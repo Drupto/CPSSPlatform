@@ -1,22 +1,12 @@
-
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const navLinks = [
     { name: "Course", href: "#course" },
@@ -27,12 +17,7 @@ export function Navbar() {
 
   return (
     <nav
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-6 py-4",
-        isScrolled
-          ? "bg-white/80 dark:bg-slate-950/80 backdrop-blur-md shadow-sm border-b"
-          : "bg-transparent"
-      )}
+      className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm px-6 py-4"
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         <a href="#" className="text-2xl font-bold tracking-tight">
@@ -45,7 +30,7 @@ export function Navbar() {
             <a
               key={link.name}
               href={link.href}
-              className="text-sm font-medium hover:text-primary transition-colors"
+              className="text-sm font-medium hover:text-primary transition-colors text-slate-600"
             >
               {link.name}
             </a>
@@ -64,7 +49,7 @@ export function Navbar() {
 
         {/* Mobile Toggle */}
         <button
-          className="md:hidden p-2"
+          className="md:hidden p-2 text-slate-600"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           {mobileMenuOpen ? <X /> : <Menu />}
@@ -73,13 +58,13 @@ export function Navbar() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-white dark:bg-slate-950 border-b p-6 space-y-4 flex flex-col items-center animate-in slide-in-from-top-4">
+        <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b p-6 space-y-4 flex flex-col items-center animate-in slide-in-from-top-4">
           {navLinks.map((link) => (
             <a
               key={link.name}
               href={link.href}
               onClick={() => setMobileMenuOpen(false)}
-              className="text-lg font-medium"
+              className="text-lg font-medium text-slate-700"
             >
               {link.name}
             </a>
