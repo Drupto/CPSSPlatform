@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, CheckCircle } from "lucide-react";
 
@@ -7,7 +6,7 @@ export function Hero() {
     <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-slate-950 text-white">
       {/* Background Decor */}
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/10 to-transparent pointer-events-none" />
-      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-secondary/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="container max-w-6xl mx-auto px-6 relative z-10">
         <div className="max-w-3xl">
@@ -16,7 +15,7 @@ export function Hero() {
           </span>
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
             Pass the CPSS Exam <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/60">
               on Your First Try.
             </span>
           </h1>
@@ -39,15 +38,15 @@ export function Hero() {
 
           <div className="flex flex-wrap items-center gap-x-8 gap-y-4 border-t border-white/10 pt-8">
             <div className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5 text-secondary" />
+              <CheckCircle className="w-5 h-5 text-primary" />
               <span className="text-slate-300 font-medium">30+ Hours of Video</span>
             </div>
             <div className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5 text-secondary" />
+              <CheckCircle className="w-5 h-5 text-primary" />
               <span className="text-slate-300 font-medium">150+ Practice Questions</span>
             </div>
             <div className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5 text-secondary" />
+              <CheckCircle className="w-5 h-5 text-primary" />
               <span className="text-slate-300 font-medium">Self-Paced Learning</span>
             </div>
           </div>
