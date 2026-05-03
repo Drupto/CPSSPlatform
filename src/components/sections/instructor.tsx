@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export function Instructor() {
-  const img = PlaceHolderImages.find(i => i.id === "instructor-portrait");
+  const img = PlaceHolderImages?.find(i => i.id === "instructor-portrait");
 
   return (
     <section className="py-24 bg-slate-50" id="instructor">
