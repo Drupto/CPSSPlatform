@@ -7,41 +7,41 @@ export function Pricing() {
   const plans = [
     {
       name: "Practice Exam Pack",
-      price: "69",
+      price: "5,000",
       features: [
-        "50+ Domain-Aligned Questions",
-        "2 Comprehensive Case Studies",
-        "Detailed Answer Explanations",
-        "PDF Study Outlines",
-        "One-time Download"
+        "Domain-aligned practice questions",
+        "3 comprehensive case studies",
+        "Detailed answer explanations",
+        "PDF study outlines",
+        "One-time download access"
       ],
       cta: "Get Access",
       popular: false,
     },
     {
-      name: "Full CPSS Prep Course",
-      price: "249",
+      name: "Full CSCS Prep Course",
+      price: "10,000",
       features: [
-        "All 30+ Video Lessons",
-        "150+ Practice Questions",
-        "Lifetime Course Access",
-        "Free Updates for Life",
-        "Mobile App Access",
-        "Domain-Specific Quizzes"
+        "All chapter-by-chapter video lectures",
+        "150+ practice questions",
+        "Lifetime course access (no expiration)",
+        "Free updates for life",
+        "Domain-specific quizzes for each chapter",
+        "Course completion certificate"
       ],
       cta: "Get Access",
       popular: true,
     },
     {
       name: "Ultimate Bundle",
-      price: "297",
+      price: "30,000",
       features: [
-        "Everything in Full Course",
-        "Bonus 1-on-1 Q&A Call",
-        "Complete Practice Exam Pack",
-        "Priority Support",
-        "Bonus: Data Vis Toolkit",
-        "Private Study Community"
+        "Everything in Full CSCS Prep Course",
+        "1-on-1 Live Class: Personalized coaching",
+        "Priority Support: Fast responses",
+        "Private Study Community: Exclusive group access",
+        "All video lectures & 150+ questions",
+        "Lifetime access & free updates"
       ],
       cta: "Get Access",
       popular: false,
@@ -52,8 +52,8 @@ export function Pricing() {
     <section className="py-24 bg-white" id="pricing">
       <div className="container max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-extrabold mb-4">Choose Your Prep Plan</h2>
-          <p className="text-slate-600">Select the path that fits your studying style and timeline.</p>
+          <h2 className="text-4xl font-extrabold mb-4">Course Offerings</h2>
+          <p className="text-slate-600">Choose the package that best fits your preparation needs and goals.</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 items-center">
@@ -74,18 +74,17 @@ export function Pricing() {
               <div className="mb-8">
                 <h3 className="text-xl font-bold mb-4">{plan.name}</h3>
                 <div className="flex items-baseline">
-                  <span className="text-5xl font-extrabold">${plan.price}</span>
-                  <span className="ml-1 text-slate-500 font-medium">USD</span>
+                  <span className="text-5xl font-extrabold">₹{plan.price}</span>
                 </div>
               </div>
 
               <ul className="space-y-4 mb-10">
                 {plan.features.map((feature, i) => (
                   <li key={i} className="flex items-start gap-3">
-                    <div className={`mt-1 p-0.5 rounded-full ${plan.popular ? "bg-primary" : "bg-primary/20"}`}>
+                    <div className={`mt-1 p-0.5 rounded-full flex-shrink-0 ${plan.popular ? "bg-primary" : "bg-primary/20"}`}>
                       <Check className={`w-3.5 h-3.5 ${plan.popular ? "text-white" : "text-primary"}`} />
                     </div>
-                    <span className={plan.popular ? "text-slate-300" : "text-slate-600"}>{feature}</span>
+                    <span className={plan.popular ? "text-slate-300 text-sm" : "text-slate-600 text-sm"}>{feature}</span>
                   </li>
                 ))}
               </ul>

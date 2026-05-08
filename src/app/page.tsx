@@ -4,6 +4,8 @@ import { Authority } from "@/components/sections/authority";
 import { Features } from "@/components/sections/features";
 import { Curriculum } from "@/components/sections/curriculum";
 import { Instructor } from "@/components/sections/instructor";
+import { Testimonials } from "@/components/sections/testimonials";
+import { VideoSection } from "@/components/sections/video";
 import { Pricing } from "@/components/sections/pricing";
 import { FAQ } from "@/components/sections/faq";
 import { Footer } from "@/components/sections/footer";
@@ -17,6 +19,8 @@ export default function Home() {
       <Features />
       <Curriculum />
       <Instructor />
+      <Testimonials />
+      <VideoSection />
       <Pricing />
       <FAQ />
       <Footer />

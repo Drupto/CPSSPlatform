@@ -68,7 +68,7 @@ export function Curriculum() {
                   <div className="text-left">
                     <h3 className="text-xl font-bold mb-1">{module.title}</h3>
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant="secondary" className="bg-primary/5 text-primary-foreground border-none font-medium text-xs">
+                      <Badge variant="secondary" className="bg-primary/5 text-primary border-none font-medium text-xs">
                         {module.weights}
                       </Badge>
                     </div>
