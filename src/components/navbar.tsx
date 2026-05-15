@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
 
   const navLinks = [
     { name: "Course", href: "#course" },
@@ -43,7 +45,10 @@ export function Navbar() {
           <Button variant="ghost" className="text-sm font-medium">
             Free Study Guide
           </Button>
-          <Button className="rounded-full px-6 font-semibold">
+          <Button 
+            className="rounded-full px-6 font-semibold"
+            onClick={() => router.push("/auth")}
+          >
             Enroll Now
           </Button>
         </div>
@@ -74,7 +79,15 @@ export function Navbar() {
             <Button variant="outline" className="w-full">
               Free Study Guide
             </Button>
-            <Button className="w-full">Enroll Now</Button>
+            <Button 
+              className="w-full"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                router.push("/auth");
+              }}
+            >
+              Enroll Now
+            </Button>
           </div>
         </div>
       )}

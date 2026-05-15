@@ -1,8 +1,12 @@
 
+"use client";
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 export function Footer() {
+  const router = useRouter();
   return (
     <footer className="bg-slate-950 text-white">
       <div className="container max-w-6xl mx-auto px-6">
@@ -11,7 +15,11 @@ export function Footer() {
           <h2 className="text-4xl md:text-5xl font-extrabold mb-8 max-w-3xl mx-auto leading-tight">
             Ready to become a Certified Strength and Conditioning Specialist?
           </h2>
-          <Button size="lg" className="h-16 px-12 text-xl font-bold rounded-full shadow-2xl shadow-primary/20">
+          <Button 
+            size="lg" 
+            className="h-16 px-12 text-xl font-bold rounded-full shadow-2xl shadow-primary/20"
+            onClick={() => router.push("/auth")}
+          >
             Enroll Now
           </Button>
           <p className="mt-8 text-slate-500 font-medium">
