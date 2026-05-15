@@ -2,28 +2,51 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, AuthError } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function AuthPage() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setIsLoading(true);
-    // Add your sign-up logic here
-    setTimeout(() => setIsLoading(false), 1000);
+    
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      router.push("/dashboard");
+    } catch (err) {
+      const firebaseError = err as AuthError;
+      setError(firebaseError.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setIsLoading(true);
-    // Add your sign-in logic here
-    setTimeout(() => setIsLoading(false), 1000);
+    
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push("/dashboard");
+    } catch (err) {
+      const firebaseError = err as AuthError;
+      setError(firebaseError.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -36,11 +59,25 @@ export default function AuthPage() {
           <p className="text-slate-600 mt-2">Join thousands of certified professionals</p>
         </div>
 
-        <Tabs defaultValue="signup" className="w-full">
+        <Tabs 
+          defaultValue="signup" 
+          className="w-full"
+          onValueChange={() => {
+            setError("");
+            setEmail("");
+            setPassword("");
+          }}
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
             <TabsTrigger value="signin">Sign In</TabsTrigger>
           </TabsList>
+
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+              {error}
+            </div>
+          )}
 
           <TabsContent value="signup" className="space-y-4 mt-6">
             <form onSubmit={handleSignUp} className="space-y-4">
