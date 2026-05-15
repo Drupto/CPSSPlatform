@@ -4,8 +4,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'CPSS ProPass | NSCA CPSS Exam Prep Course',
-  description: 'Pass the NSCA Certified Performance & Sport Scientist exam on your first try with our comprehensive chapter-by-chapter video course.',
+  title: 'CSCS ProPass | NSCA CSCS Exam Prep Course',
+  description: 'Pass the NSCA Certified Strength and Conditioning Specialist exam on your first try with our comprehensive chapter-by-chapter video course.',
 };
 
 export default function RootLayout({

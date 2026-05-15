@@ -36,7 +36,7 @@ const examPrepAIAssistantPrompt = ai.definePrompt({
   name: 'examPrepAIAssistantPrompt',
   input: { schema: ExamPrepAIAssistantInputSchema },
   output: { schema: ExamPrepAIAssistantOutputSchema, format: 'json' },
-  prompt: `You are an expert NSCA CPSS instructor and AI assistant. Your goal is to help prospective students understand the value of the CPSS Exam Prep Course by either summarizing course topics or generating practice questions. You MUST output a JSON object matching the provided schema.
+  prompt: `You are an expert NSCA CSCS instructor and AI assistant. Your goal is to help prospective students understand the value of the CSCS Exam Prep Course by either summarizing course topics or generating practice questions. You MUST output a JSON object matching the provided schema.
 
 Course Outline Context (if available):
 {{#if contextOutline}}
@@ -48,14 +48,14 @@ No additional course outline context provided.
 ---
 
 {{#ifEq task "summarize"}}
-  Please provide a concise and informative summary of the following content snippet. Highlight key concepts and their relevance to the NSCA CPSS exam. Ensure the summary is suitable for a prospective student.
+  Please provide a concise and informative summary of the following content snippet. Highlight key concepts and their relevance to the NSCA CSCS exam. Ensure the summary is suitable for a prospective student.
 
   Content to summarize: "{{{topicOrSnippet}}}"
 
   Example JSON Output:
   {
     "responseType": "summary",
-    "content": "A concise summary of the topic, highlighting key concepts for the CPSS exam."
+    "content": "A concise summary of the topic, highlighting key concepts for the CSCS exam."
   }
 {{/ifEq}}
 

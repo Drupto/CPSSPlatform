@@ -11,18 +11,18 @@ export function Hero() {
       <div className="container max-w-6xl mx-auto px-6 relative z-10">
         <div className="max-w-3xl">
           <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold uppercase tracking-wider mb-6 animate-in fade-in slide-in-from-bottom-2">
-            NSCA CPSS Exam Prep
+            NSCA CSCS Exam Prep
           </span>
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
-            Pass the CPSS Exam <br />
+            Pass the CSCS Exam <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/60">
               on Your First Try.
             </span>
           </h1>
           <p className="text-xl text-slate-400 mb-10 leading-relaxed max-w-2xl">
-            Stop guessing what's on the test. Our chapter-by-chapter video course, 
-            based on the Essentials of Sport Science textbook, gives you the exact 
-            framework to pass the NSCA's most advanced certification.
+            Stop guessing what's on the test. Our chapter-by-chapter video course 
+            follows the official CSCS Exam Content Outline, so you study the exact 
+            Scientific Foundations and Practical/Applied topics tested by the NSCA.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-12">

@@ -1,26 +1,49 @@
-import { Card } from "@/components/ui/card";
-import { Star } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+"use client"
+
+import { useState } from "react"
+import Image from "next/image"
+import { Card } from "@/components/ui/card"
+import { Star } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel"
 
 export function Testimonials() {
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
   const testimonials = [
     {
-      quote: "The Practice Exam Pack helped me focus on the right topics – it was a game-changer for my prep!",
-      author: "Anand",
-      location: "Gwalior",
-      rating: 5
+      quote: "Joining CSCS Prep Batch was one of the best decisions for my career. Before joining, I was confused about how to study for CSCS and the syllabus felt overwhelming, but the way Prakhar sir explains every topic with practical examples and scientific concepts made everything easy to understand. The best thing about this course is that it’s not just theory-based — every concept is connected with real-life strength & conditioning applications, which helped me build confidence as a coach. The study material, guidance, doubt-solving sessions, and structured preparation strategy kept me consistent throughout the journey. Prakhar sir’s teaching style, energy, and deep knowledge in strength & conditioning truly stand out. He genuinely wants every student to grow and succeed. I highly recommend Parmitrain’s CSCS Prep Batch to anyone who is serious about clearing CSCS and becoming a better coach professionally.",
+      author: "Amarendra Singh",
+      location: "India",
+      rating: 5,
+      image: "https://res.cloudinary.com/dziccfxut/image/upload/v1778860494/Amarendra_Singh_fxrvoh.jpg",
     },
     {
-      quote: "I passed the CSCS exam on my first try thanks to the comprehensive videos and quizzes.",
-      author: "Neha",
-      location: "Lucknow",
-      rating: 5
+      quote: "Prakhar Sir’s CSCS Preparation Course is truly one of the most well-structured and practical learning programs for aspiring strength & conditioning coaches. The way he breaks down difficult concepts into simple, understandable lessons makes learning very effective and engaging. What makes this course different is the balance between scientific knowledge and real-world application. Every session adds value not only for clearing CSCS but also for becoming a better coach professionally. The guidance, study strategy, doubt-solving, and consistent support throughout the preparation journey are exceptional. Prakhar Sir is highly knowledgeable, passionate, and genuinely dedicated to helping students grow. His teaching style keeps students motivated and confident throughout the process. I genuinely recommend Parmitrain’s CSCS Prep Batch to anyone serious about building a strong foundation in strength & conditioning and preparing for the CSCS exam with proper guidance.",
+      author: "Tulika Singh",
+      location: "India",
+      rating: 5,
+      image: "https://res.cloudinary.com/dziccfxut/image/upload/v1778860494/Tulika_Singh_k3npmw.jpg",
     },
     {
-      quote: "The 1-on-1 live session in the Ultimate Bundle gave me the confidence boost I needed.",
-      author: "Rajat",
-      location: "Mumbai",
-      rating: 5
+      quote: "Joining Prakhar Sir’s CSCS Prep Batch helped me understand strength & conditioning concepts in a much deeper and practical way. The classes are very well-structured, easy to understand, and focused not only on clearing CSCS but also on improving coaching knowledge. Prakhar Sir’s guidance, support, and teaching style kept me motivated throughout the preparation journey. I would definitely recommend Parmitrain’s CSCS Prep Batch to every aspiring coach.",
+      author: "Abdullah",
+      location: "India",
+      rating: 5,
+      image: "https://res.cloudinary.com/dziccfxut/image/upload/v1778860494/Abdullah_ya1ste.jpg",
+    },
+    {
+      quote: "Prakhar Sir’s CSCS Prep Batch made my preparation very clear and structured. The practical teaching style, concept clarity, and constant guidance helped me improve both my knowledge and confidence as a coach. Highly recommended for anyone preparing for CSCS.",
+      author: "Salman",
+      location: "India",
+      rating: 5,
+      image: "https://res.cloudinary.com/dziccfxut/image/upload/v1778860494/Salman_zudjqg.jpg",
     }
   ];
 
@@ -35,34 +58,76 @@ export function Testimonials() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <Card 
-              key={index}
-              className="p-8 rounded-[2rem] border-slate-200 hover:border-primary/30 hover:shadow-lg transition-all duration-300 flex flex-col"
-            >
-              {/* Star Rating */}
-              <div className="flex gap-1 mb-6">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
+        <Carousel className="relative" opts={{ loop: false, align: "start", containScroll: "trimSnaps" }}>
+          <CarouselPrevious />
+          <CarouselNext />
 
-              {/* Quote */}
-              <blockquote className="text-slate-700 text-lg leading-relaxed mb-6 flex-grow italic">
-                "{testimonial.quote}"
-              </blockquote>
+          <CarouselContent className="flex gap-8">
+            {testimonials.map((testimonial, index) => {
+              const previewLength = 220
+              const isExpanded = expandedIndex === index
+              const shouldShowButton = testimonial.quote.length > previewLength
+              const displayedQuote = isExpanded
+                ? testimonial.quote
+                : `${testimonial.quote.slice(0, previewLength).trimEnd()}${shouldShowButton ? "..." : ""}`
 
-              {/* Author */}
-              <div className="border-t border-slate-200 pt-6">
-                <p className="font-bold text-slate-900">{testimonial.author}</p>
-                <p className="text-slate-500 text-sm">{testimonial.location}</p>
-              </div>
-            </Card>
-          ))}
-        </div>
+              return (
+                <CarouselItem key={index} className="pb-8">
+                  <Card className="p-8 rounded-[2rem] border border-slate-200 bg-white shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-100 shadow-sm">
+                        <Image
+                          src={testimonial.image}
+                          alt={testimonial.author}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
 
-        {/* Video Testimonial Placeholder */}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs uppercase tracking-[0.3em] text-primary font-semibold mb-2">
+                          Student testimonial
+                        </p>
+                        <p className="text-xl font-semibold text-slate-950 leading-tight">
+                          {testimonial.author}
+                        </p>
+                        <p className="text-sm text-slate-500 mt-1">{testimonial.location}</p>
+                      </div>
+
+                      <div className="rounded-full bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-700 border border-slate-200">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <Star key={i} className="inline-block w-4 h-4 fill-amber-400 text-amber-400" />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="text-slate-700 text-base leading-8 mb-6">
+                      <blockquote className="not-italic text-slate-800">
+                        {displayedQuote}
+                      </blockquote>
+                    </div>
+
+                    {shouldShowButton ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="self-start px-4"
+                        onClick={() => setExpandedIndex(isExpanded ? null : index)}
+                      >
+                        {isExpanded ? "Show less" : "Read more"}
+                      </Button>
+                    ) : null}
+
+                    <div className="mt-auto pt-6 border-t border-slate-200">
+                      <p className="text-sm text-slate-500">CSCS Prep Batch alumni</p>
+                    </div>
+                  </Card>
+                </CarouselItem>
+              )
+            })}
+          </CarouselContent>
+        </Carousel>
+
         <div className="mt-16">
           <div className="bg-gradient-to-br from-slate-100 to-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-300 p-16 text-center">
             <svg className="w-20 h-20 mx-auto mb-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

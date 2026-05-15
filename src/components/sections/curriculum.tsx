@@ -8,46 +8,52 @@ export function Curriculum() {
   const modules = [
     {
       id: "module-1",
-      title: "Module 1: Training Theory & Process",
-      weights: "10-14% Scientific Disciplines | 3-6% Tech | 9-12% Research",
+      title: "Scientific Foundations",
+      weights: "1.5 hours | 80 scored + 15 non-scored questions",
       topics: [
-        "Biological adaptations to training load",
-        "Periodization models for elite sport",
-        "Individualization and specificity principles",
-        "Interdisciplinary support team coordination"
+        "Exercise Sciences: muscle anatomy, neuromuscular physiology, biomechanics, bone and connective tissue, bioenergetics",
+        "Exercise Physiology: neuroendocrine function, cardiopulmonary response, training adaptations, athlete differences, sport psychology",
+        "Nutrition: performance nutrition, hydration, eating disorders, ergogenic aids"
       ]
     },
     {
       id: "module-2",
-      title: "Module 2: Needs Analysis",
-      weights: "11-15% Scientific Disciplines | 3-6% Tech | 7-11% Research",
+      title: "Exercise Technique",
+      weights: "38 scored questions (video-supported technique assessment)",
       topics: [
-        "Metabolic and biomechanical sport demands",
-        "Profiling positional requirements",
-        "Benchmarking across competition levels",
-        "Injury epidemiology and risk assessment"
+        "Teach and evaluate resistance training technique for free weights, machines, alternative implements",
+        "Plyometric, speed/sprint, agility, metabolic conditioning, and flexibility technique",
+        "Spotting procedures and safety for complex lifts"
       ]
     },
     {
       id: "module-3",
-      title: "Module 3: Acute & Chronic Monitoring",
-      weights: "5-8% Scientific Disciplines | 10-14% Tech | 7-11% Research",
+      title: "Program Design",
+      weights: "39 scored questions",
       topics: [
-        "Wearable technology integration (GPS, HRV)",
-        "Internal vs external load metrics",
-        "Readiness and fatigue assessment protocols",
-        "Data visualization for coaching staff"
+        "Program design based on athlete health, training age, goals, and sport demand",
+        "Exercise selection, order, intensity, volume, work/rest, recovery, and progression",
+        "Periodization models and reconditioning programs for injured athletes"
       ]
     },
     {
       id: "module-4",
-      title: "Module 4: Communication & Education",
-      weights: "3-6% Scientific Disciplines | 3-7% Tech | 10-14% Research",
+      title: "Organization & Administration",
+      weights: "13 scored questions",
       topics: [
-        "Translating complex data for non-scientists",
-        "Implementing behavioral change strategies",
-        "Designing effective performance reports",
-        "Ethical considerations in sport science"
+        "Facility design, equipment layout, and operational policies",
+        "Staff roles, safety procedures, and liability mitigation",
+        "Creating a safe training environment and referral process"
+      ]
+    },
+    {
+      id: "module-5",
+      title: "Testing & Evaluation",
+      weights: "20 scored questions",
+      topics: [
+        "Selecting and administering valid, reliable performance tests",
+        "Data collection, equipment use, and testing protocols",
+        "Interpreting results and modifying programs based on athlete performance"
       ]
     }
   ];
@@ -56,8 +62,8 @@ export function Curriculum() {
     <section className="py-24 bg-white" id="curriculum">
       <div className="container max-w-6xl mx-auto px-6">
         <div className="mb-16 text-center">
-          <h2 className="text-4xl font-extrabold mb-4">Aligned Exactly to the NSCA CPSS Domains</h2>
-          <p className="text-slate-600 max-w-2xl mx-auto">Our content weighting mirrors the actual exam specifications provided by the NSCA.</p>
+          <h2 className="text-4xl font-extrabold mb-4">Aligned Exactly to the NSCA CSCS Exam Content Outline</h2>
+          <p className="text-slate-600 max-w-2xl mx-auto">Our content mirrors the official CSCS exam structure so you're studying the correct Scientific Foundations and Practical/Applied domains.</p>
         </div>
 
         <div className="max-w-4xl mx-auto">

@@ -32,7 +32,7 @@ export function AITutor() {
       const result = await examPrepAIAssistant({
         task,
         topicOrSnippet: topic.content,
-        contextOutline: "NSCA CPSS Exam Content Outline: Scientific Disciplines, Assessment Tech, Research Process."
+        contextOutline: "NSCA CSCS Exam Content Outline: Scientific Foundations and Practical/Applied domains."
       });
 
       setResponse({ content: result.content, type: result.responseType });
@@ -107,7 +107,7 @@ export function AITutor() {
                   {loading && <Loader2 className="w-5 h-5 animate-spin text-primary" />}
                 </CardTitle>
                 <CardDescription className="text-slate-400">
-                  Powered by Gemini Pro - Our NSCA CPSS Training Model
+                  Powered by Gemini Pro - Our NSCA CSCS Training Model
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-8 flex-1 overflow-auto bg-slate-900/40">

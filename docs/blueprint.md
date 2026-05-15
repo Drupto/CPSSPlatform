@@ -1,4 +1,4 @@
-# **App Name**: CPSS ProPass
+# **App Name**: CSCS ProPass
 
 ## Core Features:
 

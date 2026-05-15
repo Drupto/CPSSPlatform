@@ -7,8 +7,8 @@ import { ShieldCheck } from "lucide-react";
 export function FAQ() {
   const faqs = [
     {
-      q: "What are the eligibility requirements for the CPSS?",
-      a: "To sit for the CPSS exam, you must have a Bachelor's degree in a related field with 3 years of experience, or a Master's degree in a related field. Professional certifications like the CSCS also weigh into the eligibility routes."
+      q: "What are the eligibility requirements for the CSCS?",
+      a: "To sit for the CSCS exam, you must meet the NSCA's academic and experience requirements, typically a bachelor's degree in a related field plus practical experience. Our course prepares you for the exam content, not the eligibility process itself."
     },
     {
       q: "How long do I have access to the course?",
@@ -20,7 +20,7 @@ export function FAQ() {
     },
     {
       q: "How is the exam formatted?",
-      a: "The CPSS exam consists of 100 scored multiple-choice questions plus 15 unscored pre-test questions. You have 165 minutes to complete it, and it includes several high-complexity case study scenarios."
+      a: "The CSCS exam is split into two sections: Scientific Foundations and Practical/Applied. The Scientific Foundations section is 1.5 hours long with 80 scored and 15 non-scored multiple-choice questions covering exercise sciences, exercise physiology, and nutrition. The Practical/Applied section is 2.5 hours long with 110 scored and 15 non-scored multiple-choice questions covering exercise technique, program design, organization/administration, and testing/evaluation, including video-supported technique items."
     }
   ];
 

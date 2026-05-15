@@ -5,6 +5,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export function Instructor() {
   const img = PlaceHolderImages?.find(i => i.id === "instructor-portrait");
+  const instructorPhoto = "https://res.cloudinary.com/dziccfxut/image/upload/v1778860869/trainer_ssypuw.jpg"
 
   const credentials = [
     "NSCA CSCS (Certified Strength and Conditioning Specialist)",
@@ -23,9 +24,9 @@ export function Instructor() {
     <section className="py-24 bg-slate-50" id="instructor">
       <div className="container max-w-6xl mx-auto px-6">
         <div className="bg-white rounded-[3xl] overflow-hidden shadow-xl border border-slate-100 flex flex-col md:flex-row items-stretch">
-          <div className="md:w-1/2 relative min-h-[400px]">
+          <div className="h-[550px] md:h-auto md:w-1/2 relative">
             <Image
-              src={img?.imageUrl || "https://picsum.photos/seed/trainer-1/600/800"}
+              src={instructorPhoto}
               alt="Instructor Portrait"
               fill
               className="object-cover"

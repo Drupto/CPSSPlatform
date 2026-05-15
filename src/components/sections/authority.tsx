@@ -26,13 +26,16 @@ export function Authority() {
       <div className="container max-w-6xl mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-4xl md:text-5xl font-extrabold mb-6">
-            The CPSS Exam is Hard. <br />
-            Studying Doesn't Have to Be.
-          </h2>
-          <p className="text-lg text-slate-600 leading-relaxed">
-            With a <span className="text-primary font-bold">65% first-time pass rate</span> and an exam spanning 600+ pages of dense sport science literature, reading the book isn't enough. You need to know how to apply Training Theory, Needs Analysis, and Acute/Chronic Monitoring to complex case studies.
-          </p>
-        </div>
+              The CSCS Exam is Hard. <br />
+              Studying Doesn't Have to Be.
+            </h2>
+            <p className="text-lg text-slate-600 leading-relaxed">
+              With a demanding two-section exam and a curriculum that spans both 
+              Scientific Foundations and Practical/Applied competencies, you need 
+              more than rote memorization. Learn how to apply anatomy, physiology, 
+              program design, exercise technique, and testing principles with confidence.
+            </p>
+          </div>
 
         <div className="grid md:grid-cols-3 gap-8">
           {painPoints.map((point, index) => (
