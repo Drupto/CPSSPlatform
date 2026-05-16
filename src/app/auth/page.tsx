@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, AuthError } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { createUserProfile } from "@/lib/course";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function AuthPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       if (userCredential.user) {
+        await createUserProfile(userCredential.user);
         await sendEmailVerification(userCredential.user);
       }
       setMessage(

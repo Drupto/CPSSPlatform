@@ -12,6 +12,7 @@ export function Navbar() {
   const router = useRouter();
 
   const navLinks = [
+    { name: "Courses", href: "/courses" },
     { name: "Course", href: "#course" },
     { name: "Curriculum", href: "#curriculum" },
     { name: "Instructor", href: "#instructor" },

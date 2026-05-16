@@ -71,7 +71,7 @@ export default function DashboardPage() {
               <p className="text-slate-600 mb-4">
                 Access your enrolled courses and continue learning.
               </p>
-              <Button>View Courses</Button>
+              <Button onClick={() => window.location.href = '/dashboard/my-courses'}>View Courses</Button>
             </div>
 
             <div className="border border-slate-200 rounded-lg p-6">
