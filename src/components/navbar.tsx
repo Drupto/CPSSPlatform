@@ -1,15 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState(false);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(!!currentUser);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setUser(false);
+      setMobileMenuOpen(false);
+      router.push("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   const navLinks = [
     { name: "Courses", href: "/courses" },
@@ -46,12 +70,32 @@ export function Navbar() {
           <Button variant="ghost" className="text-sm font-medium">
             Free Study Guide
           </Button>
-          <Button 
-            className="rounded-full px-6 font-semibold"
-            onClick={() => router.push("/auth")}
-          >
-            Enroll Now
-          </Button>
+          {!loading && (
+            user ? (
+              <>
+                <Button 
+                  className="rounded-full px-6 font-semibold"
+                  onClick={() => router.push("/dashboard")}
+                >
+                  My Dashboard
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="text-sm font-medium"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <Button 
+                className="rounded-full px-6 font-semibold"
+                onClick={() => router.push("/auth")}
+              >
+                Enroll Now
+              </Button>
+            )
+          )}
         </div>
 
         {/* Mobile Toggle */}
@@ -80,15 +124,38 @@ export function Navbar() {
             <Button variant="outline" className="w-full">
               Free Study Guide
             </Button>
-            <Button 
-              className="w-full"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                router.push("/auth");
-              }}
-            >
-              Enroll Now
-            </Button>
+            {!loading && (
+              user ? (
+                <>
+                  <Button 
+                    className="w-full"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      router.push("/dashboard");
+                    }}
+                  >
+                    My Dashboard
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Button 
+                  className="w-full"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    router.push("/auth");
+                  }}
+                >
+                  Enroll Now
+                </Button>
+              )
+            )}
           </div>
         </div>
       )}

@@ -28,7 +28,14 @@ export default function AuthPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       if (userCredential.user) {
-        await createUserProfile(userCredential.user);
+        try {
+          await createUserProfile(userCredential.user);
+        } catch (profileError) {
+          console.error("Error creating user profile:", profileError);
+          setError(`Account created but profile setup failed: ${profileError instanceof Error ? profileError.message : "Unknown error"}`);
+          setIsLoading(false);
+          return;
+        }
         await sendEmailVerification(userCredential.user);
       }
       setMessage(
