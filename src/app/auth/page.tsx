@@ -16,10 +16,12 @@ export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setMessage("");
     setIsLoading(true);
     
     try {
@@ -27,7 +29,7 @@ export default function AuthPage() {
       if (userCredential.user) {
         await sendEmailVerification(userCredential.user);
       }
-      setError(
+      setMessage(
         `A verification email has been sent to ${email}. Please verify your email before signing in.`
       );
     } catch (err) {
@@ -41,6 +43,7 @@ export default function AuthPage() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setMessage("");
     setIsLoading(true);
     
     try {
@@ -49,7 +52,7 @@ export default function AuthPage() {
         router.push("/dashboard");
       } else {
         await sendEmailVerification(userCredential.user);
-        setError(
+        setMessage(
           "You must verify your email before accessing the dashboard. A verification email has been resent."
         );
       }
@@ -88,6 +91,11 @@ export default function AuthPage() {
           {error && (
             <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
               {error}
+            </div>
+          )}
+          {message && (
+            <div className="mt-4 p-3 bg-emerald-100 border border-emerald-400 text-emerald-700 rounded-md text-sm">
+              {message}
             </div>
           )}
 
