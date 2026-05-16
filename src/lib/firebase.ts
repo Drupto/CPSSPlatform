@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
@@ -13,16 +13,24 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only on client-side to prevent build-time errors
+let app: any;
+let auth: any;
+let db: any;
+let storage: any;
 
-// Initialize Firebase Authentication and get a reference to the service
-export const auth = getAuth(app);
+if (typeof window !== "undefined") {
+  // Client-side only initialization
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApps()[0];
+  }
+  
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+}
 
-// Initialize Cloud Firestore and get a reference to the service
-export const db = getFirestore(app);
-
-// Initialize Cloud Storage and get a reference to the service
-export const storage = getStorage(app);
-
+export { app, auth, db, storage };
 export default app;
