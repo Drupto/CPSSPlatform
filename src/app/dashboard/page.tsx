@@ -13,13 +13,13 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is authenticated
+    // Check if user is authenticated and has a verified email
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
+      if (!currentUser || !currentUser.emailVerified) {
+        router.push("/auth");
+      } else {
         setUser(currentUser);
         setIsLoading(false);
-      } else {
-        router.push("/auth");
       }
     });
 

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, AuthError } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, AuthError } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
 export default function AuthPage() {
@@ -23,8 +23,13 @@ export default function AuthPage() {
     setIsLoading(true);
     
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      if (userCredential.user) {
+        await sendEmailVerification(userCredential.user);
+      }
+      setError(
+        `A verification email has been sent to ${email}. Please verify your email before signing in.`
+      );
     } catch (err) {
       const firebaseError = err as AuthError;
       setError(firebaseError.message);
@@ -39,8 +44,15 @@ export default function AuthPage() {
     setIsLoading(true);
     
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push("/dashboard");
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      if (userCredential.user.emailVerified) {
+        router.push("/dashboard");
+      } else {
+        await sendEmailVerification(userCredential.user);
+        setError(
+          "You must verify your email before accessing the dashboard. A verification email has been resent."
+        );
+      }
     } catch (err) {
       const firebaseError = err as AuthError;
       setError(firebaseError.message);
