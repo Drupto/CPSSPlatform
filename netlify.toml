@@ -3,17 +3,14 @@
   functions = "netlify/functions"
   publish = ".next"
 
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
 [build.environment]
   NODE_VERSION = "20"
   NPM_VERSION = "10"
 
-# Next.js specific redirect for SPA routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  force = false
-  conditions = { Role = ["visitor"] }
+# Removed an SPA redirect that intercepted asset requests (caused CSS to return HTML)
 
 # Ensure proper caching
 [[headers]]
