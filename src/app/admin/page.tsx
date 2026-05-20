@@ -7,14 +7,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getUserProfile, isAdminProfile } from "@/lib/course";
+import { getUserProfile, isAdminProfile, getTotalUsers, getTotalCourses, getTotalEnrollments } from "@/lib/course";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
+import { Users, BookOpen, GraduationCap, TrendingUp } from "lucide-react";
 
 export default function AdminPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalCourses, setTotalCourses] = useState(0);
+  const [totalEnrollments, setTotalEnrollments] = useState(0);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser: User | null) => {
@@ -30,6 +34,14 @@ export default function AdminPage() {
       }
 
       setIsAdmin(true);
+      const [users, courses, enrollments] = await Promise.all([
+        getTotalUsers(),
+        getTotalCourses(),
+        getTotalEnrollments(),
+      ]);
+      setTotalUsers(users);
+      setTotalCourses(courses);
+      setTotalEnrollments(enrollments);
       setLoading(false);
     });
 
@@ -44,6 +56,13 @@ export default function AdminPage() {
     );
   }
 
+  const stats = [
+    { label: "Total Users", value: totalUsers, icon: Users, color: "bg-blue-500" },
+    { label: "Total Courses", value: totalCourses, icon: BookOpen, color: "bg-emerald-500" },
+    { label: "Total Enrollments", value: totalEnrollments, icon: GraduationCap, color: "bg-violet-500" },
+    { label: "Revenue", value: `₹${totalCourses * 0}`, icon: TrendingUp, color: "bg-amber-500" },
+  ];
+
   return (
     <main className="relative min-h-screen bg-slate-50">
       <Navbar />
@@ -51,8 +70,23 @@ export default function AdminPage() {
         <div className="bg-white rounded-3xl shadow-lg p-10">
           <h1 className="text-4xl font-bold text-slate-900 mb-4">Admin Dashboard</h1>
           <p className="text-slate-600 mb-8">
-            Create and manage courses for the student experience.
+            Overview and management of your course platform.
           </p>
+
+          {/* Stats Grid */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+            {stats.map((stat) => (
+              <div key={stat.label} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`${stat.color} rounded-lg p-2 text-white`}>
+                    <stat.icon className="h-5 w-5" />
+                  </div>
+                  <span className="text-sm text-slate-500">{stat.label}</span>
+                </div>
+                <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
+              </div>
+            ))}
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Link href="/admin/courses" className="rounded-2xl border border-slate-200 bg-slate-50 p-6 hover:border-primary transition">

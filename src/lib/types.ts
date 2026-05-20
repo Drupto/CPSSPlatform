@@ -39,3 +39,11 @@ export interface Enrollment {
   courseId: string;
   enrolledAt: Timestamp | null;
 }
+
+export interface CourseProgress {
+  id: string;
+  userId: string;
+  courseId: string;
+  completedContentIds: string[];
+  updatedAt: Timestamp | null;
+}

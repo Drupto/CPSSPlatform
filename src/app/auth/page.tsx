@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, AuthError } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, AuthError } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { createUserProfile } from "@/lib/course";
 
@@ -177,7 +177,30 @@ export default function AuthPage() {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Signing In..." : "Sign In"}
               </Button>
-              <Button variant="ghost" className="w-full text-sm">
+              <Button 
+                type="button" 
+                variant="ghost" 
+                className="w-full text-sm"
+                disabled={isLoading}
+                onClick={async () => {
+                  if (!email.trim()) {
+                    setError("Please enter your email address first.");
+                    return;
+                  }
+                  setError("");
+                  setMessage("");
+                  setIsLoading(true);
+                  try {
+                    await sendPasswordResetEmail(auth, email.trim());
+                    setMessage("Password reset email sent. Check your inbox.");
+                  } catch (err) {
+                    const firebaseError = err as AuthError;
+                    setError(firebaseError.message);
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+              >
                 Forgot your password?
               </Button>
             </form>

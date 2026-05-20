@@ -7,15 +7,28 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getAllCourses, getUserProfile, isAdminProfile } from "@/lib/course";
+import { getAllCourses, getUserProfile, isAdminProfile, deleteCourse } from "@/lib/course";
 import type { Course } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Navbar } from "@/components/navbar";
 
 export default function AdminCoursesPage() {
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser: User | null) => {
@@ -78,6 +91,45 @@ export default function AdminCoursesPage() {
                   <div className="mt-4 flex items-center gap-3">
                     <Link href={`/courses/${course.slug}`} className="text-primary hover:underline text-sm">View Course</Link>
                     <Link href={`/admin/courses/${course.id}/edit`} className="text-slate-600 hover:text-slate-900 text-sm">Edit</Link>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button
+                          onClick={() => setCourseToDelete(course.id)}
+                          className="text-red-500 hover:text-red-700 text-sm"
+                        >
+                          Delete
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Course</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{course.title}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => setCourseToDelete(null)}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            disabled={deleting}
+                            onClick={async () => {
+                              setDeleting(true);
+                              try {
+                                await deleteCourse(course.id);
+                                setCourses((prev) => prev.filter((c) => c.id !== course.id));
+                              } catch (err) {
+                                console.error("Failed to delete course:", err);
+                              } finally {
+                                setDeleting(false);
+                                setCourseToDelete(null);
+                              }
+                            }}
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            {deleting ? "Deleting..." : "Delete"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}

@@ -1,6 +1,6 @@
 import type { User } from "firebase/auth";
-import type { Course, CourseContentItem, Enrollment, UserProfile } from "./types";
-import { addDoc, collection, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import type { Course, CourseContentItem, CourseProgress, Enrollment, UserProfile } from "./types";
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 
@@ -31,7 +31,7 @@ export async function createUserProfile(user: User, role: "student" | "admin" = 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const profileRef = doc(db, "users", uid);
   const snapshot = await getDoc(profileRef);
-  return snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as UserProfile) : null;
+  return snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as unknown as UserProfile) : null;
 }
 
 export async function getAllCourses(): Promise<Course[]> {
@@ -128,6 +128,11 @@ export async function getEnrollmentsForUser(userId: string): Promise<Enrollment[
   return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Enrollment));
 }
 
+export async function deleteCourse(courseId: string): Promise<void> {
+  const courseRef = doc(db, "courses", courseId);
+  await deleteDoc(courseRef);
+}
+
 export async function updateCourse(courseId: string, updates: Partial<CourseCreateData>): Promise<void> {
   const courseRef = doc(db, "courses", courseId);
   await setDoc(courseRef, {
@@ -138,8 +143,7 @@ export async function updateCourse(courseId: string, updates: Partial<CourseCrea
 
 export async function deleteCourseContentItem(courseId: string, contentId: string): Promise<void> {
   const contentRef = doc(db, "courses", courseId, "content", contentId);
-  await getDoc(contentRef);
-  return;
+  await deleteDoc(contentRef);
 }
 
 export async function updateCourseContentItem(courseId: string, contentId: string, updates: Partial<CourseContentCreateData>): Promise<void> {
@@ -147,6 +151,68 @@ export async function updateCourseContentItem(courseId: string, contentId: strin
   await setDoc(contentRef, {
     ...updates,
   }, { merge: true });
+}
+
+export async function getCourseProgress(userId: string, courseId: string): Promise<CourseProgress | null> {
+  const progressRef = doc(db, "progress", `${userId}_${courseId}`);
+  const snapshot = await getDoc(progressRef);
+  return snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as CourseProgress) : null;
+}
+
+export async function markContentCompleted(userId: string, courseId: string, contentId: string): Promise<void> {
+  const progressRef = doc(db, "progress", `${userId}_${courseId}`);
+  const snapshot = await getDoc(progressRef);
+  
+  if (snapshot.exists()) {
+    const data = snapshot.data();
+    const completedIds = data.completedContentIds || [];
+    if (!completedIds.includes(contentId)) {
+      await setDoc(progressRef, {
+        completedContentIds: [...completedIds, contentId],
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    }
+  } else {
+    await setDoc(progressRef, {
+      id: `${userId}_${courseId}`,
+      userId,
+      courseId,
+      completedContentIds: [contentId],
+      updatedAt: serverTimestamp(),
+    });
+  }
+}
+
+export async function markContentIncomplete(userId: string, courseId: string, contentId: string): Promise<void> {
+  const progressRef = doc(db, "progress", `${userId}_${courseId}`);
+  const snapshot = await getDoc(progressRef);
+  
+  if (snapshot.exists()) {
+    const data = snapshot.data();
+    const completedIds = (data.completedContentIds || []).filter((id: string) => id !== contentId);
+    await setDoc(progressRef, {
+      completedContentIds: completedIds,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  }
+}
+
+export async function getTotalUsers(): Promise<number> {
+  const usersRef = collection(db, "users");
+  const snapshot = await getDocs(usersRef);
+  return snapshot.size;
+}
+
+export async function getTotalCourses(): Promise<number> {
+  const coursesRef = collection(db, "courses");
+  const snapshot = await getDocs(coursesRef);
+  return snapshot.size;
+}
+
+export async function getTotalEnrollments(): Promise<number> {
+  const enrollmentsRef = collection(db, "enrollments");
+  const snapshot = await getDocs(enrollmentsRef);
+  return snapshot.size;
 }
 
 export function isAdminProfile(profile: UserProfile | null) {

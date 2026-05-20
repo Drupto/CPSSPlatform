@@ -270,9 +270,49 @@ export default function EditCoursePage() {
                 <div key={block.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
                   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <h3 className="font-semibold text-slate-900">Section {block.order}</h3>
-                    <Button variant="ghost" className="text-sm text-slate-600" type="button" onClick={() => removeBlock(block.id)}>
-                      Remove
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const idx = contentBlocks.findIndex((b) => b.id === block.id);
+                          if (idx > 0) {
+                            const newBlocks = [...contentBlocks];
+                            const temp = newBlocks[idx].order;
+                            newBlocks[idx].order = newBlocks[idx - 1].order;
+                            newBlocks[idx - 1].order = temp;
+                            [newBlocks[idx], newBlocks[idx - 1]] = [newBlocks[idx - 1], newBlocks[idx]];
+                            setContentBlocks(newBlocks);
+                          }
+                        }}
+                        disabled={contentBlocks.findIndex((b) => b.id === block.id) === 0}
+                        className="text-slate-500 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+                        title="Move up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const idx = contentBlocks.findIndex((b) => b.id === block.id);
+                          if (idx < contentBlocks.length - 1) {
+                            const newBlocks = [...contentBlocks];
+                            const temp = newBlocks[idx].order;
+                            newBlocks[idx].order = newBlocks[idx + 1].order;
+                            newBlocks[idx + 1].order = temp;
+                            [newBlocks[idx], newBlocks[idx + 1]] = [newBlocks[idx + 1], newBlocks[idx]];
+                            setContentBlocks(newBlocks);
+                          }
+                        }}
+                        disabled={contentBlocks.findIndex((b) => b.id === block.id) === contentBlocks.length - 1}
+                        className="text-slate-500 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+                        title="Move down"
+                      >
+                        ↓
+                      </button>
+                      <Button variant="ghost" className="text-sm text-slate-600" type="button" onClick={() => removeBlock(block.id)}>
+                        Remove
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="grid gap-6 md:grid-cols-2 mt-4">

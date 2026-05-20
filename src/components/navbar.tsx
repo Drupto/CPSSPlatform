@@ -3,21 +3,38 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Shield } from "lucide-react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { getUserProfile, isAdminProfile } from "@/lib/course";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(!!currentUser);
+      if (currentUser) {
+        const profile = await getUserProfile(currentUser.uid);
+        setIsAdmin(isAdminProfile(profile));
+      } else {
+        setIsAdmin(false);
+      }
       setLoading(false);
     });
 
@@ -44,7 +61,11 @@ export function Navbar() {
 
   return (
     <nav
-      className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm px-6 py-4"
+      className={`fixed top-0 left-0 right-0 z-50 px-6 py-4 transition-all duration-300 ${
+        scrolled
+          ? "bg-white/90 backdrop-blur-lg border-b border-slate-200 shadow-sm"
+          : "bg-white border-b border-slate-200"
+      }`}
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         <Link href="/" className="text-2xl font-bold tracking-tight">
@@ -72,13 +93,23 @@ export function Navbar() {
           {!loading && (
             user ? (
               <>
-                <Button 
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    className="text-sm font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                    onClick={() => router.push("/admin")}
+                  >
+                    <Shield className="h-4 w-4 mr-1.5" />
+                    Admin
+                  </Button>
+                )}
+                <Button
                   className="rounded-full px-6 font-semibold"
                   onClick={() => router.push("/dashboard")}
                 >
                   My Dashboard
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   className="text-sm font-medium"
                   onClick={handleLogout}
@@ -87,7 +118,7 @@ export function Navbar() {
                 </Button>
               </>
             ) : (
-              <Button 
+              <Button
                 className="rounded-full px-6 font-semibold"
                 onClick={() => router.push("/auth")}
               >
@@ -119,6 +150,18 @@ export function Navbar() {
               {link.name}
             </Link>
           ))}
+          {isAdmin && (
+            <Button
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                router.push("/admin");
+              }}
+            >
+              <Shield className="h-4 w-4 mr-1.5" />
+              Admin Dashboard
+            </Button>
+          )}
           <div className="pt-4 space-y-3 w-full max-w-xs flex flex-col">
             <Button variant="outline" className="w-full">
               Free Study Guide
@@ -126,7 +169,7 @@ export function Navbar() {
             {!loading && (
               user ? (
                 <>
-                  <Button 
+                  <Button
                     className="w-full"
                     onClick={() => {
                       setMobileMenuOpen(false);
@@ -135,7 +178,7 @@ export function Navbar() {
                   >
                     My Dashboard
                   </Button>
-                  <Button 
+                  <Button
                     variant="outline"
                     className="w-full"
                     onClick={handleLogout}
@@ -144,7 +187,7 @@ export function Navbar() {
                   </Button>
                 </>
               ) : (
-                <Button 
+                <Button
                   className="w-full"
                   onClick={() => {
                     setMobileMenuOpen(false);
