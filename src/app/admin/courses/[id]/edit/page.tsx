@@ -152,12 +152,12 @@ export default function EditCoursePage() {
 
       for (const block of contentBlocks) {
         let contentUrl = block.url;
-        if (block.type === "document" && block.file) {
+        if ((block.type === "document" || block.type === "video") && block.file) {
           contentUrl = await uploadCourseAsset(block.file, courseId as string);
         }
 
         if (block.type === "video" && !contentUrl.trim()) {
-          throw new Error("Video blocks require a URL.");
+          throw new Error("Video blocks require a video file upload or a URL.");
         }
 
         if (block.isNew) {
@@ -350,13 +350,34 @@ export default function EditCoursePage() {
                     )}
 
                     {block.type === "video" && (
-                      <div className="space-y-2">
-                        <Label>Video URL</Label>
-                        <Input
-                          value={block.url}
-                          onChange={(event) => updateBlock(block.id, { url: event.target.value })}
-                          placeholder="https://www.youtube.com/watch?v=..."
-                        />
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Video File Upload</Label>
+                          <input
+                            type="file"
+                            accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                            onChange={(event) => updateBlock(block.id, { file: event.target.files?.[0] ?? null })}
+                            className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-slate-900"
+                          />
+                          <p className="text-xs text-slate-500">Supported formats: MP4, WebM, OGG, MOV. Max file size depends on your Firebase plan.</p>
+                        </div>
+                        <div className="relative">
+                          <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-slate-200" />
+                          </div>
+                          <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-white px-2 text-slate-500">Or use an external URL</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Video URL</Label>
+                          <Input
+                            value={block.url}
+                            onChange={(event) => updateBlock(block.id, { url: event.target.value })}
+                            placeholder="https://www.youtube.com/watch?v=..."
+                          />
+                          {block.url && <p className="text-sm text-slate-500">Current: {block.url}</p>}
+                        </div>
                       </div>
                     )}
 
