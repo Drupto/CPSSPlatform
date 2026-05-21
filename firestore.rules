@@ -6,34 +6,52 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
-    // Allow anyone to read published courses
+    // Allow anyone to read published courses; admins can create, update, and delete
     match /courses/{courseId} {
       allow read: if resource.data.published == true || (request.auth != null && isAdmin());
-      allow write: if request.auth != null && isAdmin();
+      allow create: if request.auth != null && isAdmin();
+      allow update: if request.auth != null && isAdmin();
+      allow delete: if request.auth != null && isAdmin();
 
-      // Allow anyone to read course content for published courses
+      // Allow anyone to read course content for published courses; admins can manage
       match /content/{contentId} {
-        allow read: if parent.data.published == true || (request.auth != null && isAdmin());
-        allow write: if request.auth != null && isAdmin();
+        allow read: if (
+          get(/databases/$(database)/documents/courses/$(courseId)).data.published == true
+        ) || (request.auth != null && isAdmin());
+        allow create: if request.auth != null && isAdmin();
+        allow update: if request.auth != null && isAdmin();
+        allow delete: if request.auth != null && isAdmin();
       }
     }
 
-    // Allow authenticated users to read/create their enrollments
+    // Allow authenticated users to read their own enrollments or if admin
+    // Allow students to create their own enrollment; admins can create/update/delete
     match /enrollments/{enrollmentId} {
-      allow read: if request.auth != null && (request.auth.uid == get(/databases/$(database)/documents/enrollments/$(enrollmentId)).data.userId || isAdmin());
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      allow write: if request.auth != null && isAdmin();
+      allow read: if request.auth != null && (
+        request.auth.uid == get(/databases/$(database)/documents/enrollments/$(enrollmentId)).data.userId
+        || isAdmin()
+      );
+      allow create: if request.auth != null && (
+        request.auth.uid == request.resource.data.userId || isAdmin()
+      );
+      allow update: if request.auth != null && isAdmin();
+      allow delete: if request.auth != null && isAdmin();
     }
 
     // Allow authenticated users to track their own progress
     match /progress/{progressId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.userId || isAdmin());
-      allow write: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId || isAdmin()
+      );
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow delete: if request.auth != null && isAdmin();
     }
 
     // Helper function to check if user is admin
     function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }

@@ -1,7 +1,7 @@
 import type { User } from "firebase/auth";
 import type { Course, CourseContentItem, CourseProgress, Enrollment, UserProfile } from "./types";
 import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 
 function slugify(value: string) {
@@ -128,9 +128,60 @@ export async function getEnrollmentsForUser(userId: string): Promise<Enrollment[
   return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Enrollment));
 }
 
+/**
+ * Deletes a file from Firebase Storage given its download URL.
+ * Parses the Firebase Storage download URL to extract the object path and deletes it.
+ * Silently handles cases where the URL is not a Firebase Storage URL or the file doesn't exist.
+ */
+export async function deleteStorageFileByUrl(downloadUrl: string): Promise<void> {
+  if (!downloadUrl || !downloadUrl.includes("firebasestorage.googleapis.com")) {
+    return; // Not a Firebase Storage URL (e.g. YouTube link), nothing to delete
+  }
+
+  try {
+    // Firebase Storage download URLs are formatted as:
+    // https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{encoded-path}?alt=media&token={token}
+    const urlObj = new URL(downloadUrl);
+    const pathSegment = urlObj.pathname.split("/o/")[1];
+    if (!pathSegment) return;
+
+    const decodedPath = decodeURIComponent(pathSegment);
+    const storageRef = ref(storage, decodedPath);
+    await deleteObject(storageRef);
+  } catch {
+    // Silently ignore if file doesn't exist or can't be deleted
+  }
+}
+
+/**
+ * Deletes a course along with all its content items and their uploaded files from Firebase Storage.
+ */
 export async function deleteCourse(courseId: string): Promise<void> {
+  // 1. Delete all content items and their uploaded files from Storage
+  const contentItems = await getCourseContent(courseId);
+  for (const item of contentItems) {
+    if (item.url) {
+      await deleteStorageFileByUrl(item.url);
+    }
+    const contentRef = doc(db, "courses", courseId, "content", item.id);
+    await deleteDoc(contentRef);
+  }
+
+  // 2. Delete the course document
   const courseRef = doc(db, "courses", courseId);
   await deleteDoc(courseRef);
+}
+
+/**
+ * Deletes a single content item from Firestore and its associated uploaded file from Storage.
+ */
+export async function deleteCourseContentItemWithFile(courseId: string, contentId: string, fileUrl?: string): Promise<void> {
+  if (fileUrl) {
+    await deleteStorageFileByUrl(fileUrl);
+  }
+
+  const contentRef = doc(db, "courses", courseId, "content", contentId);
+  await deleteDoc(contentRef);
 }
 
 export async function updateCourse(courseId: string, updates: Partial<CourseCreateData>): Promise<void> {

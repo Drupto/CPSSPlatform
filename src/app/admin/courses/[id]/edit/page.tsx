@@ -13,6 +13,7 @@ import {
   updateCourse,
   addCourseContentItem,
   updateCourseContentItem,
+  deleteCourseContentItemWithFile,
   uploadCourseAsset,
   isAdminProfile,
 } from "@/lib/course";
@@ -122,7 +123,20 @@ export default function EditCoursePage() {
     );
   };
 
-  const removeBlock = (id: string) => {
+  const removeBlock = async (id: string) => {
+    const block = contentBlocks.find((b) => b.id === id);
+    if (!block) return;
+
+    // If it's an existing block (not newly added), delete from Firestore and Storage
+    if (!block.isNew && courseId) {
+      try {
+        await deleteCourseContentItemWithFile(courseId as string, id, block.url);
+      } catch (err) {
+        console.error("Failed to delete content item:", err);
+        // Continue removing from UI even if backend delete fails
+      }
+    }
+
     setContentBlocks((current) => current.filter((block) => block.id !== id));
   };
 
