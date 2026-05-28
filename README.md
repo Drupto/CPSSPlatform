@@ -1,6 +1,6 @@
-# CSCS ProPass - Strength & Conditioning Study Platform
+# KINÉTIKA - Redefining Fitness Education
 
-A comprehensive Next.js application for CSCS (Certified Strength and Conditioning Specialist) exam preparation, built with Firebase integration and AI-powered tutoring capabilities.
+A comprehensive Next.js application for fitness education and professional certification preparation, built with Firebase integration and AI-powered tutoring capabilities.
 
 ## Getting Started
 

@@ -69,7 +69,7 @@ export function Navbar() {
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         <Link href="/" className="text-2xl font-bold tracking-tight">
-          CSCS<span className="text-primary">ProPass</span>
+          KINÉTIKA
         </Link>
 
         {/* Desktop Links */}

@@ -4,8 +4,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'CSCS ProPass | NSCA CSCS Exam Prep Course',
-  description: 'Pass the NSCA Certified Strength and Conditioning Specialist exam on your first try with our comprehensive chapter-by-chapter video course.',
+  title: 'KINÉTIKA | Redefining Fitness Education',
+  description: 'Master the science of fitness with comprehensive, evidence-based courses. Build a career you\'re proud of with KINÉTIKA.',
 };
 
 export default function RootLayout({

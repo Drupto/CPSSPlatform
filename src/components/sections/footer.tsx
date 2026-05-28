@@ -30,7 +30,7 @@ export function Footer() {
         {/* Footer Links */}
         <div className="py-12 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="text-2xl font-bold">
-            CSCS<span className="text-primary">ProPass</span>
+            KINÉTIKA
           </div>
           
           <div className="flex flex-wrap justify-center gap-x-10 gap-y-4 text-sm font-medium text-slate-400">
@@ -42,7 +42,7 @@ export function Footer() {
           </div>
 
           <div className="text-sm text-slate-500">
-            &copy; 2024 CSCS ProPass. All rights reserved.
+            &copy; 2024 KINÉTIKA. All rights reserved.
           </div>
         </div>
       </div>
