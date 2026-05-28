@@ -4,9 +4,23 @@ import { ArrowRight, Play, CheckCircle } from "lucide-react";
 export function Hero() {
   return (
     <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-slate-950 text-white">
-      {/* Background Decor */}
-      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/10 to-transparent pointer-events-none" />
-      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
+      {/* Video Background */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+      >
+        <source
+          src="https://res.cloudinary.com/dziccfxut/video/upload/v1779960745/4367639-hd_1920_1080_30fps_nxqs9u.mp4"
+          type="video/mp4"
+        />
+      </video>
+
+      {/* Dark Overlay for readability */}
+      <div className="absolute inset-0 bg-slate-950/70 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-transparent pointer-events-none" />
 
       <div className="container max-w-6xl mx-auto px-6 relative z-10">
         <div className="max-w-3xl">
