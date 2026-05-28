@@ -50,6 +50,7 @@ export default function EditCoursePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [uploadProgress, setUploadProgress] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser: User | null) => {
@@ -144,6 +145,7 @@ export default function EditCoursePage() {
     event.preventDefault();
     setError("");
     setMessage("");
+    setUploadProgress("");
     setIsSaving(true);
 
     try {
@@ -155,6 +157,22 @@ export default function EditCoursePage() {
         throw new Error("Please enter a course title and description");
       }
 
+      // Validate all video/document blocks have either a file or URL
+      for (let i = 0; i < contentBlocks.length; i++) {
+        const block = contentBlocks[i];
+        if (block.type === "video" && !block.file && !block.url.trim()) {
+          setError(`Section ${i + 1}: Video blocks require a video file upload or a URL.`);
+          setIsSaving(false);
+          return;
+        }
+        if (block.type === "document" && !block.file && !block.url.trim()) {
+          setError(`Section ${i + 1}: Document blocks require a file upload.`);
+          setIsSaving(false);
+          return;
+        }
+      }
+
+      setUploadProgress("Updating course details...");
       await updateCourse(courseId as string, {
         title: title.trim(),
         slug: slug.trim() || title.trim(),
@@ -164,14 +182,27 @@ export default function EditCoursePage() {
         coverImageUrl: coverImageUrl.trim(),
       });
 
-      for (const block of contentBlocks) {
+      // Upload files and prepare content data
+      setUploadProgress("Processing content...");
+      let totalBlocks = contentBlocks.length;
+      
+      for (let i = 0; i < contentBlocks.length; i++) {
+        const block = contentBlocks[i];
         let contentUrl = block.url;
+        
         if ((block.type === "document" || block.type === "video") && block.file) {
-          contentUrl = await uploadCourseAsset(block.file, courseId as string);
-        }
-
-        if (block.type === "video" && !contentUrl.trim()) {
-          throw new Error("Video blocks require a video file upload or a URL.");
+          try {
+            setUploadProgress(`Uploading ${block.type} for section ${i + 1}/${totalBlocks}...`);
+            contentUrl = await uploadCourseAsset(block.file, courseId as string);
+            console.log(`✓ Successfully uploaded ${block.type}:`, contentUrl);
+          } catch (uploadErr) {
+            const errorMsg = uploadErr instanceof Error ? uploadErr.message : "Unknown error";
+            console.error(`✗ Failed to upload ${block.type} for section ${i + 1}:`, errorMsg);
+            throw new Error(
+              `Failed to upload ${block.type} for section "${block.title}": ${errorMsg}. ` +
+              `Check browser console for more details.`
+            );
+          }
         }
 
         if (block.isNew) {
@@ -193,10 +224,14 @@ export default function EditCoursePage() {
         }
       }
 
+      setUploadProgress("");
       setMessage("Course updated successfully.");
       setTimeout(() => router.push("/admin/courses"), 1200);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to update the course.");
+      const errorMsg = err instanceof Error ? err.message : "Unable to update the course.";
+      console.error("Course update error:", err);
+      setError(errorMsg);
+      setUploadProgress("");
     } finally {
       setIsSaving(false);
     }
@@ -220,6 +255,7 @@ export default function EditCoursePage() {
 
           {error && <div className="mb-6 rounded-2xl bg-red-100 border border-red-200 px-4 py-3 text-red-700">{error}</div>}
           {message && <div className="mb-6 rounded-2xl bg-emerald-100 border border-emerald-200 px-4 py-3 text-emerald-700">{message}</div>}
+          {uploadProgress && <div className="mb-6 rounded-2xl bg-blue-100 border border-blue-200 px-4 py-3 text-blue-700">{uploadProgress}</div>}
 
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="grid gap-6 md:grid-cols-2">

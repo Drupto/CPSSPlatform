@@ -38,6 +38,7 @@ export default function NewCoursePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [uploadProgress, setUploadProgress] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser: User | null) => {
@@ -87,6 +88,7 @@ export default function NewCoursePage() {
     event.preventDefault();
     setError("");
     setMessage("");
+    setUploadProgress("");
     setIsSaving(true);
 
     try {
@@ -96,6 +98,24 @@ export default function NewCoursePage() {
         return;
       }
 
+      // Validate all video/document blocks have either a file or URL
+      for (let i = 0; i < contentBlocks.length; i++) {
+        const block = contentBlocks[i];
+        if (block.type === "video" && !block.file && !block.url.trim()) {
+          setError(`Section ${i + 1}: Video blocks require a video file upload or a URL.`);
+          setIsSaving(false);
+          return;
+        }
+        if (block.type === "document" && !block.file) {
+          setError(`Section ${i + 1}: Document blocks require a file upload.`);
+          setIsSaving(false);
+          return;
+        }
+      }
+
+      // STEP 1: Create a temporary course ID for file uploads
+      // We create the course first because we need a courseId for the storage path
+      setUploadProgress("Creating course document...");
       const courseId = await createCourse({
         title: title.trim(),
         slug: slug.trim() || title.trim(),
@@ -105,17 +125,31 @@ export default function NewCoursePage() {
         coverImageUrl: coverImageUrl.trim(),
       });
 
-      for (const block of contentBlocks) {
+      // STEP 2: Upload all files and prepare content data
+      setUploadProgress("Uploading media files...");
+      const contentDataToSave = [];
+      
+      for (let i = 0; i < contentBlocks.length; i++) {
+        const block = contentBlocks[i];
         let contentUrl = block.url;
+
         if ((block.type === "document" || block.type === "video") && block.file) {
-          contentUrl = await uploadCourseAsset(block.file, courseId);
+          try {
+            setUploadProgress(`Uploading ${block.type} for section ${i + 1}/${contentBlocks.length}...`);
+            contentUrl = await uploadCourseAsset(block.file, courseId);
+            console.log(`✓ Successfully uploaded ${block.type}:`, contentUrl);
+          } catch (uploadErr) {
+            const errorMsg = uploadErr instanceof Error ? uploadErr.message : "Unknown error";
+            console.error(`✗ Failed to upload ${block.type} for section ${i + 1}:`, errorMsg);
+            throw new Error(
+              `Failed to upload ${block.type} for section "${block.title}": ${errorMsg}. ` +
+              `Make sure you have admin permissions and the file size is within limits. ` +
+              `Check browser console for more details.`
+            );
+          }
         }
 
-        if (block.type === "video" && !contentUrl.trim()) {
-          throw new Error("Video blocks require a video file upload or a URL.");
-        }
-
-        await addCourseContentItem(courseId, {
+        contentDataToSave.push({
           type: block.type,
           title: block.title.trim() || "Untitled section",
           body: block.body.trim(),
@@ -124,10 +158,21 @@ export default function NewCoursePage() {
         });
       }
 
+      // STEP 3: Add all content items
+      setUploadProgress("Saving course content...");
+      for (let i = 0; i < contentDataToSave.length; i++) {
+        const data = contentDataToSave[i];
+        await addCourseContentItem(courseId, data);
+      }
+
+      setUploadProgress("");
       setMessage("Course created successfully. You can now view it in the admin course list.");
       setTimeout(() => router.push("/admin/courses"), 1200);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to create the course.");
+      const errorMsg = err instanceof Error ? err.message : "Unable to create the course.";
+      console.error("Course creation error:", err);
+      setError(errorMsg);
+      setUploadProgress("");
     } finally {
       setIsSaving(false);
     }
@@ -151,6 +196,7 @@ export default function NewCoursePage() {
 
           {error && <div className="mb-6 rounded-2xl bg-red-100 border border-red-200 px-4 py-3 text-red-700">{error}</div>}
           {message && <div className="mb-6 rounded-2xl bg-emerald-100 border border-emerald-200 px-4 py-3 text-emerald-700">{message}</div>}
+          {uploadProgress && <div className="mb-6 rounded-2xl bg-blue-100 border border-blue-200 px-4 py-3 text-blue-700">{uploadProgress}</div>}
 
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="grid gap-6 md:grid-cols-2">

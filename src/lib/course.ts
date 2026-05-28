@@ -100,9 +100,45 @@ export async function getCourseContent(courseId: string): Promise<CourseContentI
 }
 
 export async function uploadCourseAsset(file: File, courseId: string): Promise<string> {
-  const storageRef = ref(storage, `courses/${courseId}/${Date.now()}-${file.name}`);
-  await uploadBytes(storageRef, file);
-  return getDownloadURL(storageRef);
+  try {
+    const fileName = file.name;
+    const fileSize = file.size;
+    const storageRef = ref(storage, `courses/${courseId}/${Date.now()}-${fileName}`);
+    
+    console.log(`Uploading file: ${fileName} (${fileSize} bytes) to courses/${courseId}/`);
+    
+    const uploadTask = await uploadBytes(storageRef, file);
+    console.log(`Upload complete for ${fileName}, retrieving download URL...`);
+    
+    const downloadUrl = await getDownloadURL(uploadTask.ref);
+    console.log(`Download URL retrieved: ${downloadUrl}`);
+    
+    return downloadUrl;
+  } catch (error) {
+    const err = error as any;
+    console.error("Upload error details:", {
+      code: err.code,
+      message: err.message,
+      serverResponse: err.serverResponse,
+    });
+    
+    // Provide more helpful error messages
+    if (err.code === "storage/unauthorized") {
+      throw new Error(
+        "Permission denied. Make sure you have admin role in your profile and Firebase Storage rules allow write access."
+      );
+    } else if (err.code === "storage/unauthenticated") {
+      throw new Error("Please log in again and try uploading the file.");
+    } else if (err.code === "storage/object-not-found") {
+      throw new Error("The file could not be found after upload. Please try again.");
+    } else if (err.code === "storage/project-not-found") {
+      throw new Error("Firebase project not found. Check your configuration.");
+    } else if (err.code === "storage/quota-exceeded") {
+      throw new Error("Storage quota exceeded. Please check your Firebase plan limits.");
+    } else {
+      throw new Error(`Upload failed: ${err.message || "Unknown error"}`);
+    }
+  }
 }
 
 export async function createEnrollment(userId: string, courseId: string): Promise<void> {
