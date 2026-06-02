@@ -85,7 +85,7 @@ export default function DashboardPage() {
             Hello, <span className="font-semibold">{user?.email}</span>
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Admin Panel Card - only shown for admin users */}
             {isAdmin && (
               <div className="border-2 border-amber-200 rounded-lg p-6 bg-amber-50">
@@ -113,6 +113,14 @@ export default function DashboardPage() {
                 Access your enrolled courses and continue learning.
               </p>
               <Button onClick={() => router.push('/dashboard/my-courses')}>View Courses</Button>
+            </div>
+
+            <div className="border border-slate-200 rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-4">Available Courses</h2>
+              <p className="text-slate-600 mb-4">
+                Browse and enroll in new courses to expand your knowledge.
+              </p>
+              <Button onClick={() => router.push('/dashboard/available-courses')}>Browse Courses</Button>
             </div>
 
             <div className="border border-slate-200 rounded-lg p-6">
