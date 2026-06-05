@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getCourseBySlug, getCourseContent, getEnrollment, getCourseProgress, markContentCompleted, markContentIncomplete } from "@/lib/course";
+import { getCourseBySlug, getCourseContent, getEnrollment, getCourseProgress, markContentCompleted, markContentIncomplete, getCourseQuizzes, createQuizAttempt, getCourseQuizAttempts } from "@/lib/course";
 import { isProfileComplete } from "@/lib/profile-check";
 import type { CourseContentItem, Course } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
@@ -24,6 +24,14 @@ export default function CourseLearnPage() {
   const [authorized, setAuthorized] = useState(false);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [user, setUser] = useState<User | null>(null);
+  const [quizzes, setQuizzes] = useState<any[]>([]); // Will be Quiz type
+  const [quizAttempts, setQuizAttempts] = useState<any[]>([]); // Will be QuizAttempt type
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [currentQuiz, setCurrentQuiz] = useState<any>(null);
+  const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizScore, setQuizScore] = useState<number | null>(null);
+  const [quizPassed, setQuizPassed] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -80,6 +88,25 @@ export default function CourseLearnPage() {
     }
   }, [loading, authorized, course, router, slug]);
 
+  // Load quizzes and quiz attempts when course and user are available
+  useEffect(() => {
+    const loadQuizzesAndAttempts = async () => {
+      if (course && user) {
+        try {
+          const loadedQuizzes = await getCourseQuizzes(course.id);
+          setQuizzes(loadedQuizzes);
+          
+          const loadedAttempts = await getCourseQuizAttempts(user.uid, course.id);
+          setQuizAttempts(loadedAttempts);
+        } catch (error) {
+          console.error("Error loading quizzes or attempts:", error);
+        }
+      }
+    };
+    
+    loadQuizzesAndAttempts();
+  }, [course, user]);
+
   const currentItem = content[currentIndex];
   const progressPercent = content.length > 0 ? Math.round((completedIds.length / content.length) * 100) : 0;
 
@@ -107,6 +134,69 @@ export default function CourseLearnPage() {
       setCurrentIndex(currentIndex - 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
+  };
+
+  // Quiz functions
+  const startQuiz = (quiz: any) => {
+    setCurrentQuiz(quiz);
+    setShowQuiz(true);
+    setQuizAnswers(Array(quiz.questions.length).fill(-1)); // Initialize with -1 (unanswered)
+    setQuizSubmitted(false);
+    setQuizScore(null);
+    setQuizPassed(null);
+  };
+
+  const handleQuizAnswerSelect = (questionIndex: number, answerIndex: number) => {
+    if (quizSubmitted) return;
+    
+    const newAnswers = [...quizAnswers];
+    newAnswers[questionIndex] = answerIndex;
+    setQuizAnswers(newAnswers);
+  };
+
+  const submitQuiz = async () => {
+    if (!user || !currentQuiz || quizSubmitted) return;
+    
+    // Calculate score
+    let correctCount = 0;
+    currentQuiz.questions.forEach((question: any, index: number) => {
+      if (quizAnswers[index] === question.correctAnswerIndex) {
+        correctCount++;
+      }
+    });
+    
+    const score = Math.round((correctCount / currentQuiz.questions.length) * 100);
+    const passed = score >= currentQuiz.passPercentage;
+    
+    setQuizScore(score);
+    setQuizPassed(passed);
+    setQuizSubmitted(true);
+    
+    // Save attempt to database
+    try {
+      await createQuizAttempt({
+        userId: user.uid,
+        quizId: currentQuiz.id,
+        courseId: course!.id,
+        answers: quizAnswers,
+        score,
+        passed
+      });
+    } catch (error) {
+      console.error("Error saving quiz attempt:", error);
+    }
+  };
+
+  const restartQuiz = () => {
+    setQuizAnswers(Array(currentQuiz.questions.length).fill(-1));
+    setQuizSubmitted(false);
+    setQuizScore(null);
+    setQuizPassed(null);
+  };
+
+  const closeQuiz = () => {
+    setShowQuiz(false);
+    setCurrentQuiz(null);
   };
 
   if (loading) {
@@ -143,6 +233,172 @@ export default function CourseLearnPage() {
       </main>
     );
   }
+
+// Quiz Modal Component
+const QuizModal = ({ 
+  quiz, 
+  answers, 
+  onAnswerSelect, 
+  onSubmit, 
+  onClose, 
+  submitted, 
+  score, 
+  passed 
+}: { 
+  quiz: any; 
+  answers: number[]; 
+  onAnswerSelect: (questionIndex: number, answerIndex: number) => void; 
+  onSubmit: () => void; 
+  onClose: () => void; 
+  submitted: boolean; 
+  score: number | null; 
+  passed: boolean | null; 
+}) => {
+  if (!quiz) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <h2 className="text-2xl font-bold text-slate-900">{quiz.title}</h2>
+            <button 
+              onClick={onClose}
+              className="text-slate-500 hover:text-slate-700"
+            >
+              ✕
+            </button>
+          </div>
+          
+          {score !== null && passed !== null ? (
+            <div className="mb-6">
+              <div className="text-center mb-4">
+                <div className={`text-5xl font-bold ${passed ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {score}%
+                </div>
+                <div className={`text-lg font-semibold ${passed ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {passed ? 'Passed!' : 'Failed'}
+                </div>
+                <p className="text-slate-600 mt-2">
+                  {passed 
+                    ? 'Congratulations! You passed the quiz.' 
+                    : `You need at least ${quiz.passPercentage}% to pass.`}
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                {quiz.questions.map((question: any, qIndex: number) => (
+                  <div key={qIndex} className="border border-slate-200 rounded-2xl p-4">
+                    <h3 className="font-semibold text-slate-900 mb-2">{question.question}</h3>
+                    <div className="space-y-2">
+                      {question.options.map((option: string, oIndex: number) => {
+                        const isCorrect = oIndex === question.correctAnswerIndex;
+                        const isSelected = answers[qIndex] === oIndex;
+                        const isWrong = isSelected && !isCorrect;
+                        
+                        return (
+                          <div 
+                            key={oIndex} 
+                            className={`p-3 rounded-lg ${
+                              isCorrect 
+                                ? 'bg-emerald-100 border-emerald-500 text-emerald-800' 
+                                : isWrong 
+                                  ? 'bg-red-100 border-red-500 text-red-800' 
+                                  : 'bg-slate-100 border-slate-200'
+                            } border`}
+                          >
+                            <div className="flex items-center">
+                              <span className="mr-2">
+                                {isCorrect ? '✓' : isWrong ? '✗' : oIndex + 1}
+                              </span>
+                              {option}
+                            </div>
+                            {question.explanation && isCorrect && (
+                              <p className="text-sm text-slate-600 mt-2 italic">
+                                Explanation: {question.explanation}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex gap-3 mt-6">
+                <Button 
+                  onClick={onSubmit} 
+                  className="flex-1"
+                >
+                  Retake Quiz
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-slate-600 mb-6">{quiz.description}</p>
+              
+              <div className="space-y-6">
+                {quiz.questions.map((question: any, qIndex: number) => (
+                  <div key={qIndex} className="border border-slate-200 rounded-2xl p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3">{question.question}</h3>
+                    <div className="space-y-2">
+                      {question.options.map((option: string, oIndex: number) => (
+                        <div 
+                          key={oIndex}
+                          onClick={() => onAnswerSelect(qIndex, oIndex)}
+                          className={`p-3 rounded-lg border cursor-pointer transition ${
+                            answers[qIndex] === oIndex
+                              ? 'border-primary bg-primary/10'
+                              : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <div className={`w-5 h-5 rounded-full border mr-3 flex items-center justify-center ${
+                              answers[qIndex] === oIndex
+                                ? 'border-primary bg-primary'
+                                : 'border-slate-300'
+                            }`}>
+                              {answers[qIndex] === oIndex && (
+                                <div className="w-2 h-2 rounded-full bg-white"></div>
+                              )}
+                            </div>
+                            {option}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex gap-3 mt-6">
+                <Button 
+                  onClick={onClose} 
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+                <Button 
+                  onClick={onSubmit} 
+                  disabled={answers.some(a => a === -1)}
+                  className="flex-1"
+                >
+                  {submitted ? 'Submit' : 'Finish Quiz'}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Inject the quiz modal into the render
+// We'll add it conditionally in the render
 
   return (
     <main className="relative min-h-screen bg-slate-50">
@@ -284,6 +540,41 @@ export default function CourseLearnPage() {
                     </button>
                   </li>
                 ))}
+                
+                {/* Quiz buttons */}
+                {quizzes.map((quiz, quizIdx) => {
+                  const quizAttempt = quizAttempts.find(attempt => attempt.quizId === quiz.id);
+                  const passed = quizAttempt ? quizAttempt.passed : null;
+                  
+                  return (
+                    <li key={`quiz-${quiz.id}`}>
+                      <button
+                        onClick={() => startQuiz(quiz)}
+                        className={`w-full text-left text-sm py-1.5 px-3 rounded-lg transition ${
+                          passed 
+                            ? "bg-emerald-100 text-emerald-700" 
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
+                            passed 
+                              ? "bg-emerald-500 text-white"
+                              : "bg-slate-200 text-slate-600"
+                          }`}>
+                            {passed ? "✓" : "Q"}
+                          </span>
+                          {quiz.title}
+                          {passed && (
+                            <span className="ml-auto text-xs">
+                              {quizAttempt?.score}% passed
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 
@@ -301,6 +592,20 @@ export default function CourseLearnPage() {
           </aside>
         </div>
       </div>
+      
+      {/* Quiz Modal */}
+      {showQuiz && (
+        <QuizModal 
+          quiz={currentQuiz}
+          answers={quizAnswers}
+          onAnswerSelect={handleQuizAnswerSelect}
+          onSubmit={submitQuiz}
+          onClose={closeQuiz}
+          submitted={quizSubmitted}
+          score={quizScore}
+          passed={quizPassed}
+        />
+      )}
     </main>
   );
 }

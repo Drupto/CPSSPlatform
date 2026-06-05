@@ -1,5 +1,5 @@
 import type { User } from "firebase/auth";
-import type { Course, CourseContentItem, CourseProgress, Enrollment, UserProfile } from "./types";
+import type { Course, CourseContentItem, CourseProgress, Enrollment, UserProfile, Quiz, QuizAttempt } from "./types";
 import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
@@ -343,6 +343,103 @@ export async function getTotalEnrollments(): Promise<number> {
   const enrollmentsRef = collection(db, "enrollments");
   const snapshot = await getDocs(enrollmentsRef);
   return snapshot.size;
+}
+
+/**
+ * Creates a new quiz for a course
+ */
+export async function createQuiz(courseId: string, quizData: Partial<Quiz>): Promise<string> {
+  const quizRef = await addDoc(collection(db, "courses", courseId, "quizzes"), {
+    title: quizData.title ?? "Untitled Quiz",
+    description: quizData.description ?? "",
+    passPercentage: quizData.passPercentage ?? 70,
+    questions: quizData.questions ?? [],
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return quizRef.id;
+}
+
+/**
+ * Gets all quizzes for a course
+ */
+export async function getCourseQuizzes(courseId: string): Promise<Quiz[]> {
+  const quizzesRef = collection(db, "courses", courseId, "quizzes");
+  const quizQuery = query(quizzesRef, orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(quizQuery);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, courseId, ...docSnap.data() } as Quiz));
+}
+
+/**
+ * Gets a specific quiz by ID
+ */
+export async function getQuizById(quizId: string): Promise<Quiz | null> {
+  const quizRef = doc(db, "quizzes", quizId);
+  const snapshot = await getDoc(quizRef);
+  return snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as Quiz) : null;
+}
+
+/**
+ * Updates a quiz
+ */
+export async function updateQuiz(quizId: string, updates: Partial<Quiz>): Promise<void> {
+  const quizRef = doc(db, "courses", updates.courseId!, "quizzes", quizId);
+  await setDoc(quizRef, {
+    ...updates,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+}
+
+/**
+ * Deletes a quiz
+ */
+export async function deleteQuiz(quizId: string, courseId: string): Promise<void> {
+  const quizRef = doc(db, "courses", courseId, "quizzes", quizId);
+  await deleteDoc(quizRef);
+}
+
+/**
+ * Creates a quiz attempt
+ */
+export async function createQuizAttempt(attemptData: Partial<QuizAttempt>): Promise<string> {
+  const attemptRef = await addDoc(collection(db, "quizAttempts"), {
+    userId: attemptData.userId,
+    quizId: attemptData.quizId,
+    courseId: attemptData.courseId,
+    answers: attemptData.answers ?? [],
+    score: attemptData.score ?? 0,
+    passed: attemptData.passed ?? false,
+    completedAt: serverTimestamp(),
+  });
+  return attemptRef.id;
+}
+
+/**
+ * Gets all quiz attempts for a user and quiz
+ */
+export async function getUserQuizAttempts(userId: string, quizId: string): Promise<QuizAttempt[]> {
+  const attemptsRef = collection(db, "quizAttempts");
+  const attemptsQuery = query(attemptsRef, 
+    where("userId", "==", userId),
+    where("quizId", "==", quizId),
+    orderBy("completedAt", "desc")
+  );
+  const snapshot = await getDocs(attemptsQuery);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as QuizAttempt));
+}
+
+/**
+ * Gets all quiz attempts for a user in a course
+ */
+export async function getCourseQuizAttempts(userId: string, courseId: string): Promise<QuizAttempt[]> {
+  const attemptsRef = collection(db, "quizAttempts");
+  const attemptsQuery = query(attemptsRef, 
+    where("userId", "==", userId),
+    where("courseId", "==", courseId),
+    orderBy("completedAt", "desc")
+  );
+  const snapshot = await getDocs(attemptsQuery);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as QuizAttempt));
 }
 
 export function isAdminProfile(profile: UserProfile | null) {

@@ -16,8 +16,12 @@ import {
   deleteCourseContentItemWithFile,
   uploadCourseAsset,
   isAdminProfile,
+  getCourseQuizzes,
+  createQuiz,
+  updateQuiz,
+  deleteQuiz,
 } from "@/lib/course";
-import type { Course, CourseContentItem } from "@/lib/types";
+import type { Course, CourseContentItem, Quiz } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +50,7 @@ export default function EditCoursePage() {
   const [published, setPublished] = useState(false);
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [contentBlocks, setContentBlocks] = useState<ContentBlockForm[]>([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -96,6 +101,11 @@ export default function EditCoursePage() {
         file: null,
       }));
       setContentBlocks(blocks);
+      
+      // Load quizzes
+      const loadedQuizzes = await getCourseQuizzes(courseData.id);
+      setQuizzes(loadedQuizzes);
+      
       setLoading(false);
     });
 
@@ -220,6 +230,28 @@ export default function EditCoursePage() {
             body: block.body.trim(),
             url: contentUrl.trim(),
             order: block.order,
+          });
+        }
+      }
+
+      // Save quizzes
+      setUploadProgress("Saving quizzes...");
+      for (const quiz of quizzes) {
+        if (quiz.id.startsWith('new-')) {
+          // This is a new quiz, create it
+          await createQuiz(courseId as string, {
+            title: quiz.title,
+            description: quiz.description,
+            passPercentage: quiz.passPercentage,
+            questions: quiz.questions
+          });
+        } else {
+          // This is an existing quiz, update it
+          await updateQuiz(quiz.id, {
+            title: quiz.title,
+            description: quiz.description,
+            passPercentage: quiz.passPercentage,
+            questions: quiz.questions
           });
         }
       }
@@ -459,6 +491,209 @@ export default function EditCoursePage() {
                 />
                 Publish Course
               </label>
+            </div>
+
+            {/* Quiz Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Quizzes</h2>
+                <Button type="button" variant="outline" onClick={() => {
+                  // Add a new empty quiz
+                  setQuizzes([...quizzes, {
+                    id: `new-${Date.now()}`,
+                    courseId: courseId as string,
+                    title: "New Quiz",
+                    description: "",
+                    passPercentage: 70,
+                    questions: [],
+                    createdAt: null,
+                    updatedAt: null
+                  }]);
+                }}>
+                  Add Quiz
+                </Button>
+              </div>
+
+              {quizzes.length === 0 ? (
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-center">
+                  <p className="text-slate-500">No quizzes added yet. Click "Add Quiz" to create one.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {quizzes.map((quiz, index) => (
+                    <div key={quiz.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold text-slate-900">Quiz {index + 1}</h3>
+                        <Button 
+                          variant="destructive" 
+                          className="text-sm"
+                          onClick={() => {
+                            // Remove quiz
+                            setQuizzes(quizzes.filter(q => q.id !== quiz.id));
+                          }}
+                        >
+                          Delete Quiz
+                        </Button>
+                      </div>
+                      
+                      <div className="grid gap-4">
+                        <div className="space-y-2">
+                          <Label>Quiz Title</Label>
+                          <Input
+                            value={quiz.title}
+                            onChange={(e) => {
+                              const newQuizzes = [...quizzes];
+                              newQuizzes[index] = {...newQuizzes[index], title: e.target.value};
+                              setQuizzes(newQuizzes);
+                            }}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Quiz Description</Label>
+                          <Textarea
+                            value={quiz.description}
+                            onChange={(e) => {
+                              const newQuizzes = [...quizzes];
+                              newQuizzes[index] = {...newQuizzes[index], description: e.target.value};
+                              setQuizzes(newQuizzes);
+                            }}
+                            rows={3}
+                          />
+                        </div>
+                        
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label>Pass Percentage</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={quiz.passPercentage}
+                              onChange={(e) => {
+                                const newQuizzes = [...quizzes];
+                                newQuizzes[index] = {...newQuizzes[index], passPercentage: parseInt(e.target.value) || 0};
+                                setQuizzes(newQuizzes);
+                              }}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Questions</Label>
+                          <div className="space-y-4">
+                            {quiz.questions && quiz.questions.length > 0 ? (
+                              quiz.questions.map((question, qIndex) => (
+                                <div key={qIndex} className="rounded-2xl border border-slate-200 bg-white p-4">
+                                  <div className="space-y-3">
+                                    <div>
+                                      <Label>Question</Label>
+                                      <Input
+                                        value={question.question}
+                                        onChange={(e) => {
+                                          const newQuestions = [...quiz.questions];
+                                          newQuestions[qIndex] = {...newQuestions[qIndex], question: e.target.value};
+                                          const newQuizzes = [...quizzes];
+                                          newQuizzes[index] = {...newQuizzes[index], questions: newQuestions};
+                                          setQuizzes(newQuizzes);
+                                        }}
+                                      />
+                                    </div>
+                                    
+                                    <div>
+                                      <Label>Options</Label>
+                                      {question.options.map((option, oIndex) => (
+                                        <div key={oIndex} className="flex items-center gap-2 mb-2">
+                                          <Input
+                                            value={option}
+                                            onChange={(e) => {
+                                              const newOptions = [...question.options];
+                                              newOptions[oIndex] = e.target.value;
+                                              const newQuestions = [...quiz.questions];
+                                              newQuestions[qIndex] = {...newQuestions[qIndex], options: newOptions};
+                                              const newQuizzes = [...quizzes];
+                                              newQuizzes[index] = {...newQuizzes[index], questions: newQuestions};
+                                              setQuizzes(newQuizzes);
+                                            }}
+                                          />
+                                          <input
+                                            type="radio"
+                                            name={`correct-answer-${index}-${qIndex}`}
+                                            checked={question.correctAnswerIndex === oIndex}
+                                            onChange={() => {
+                                              const newQuestions = [...quiz.questions];
+                                              newQuestions[qIndex] = {...newQuestions[qIndex], correctAnswerIndex: oIndex};
+                                              const newQuizzes = [...quizzes];
+                                              newQuizzes[index] = {...newQuizzes[index], questions: newQuestions};
+                                              setQuizzes(newQuizzes);
+                                            }}
+                                          />
+                                          <span>Correct Answer</span>
+                                        </div>
+                                      ))}
+                                      <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        className="text-sm"
+                                        onClick={() => {
+                                          const newQuestions = [...quiz.questions];
+                                          newQuestions[qIndex] = {...newQuestions[qIndex], options: [...newQuestions[qIndex].options, ""]};
+                                          const newQuizzes = [...quizzes];
+                                          newQuizzes[index] = {...newQuizzes[index], questions: newQuestions};
+                                          setQuizzes(newQuizzes);
+                                        }}
+                                      >
+                                        Add Option
+                                      </Button>
+                                    </div>
+                                    
+                                    <div>
+                                      <Label>Explanation (Optional)</Label>
+                                      <Textarea
+                                        value={question.explanation || ""}
+                                        onChange={(e) => {
+                                          const newQuestions = [...quiz.questions];
+                                          newQuestions[qIndex] = {...newQuestions[qIndex], explanation: e.target.value};
+                                          const newQuizzes = [...quizzes];
+                                          newQuizzes[index] = {...newQuizzes[index], questions: newQuestions};
+                                          setQuizzes(newQuizzes);
+                                        }}
+                                        rows={2}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-slate-500">No questions added yet.</p>
+                            )}
+                            
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => {
+                                const newQuestions = quiz.questions ? [...quiz.questions] : [];
+                                newQuestions.push({
+                                  id: `new-q-${Date.now()}`,
+                                  question: "",
+                                  options: ["", ""],
+                                  correctAnswerIndex: 0,
+                                  explanation: ""
+                                });
+                                const newQuizzes = [...quizzes];
+                                newQuizzes[index] = {...newQuizzes[index], questions: newQuestions};
+                                setQuizzes(newQuizzes);
+                              }}
+                            >
+                              Add Question
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3">

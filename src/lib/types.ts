@@ -23,6 +23,36 @@ export interface Course {
   updatedAt: Timestamp | null;
 }
 
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswerIndex: number;
+  explanation?: string;
+}
+
+export interface Quiz {
+  id: string;
+  courseId: string;
+  title: string;
+  description: string;
+  passPercentage: number;
+  questions: QuizQuestion[];
+  createdAt: Timestamp | null;
+  updatedAt: Timestamp | null;
+}
+
+export interface QuizAttempt {
+  id: string;
+  userId: string;
+  quizId: string;
+  courseId: string;
+  answers: number[]; // Array of selected answer indices
+  score: number; // Percentage score
+  passed: boolean;
+  completedAt: Timestamp | null;
+}
+
 export interface CourseContentItem {
   id: string;
   courseId: string;

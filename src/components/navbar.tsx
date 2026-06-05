@@ -90,56 +90,42 @@ export function Navbar() {
           <Button variant="ghost" className="text-sm font-medium">
             Free Study Guide
           </Button>
-          {!loading && (
-            user ? (
-              <>
-           <Button
-             variant="ghost"
-             className="text-sm font-medium"
-             onClick={() => router.push("/dashboard/progress")}
-           >
-             Progress
-           </Button>
-           <Button
-             variant="ghost"
-             className="text-sm font-medium"
-             onClick={() => router.push("/dashboard/resources")}
-           >
-             Resources
-           </Button>
-                {isAdmin && (
-                  <Button
-                    variant="ghost"
-                    className="text-sm font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                    onClick={() => router.push("/admin")}
-                  >
-                    <Shield className="h-4 w-4 mr-1.5" />
-                    Admin
-                  </Button>
-                )}
-                <Button
-                  className="rounded-full px-6 font-semibold"
-                  onClick={() => router.push("/dashboard")}
-                >
-                  My Dashboard
-                </Button>
-                <Button
-                  variant="outline"
-                  className="text-sm font-medium"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <Button
-                className="rounded-full px-6 font-semibold"
-                onClick={() => router.push("/auth")}
-              >
-                Enroll Now
-              </Button>
-            )
-          )}
+           {!loading && (
+             user ? (
+               <>
+                 {isAdmin && (
+                   <Button
+                     variant="ghost"
+                     className="text-sm font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                     onClick={() => router.push("/admin")}
+                   >
+                     <Shield className="h-4 w-4 mr-1.5" />
+                     Admin
+                   </Button>
+                 )}
+                 <Button
+                   className="rounded-full px-6 font-semibold"
+                   onClick={() => router.push("/dashboard")}
+                 >
+                   My Dashboard
+                 </Button>
+                 <Button
+                   variant="outline"
+                   className="text-sm font-medium"
+                   onClick={handleLogout}
+                 >
+                   Logout
+                 </Button>
+               </>
+             ) : (
+               <Button
+                 className="rounded-full px-6 font-semibold"
+                 onClick={() => router.push("/auth")}
+               >
+                 Enroll Now
+               </Button>
+             )
+           )}
         </div>
 
         {/* Mobile Toggle */}
@@ -176,24 +162,6 @@ export function Navbar() {
               Admin Dashboard
             </Button>
           )}
-          <Button
-            className="w-full"
-            onClick={() => {
-              setMobileMenuOpen(false);
-              router.push("/dashboard/progress");
-            }}
-          >
-            Progress
-          </Button>
-          <Button
-            className="w-full"
-            onClick={() => {
-              setMobileMenuOpen(false);
-              router.push("/dashboard/resources");
-            }}
-          >
-            Resources
-          </Button>
           <div className="pt-4 space-y-3 w-full max-w-xs flex flex-col">
             <Button variant="outline" className="w-full">
               Free Study Guide
