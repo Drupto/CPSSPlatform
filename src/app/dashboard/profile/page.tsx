@@ -114,7 +114,7 @@ export default function ProfilePage() {
                 {saving ? "Saving..." : "Save Changes"}
               </Button>
               <Button type="button" variant="outline" onClick={() => router.push("/dashboard")}>
-                Back to Dashboard
+                Go to Dashboard
               </Button>
             </div>
           </form>

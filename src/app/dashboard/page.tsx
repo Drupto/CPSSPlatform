@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
 import { signOut, onAuthStateChanged, User } from "firebase/auth";
 import { getUserProfile, isAdminProfile } from "@/lib/course";
+import { isProfileComplete } from "@/lib/profile-check";
 import { Shield } from "lucide-react";
 
 export default function DashboardPage() {
@@ -23,6 +24,13 @@ export default function DashboardPage() {
       if (!currentUser || !currentUser.emailVerified) {
         router.push("/auth");
       } else {
+        // Check if user has completed their profile
+        const isComplete = await isProfileComplete(currentUser);
+        if (!isComplete && !window.location.pathname.startsWith('/dashboard/profile')) {
+          router.push('/dashboard/profile');
+          return;
+        }
+        
         setUser(currentUser);
         // Check if user has admin role
         const profile = await getUserProfile(currentUser.uid);

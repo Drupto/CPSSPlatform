@@ -8,6 +8,7 @@ import Link from "next/link";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getCourseBySlug, createEnrollment, getEnrollment, getCourseContent } from "@/lib/course";
+import { isProfileComplete } from "@/lib/profile-check";
 import type { Course } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
@@ -37,11 +38,17 @@ export default function CourseDetailPage() {
       if (user && course) {
         const enrollment = await getEnrollment(user.uid, course.id);
         setIsEnrolled(Boolean(enrollment));
+        
+        // Check if user has completed their profile
+        const isComplete = await isProfileComplete(user);
+        if (!isComplete && !window.location.pathname.startsWith('/dashboard/profile')) {
+          router.push('/dashboard/profile');
+        }
       }
     });
 
     return () => unsubscribe();
-  }, [course]);
+  }, [course, router]);
 
   const handleEnroll = async () => {
     setError("");

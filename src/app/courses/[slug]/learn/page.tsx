@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getCourseBySlug, getCourseContent, getEnrollment, getCourseProgress, markContentCompleted, markContentIncomplete } from "@/lib/course";
+import { isProfileComplete } from "@/lib/profile-check";
 import type { CourseContentItem, Course } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
@@ -56,13 +57,20 @@ export default function CourseLearnPage() {
       const enrollment = await getEnrollment(authUser.uid, course.id);
       const isAuthorized = Boolean(enrollment);
       setAuthorized(isAuthorized);
+      
+      // Check if user has completed their profile
+      const isComplete = await isProfileComplete(authUser);
+      if (!isComplete && !window.location.pathname.startsWith('/dashboard/profile')) {
+        router.push('/dashboard/profile');
+      }
+      
       if (isAuthorized) {
         await loadProgress(authUser.uid, course.id);
       }
     });
 
     return () => unsubscribe();
-  }, [course, loadProgress]);
+  }, [course, loadProgress, router]);
 
   // Prevent redirect to course page when user is already on learn page and authorized
   useEffect(() => {

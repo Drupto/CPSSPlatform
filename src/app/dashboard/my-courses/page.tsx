@@ -8,6 +8,7 @@ import Link from "next/link";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getEnrollmentsForUser, getCourseById } from "@/lib/course";
+import { isProfileComplete } from "@/lib/profile-check";
 import type { Enrollment, Course } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
@@ -22,6 +23,13 @@ export default function MyCoursesPage() {
     const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
       if (!user) {
         router.push("/auth");
+        return;
+      }
+
+      // Check if user has completed their profile
+      const isComplete = await isProfileComplete(user);
+      if (!isComplete && !window.location.pathname.startsWith('/dashboard/profile')) {
+        router.push('/dashboard/profile');
         return;
       }
 
