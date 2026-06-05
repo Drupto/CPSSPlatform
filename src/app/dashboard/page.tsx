@@ -147,13 +147,13 @@ export default function DashboardPage() {
                <Button variant="outline" onClick={() => router.push('/dashboard/progress')}>View Progress</Button>
              </div>
 
-            <div className="border border-slate-200 rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Resources</h2>
-              <p className="text-slate-600 mb-4">
-                Access study materials and additional resources.
-              </p>
-              <Button variant="outline">Browse Resources</Button>
-            </div>
+             <div className="border border-slate-200 rounded-lg p-6">
+               <h2 className="text-xl font-semibold mb-4">Resources</h2>
+               <p className="text-slate-600 mb-4">
+                 Access study materials and additional resources.
+               </p>
+               <Button variant="outline" onClick={() => router.push('/dashboard/resources')}>Browse Resources</Button>
+             </div>
           </div>
         </div>
       </div>

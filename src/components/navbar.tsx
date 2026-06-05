@@ -93,13 +93,20 @@ export function Navbar() {
           {!loading && (
             user ? (
               <>
-                <Button
-                  variant="ghost"
-                  className="text-sm font-medium"
-                  onClick={() => router.push("/dashboard/progress")}
-                >
-                  Progress
-                </Button>
+           <Button
+             variant="ghost"
+             className="text-sm font-medium"
+             onClick={() => router.push("/dashboard/progress")}
+           >
+             Progress
+           </Button>
+           <Button
+             variant="ghost"
+             className="text-sm font-medium"
+             onClick={() => router.push("/dashboard/resources")}
+           >
+             Resources
+           </Button>
                 {isAdmin && (
                   <Button
                     variant="ghost"
@@ -177,6 +184,15 @@ export function Navbar() {
             }}
           >
             Progress
+          </Button>
+          <Button
+            className="w-full"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              router.push("/dashboard/resources");
+            }}
+          >
+            Resources
           </Button>
           <div className="pt-4 space-y-3 w-full max-w-xs flex flex-col">
             <Button variant="outline" className="w-full">

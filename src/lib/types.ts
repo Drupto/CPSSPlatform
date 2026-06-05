@@ -1,6 +1,6 @@
 import type { Timestamp } from "firebase/firestore";
 
-export type CourseContentType = "text" | "video" | "document";
+export type CourseContentType = "text" | "video" | "document" | "link";
 
 export interface UserProfile {
   uid: string;

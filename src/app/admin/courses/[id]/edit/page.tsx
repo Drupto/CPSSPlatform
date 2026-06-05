@@ -26,7 +26,7 @@ import { Navbar } from "@/components/navbar";
 
 interface ContentBlockForm {
   id: string;
-  type: "text" | "video" | "document";
+  type: "text" | "video" | "document" | "link";
   title: string;
   body: string;
   url: string;

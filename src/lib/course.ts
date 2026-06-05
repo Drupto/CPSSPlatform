@@ -246,6 +246,49 @@ export async function getCourseProgress(userId: string, courseId: string): Promi
   return snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as CourseProgress) : null;
 }
 
+/**
+ * Gets all resources for a specific course
+ */
+export async function getCourseResources(courseId: string): Promise<CourseContentItem[]> {
+  const resourcesRef = collection(db, "courses", courseId, "resources");
+  const resourcesQuery = query(resourcesRef, orderBy("order", "asc"));
+  const snapshot = await getDocs(resourcesQuery);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, courseId, ...docSnap.data() } as CourseContentItem));
+}
+
+/**
+ * Adds a resource to a course
+ */
+export async function addCourseResource(courseId: string, resourceData: CourseContentCreateData): Promise<string> {
+  const resourceRef = await addDoc(collection(db, "courses", courseId, "resources"), {
+    type: resourceData.type,
+    title: resourceData.title,
+    body: resourceData.body ?? "",
+    url: resourceData.url ?? "",
+    order: resourceData.order,
+    createdAt: serverTimestamp(),
+  });
+  return resourceRef.id;
+}
+
+/**
+ * Updates a resource in a course
+ */
+export async function updateCourseResource(courseId: string, resourceId: string, updates: Partial<CourseContentCreateData>): Promise<void> {
+  const resourceRef = doc(db, "courses", courseId, "resources", resourceId);
+  await setDoc(resourceRef, {
+    ...updates,
+  }, { merge: true });
+}
+
+/**
+ * Deletes a resource from a course
+ */
+export async function deleteCourseResource(courseId: string, resourceId: string): Promise<void> {
+  const resourceRef = doc(db, "courses", courseId, "resources", resourceId);
+  await deleteDoc(resourceRef);
+}
+
 export async function markContentCompleted(userId: string, courseId: string, contentId: string): Promise<void> {
   const progressRef = doc(db, "progress", `${userId}_${courseId}`);
   const snapshot = await getDoc(progressRef);
