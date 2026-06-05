@@ -100,6 +100,7 @@ export default function AvailableCoursesPage() {
           <div>
             <h1 className="text-4xl font-bold text-slate-900">Available Courses</h1>
             <p className="mt-2 text-slate-600">Browse and enroll in courses to advance your learning journey</p>
+            <p className="mt-2 text-sm text-slate-500">Track your progress in <Link href="/dashboard/progress" className="text-primary hover:underline">My Progress</Link></p>
           </div>
 
           {loading ? (

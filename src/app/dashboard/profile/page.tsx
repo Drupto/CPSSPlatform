@@ -81,8 +81,9 @@ export default function ProfilePage() {
       <Navbar />
       <div className="max-w-4xl mx-auto px-6 py-28">
         <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Profile Settings</h1>
-          <p className="text-slate-600 mb-8">Update your profile information.</p>
+           <h1 className="text-3xl font-bold text-slate-900 mb-2">Profile Settings</h1>
+           <p className="text-slate-600 mb-8">Update your profile information.</p>
+           <p className="text-sm text-slate-500 mb-6">Track your learning progress in <Link href="/dashboard/progress" className="text-primary hover:underline">My Progress</Link></p>
 
           {error && <div className="mb-6 rounded-2xl bg-red-100 border border-red-200 px-4 py-3 text-red-700">{error}</div>}
           {message && <div className="mb-6 rounded-2xl bg-emerald-100 border border-emerald-200 px-4 py-3 text-emerald-700">{message}</div>}
