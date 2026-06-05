@@ -75,10 +75,11 @@ export default function CoursesPage() {
               {filteredCourses.map((course) => (
                 <article key={course.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="space-y-4">
-                    <div>
-                      <p className="text-sm uppercase tracking-[0.3em] text-secondary">Course</p>
-                      <h2 className="mt-2 text-2xl font-semibold text-slate-900">{course.title}</h2>
-                    </div>
+                     <div>
+                       <p className="text-sm uppercase tracking-[0.3em] text-secondary">Course</p>
+                       <h2 className="mt-2 text-2xl font-semibold text-slate-900">{course.title}</h2>
+                       <p className="text-xs text-slate-500 mt-1">ID: {course.id}</p>
+                     </div>
                     <p className="text-slate-600 min-h-[3rem]">{course.description}</p>
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-xl font-semibold text-slate-900">₹{course.price}</span>

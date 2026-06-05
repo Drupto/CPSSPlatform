@@ -105,23 +105,24 @@ export default function CourseDetailPage() {
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-28">
         <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
-          <div className="space-y-6 rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
-            <div className="space-y-3">
-              <p className="text-sm uppercase tracking-[0.3em] text-secondary">Course</p>
-              <h1 className="text-4xl font-bold text-slate-900">{course.title}</h1>
-              <p className="text-slate-600">{course.description}</p>
-            </div>
-            <div className="space-y-4">
-              <div className="rounded-3xl bg-slate-50 p-6">
-                <p className="text-sm text-slate-500">Price</p>
-                <p className="mt-2 text-3xl font-semibold text-slate-900">₹{course.price}</p>
+             <div className="space-y-6 rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+              <div className="space-y-3">
+                <p className="text-sm uppercase tracking-[0.3em] text-secondary">Course</p>
+                <h1 className="text-4xl font-bold text-slate-900">{course.title}</h1>
+                <p className="text-slate-600">ID: {course.id}</p>
+                <p className="text-slate-600">{course.description}</p>
               </div>
-              <div className="rounded-3xl bg-slate-50 p-6">
-                <p className="text-sm text-slate-500">Status</p>
-                <p className="mt-2 text-slate-900">{course.published ? "Published" : "Draft"}</p>
-              </div>
-            </div>
-          </div>
+             <div className="space-y-4">
+               <div className="rounded-3xl bg-slate-50 p-6">
+                 <p className="text-sm text-slate-500">Price</p>
+                 <p className="mt-2 text-3xl font-semibold text-slate-900">₹{course.price}</p>
+               </div>
+               <div className="rounded-3xl bg-slate-50 p-6">
+                 <p className="text-sm text-slate-500">Status</p>
+                 <p className="mt-2 text-slate-900">{course.published ? "Published" : "Draft"}</p>
+               </div>
+             </div>
+           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
             {error && <div className="mb-4 rounded-2xl bg-red-100 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}

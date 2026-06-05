@@ -250,8 +250,8 @@ export default function EditCoursePage() {
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-24">
         <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Edit Course</h1>
-          <p className="text-slate-600 mb-8">Update course information and content sections.</p>
+           <h1 className="text-3xl font-bold text-slate-900 mb-2">Edit Course</h1>
+           <p className="text-slate-600 mb-8">Update course information and content sections.</p>
 
           {error && <div className="mb-6 rounded-2xl bg-red-100 border border-red-200 px-4 py-3 text-red-700">{error}</div>}
           {message && <div className="mb-6 rounded-2xl bg-emerald-100 border border-emerald-200 px-4 py-3 text-emerald-700">{message}</div>}

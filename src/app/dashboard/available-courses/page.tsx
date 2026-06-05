@@ -115,31 +115,32 @@ export default function AvailableCoursesPage() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2">
               {courses.map((course) => (
-                <article key={course.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm uppercase tracking-[0.3em] text-secondary">Course</p>
-                      <h2 className="mt-2 text-xl font-semibold text-slate-900">{course.title}</h2>
-                    </div>
-                    <p className="text-slate-600 line-clamp-2">{course.description}</p>
-                    <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200">
-                      <span className="text-sm text-slate-500">₹{course.price}</span>
-                      {isEnrolled(course.id) ? (
-                        <Button disabled className="rounded-full bg-green-500 px-4 py-2 text-sm font-semibold text-white">
-                          Already Enrolled
-                        </Button>
-                      ) : (
-                        <Button 
-                          onClick={() => handleEnroll(course.id)}
-                          disabled={enrolling[course.id]}
-                          className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
-                        >
-                          {enrolling[course.id] ? "Enrolling..." : "Enroll Now"}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </article>
+                 <article key={course.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
+                   <div className="space-y-4">
+                       <div>
+                         <p className="text-sm uppercase tracking-[0.3em] text-secondary">Course</p>
+                         <h2 className="mt-2 text-xl font-semibold text-slate-900">{course.title}</h2>
+                         <p className="text-xs text-slate-500 mt-1">ID: {course.id}</p>
+                       </div>
+                     <p className="text-slate-600 line-clamp-2">{course.description}</p>
+                     <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200">
+                       <span className="text-sm text-slate-500">₹{course.price}</span>
+                       {isEnrolled(course.id) ? (
+                         <Button disabled className="rounded-full bg-green-500 px-4 py-2 text-sm font-semibold text-white">
+                           Already Enrolled
+                         </Button>
+                       ) : (
+                         <Button 
+                           onClick={() => handleEnroll(course.id)}
+                           disabled={enrolling[course.id]}
+                           className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
+                         >
+                           {enrolling[course.id] ? "Enrolling..." : "Enroll Now"}
+                         </Button>
+                       )}
+                     </div>
+                   </div>
+                 </article>
               ))}
             </div>
           )}

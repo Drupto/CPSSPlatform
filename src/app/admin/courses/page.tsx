@@ -74,65 +74,66 @@ export default function AdminCoursesPage() {
             </div>
           ) : (
             <div className="grid gap-4">
-              {courses.map((course) => (
-                <div key={course.id} className="rounded-3xl border border-slate-200 bg-white p-6">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <h2 className="text-xl font-semibold text-slate-900">{course.title}</h2>
-                      <p className="text-slate-500">Slug: {course.slug}</p>
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-sm text-slate-500">
-                      <span className={course.published ? "rounded-full bg-emerald-100 px-3 py-1 text-emerald-700" : "rounded-full bg-slate-100 px-3 py-1 text-slate-600"}>
-                        {course.published ? "Published" : "Draft"}
-                      </span>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">₹{course.price}</span>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center gap-3">
-                    <Link href={`/courses/${course.slug}`} className="text-primary hover:underline text-sm">View Course</Link>
-                    <Link href={`/admin/courses/${course.id}/edit`} className="text-slate-600 hover:text-slate-900 text-sm">Edit</Link>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <button
-                          onClick={() => setCourseToDelete(course.id)}
-                          className="text-red-500 hover:text-red-700 text-sm"
-                        >
-                          Delete
-                        </button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Course</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{course.title}"? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel onClick={() => setCourseToDelete(null)}>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            disabled={deleting}
-                            onClick={async () => {
-                              setDeleting(true);
-                              try {
-                                await deleteCourse(course.id);
-                                setCourses((prev) => prev.filter((c) => c.id !== course.id));
-                              } catch (err) {
-                                console.error("Failed to delete course:", err);
-                              } finally {
-                                setDeleting(false);
-                                setCourseToDelete(null);
-                              }
-                            }}
-                            className="bg-red-500 hover:bg-red-600"
-                          >
-                            {deleting ? "Deleting..." : "Delete"}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              ))}
+               {courses.map((course) => (
+                 <div key={course.id} className="rounded-3xl border border-slate-200 bg-white p-6">
+                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h2 className="text-xl font-semibold text-slate-900">{course.title}</h2>
+                        <p className="text-slate-500">ID: {course.id}</p>
+                        <p className="text-slate-500">Slug: {course.slug}</p>
+                      </div>
+                     <div className="flex flex-wrap gap-2 text-sm text-slate-500">
+                       <span className={course.published ? "rounded-full bg-emerald-100 px-3 py-1 text-emerald-700" : "rounded-full bg-slate-100 px-3 py-1 text-slate-600"}>
+                         {course.published ? "Published" : "Draft"}
+                       </span>
+                       <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">₹{course.price}</span>
+                     </div>
+                   </div>
+                   <div className="mt-4 flex items-center gap-3">
+                     <Link href={`/courses/${course.slug}`} className="text-primary hover:underline text-sm">View Course</Link>
+                     <Link href={`/admin/courses/${course.id}/edit`} className="text-slate-600 hover:text-slate-900 text-sm">Edit</Link>
+                     <AlertDialog>
+                       <AlertDialogTrigger asChild>
+                         <button
+                           onClick={() => setCourseToDelete(course.id)}
+                           className="text-red-500 hover:text-red-700 text-sm"
+                         >
+                           Delete
+                         </button>
+                       </AlertDialogTrigger>
+                       <AlertDialogContent>
+                         <AlertDialogHeader>
+                           <AlertDialogTitle>Delete Course</AlertDialogTitle>
+                           <AlertDialogDescription>
+                             Are you sure you want to delete "{course.title}"? This action cannot be undone.
+                           </AlertDialogDescription>
+                         </AlertDialogHeader>
+                         <AlertDialogFooter>
+                           <AlertDialogCancel onClick={() => setCourseToDelete(null)}>Cancel</AlertDialogCancel>
+                           <AlertDialogAction
+                             disabled={deleting}
+                             onClick={async () => {
+                               setDeleting(true);
+                               try {
+                                 await deleteCourse(course.id);
+                                 setCourses((prev) => prev.filter((c) => c.id !== course.id));
+                               } catch (err) {
+                                 console.error("Failed to delete course:", err);
+                               } finally {
+                                 setDeleting(false);
+                                 setCourseToDelete(null);
+                               }
+                             }}
+                             className="bg-red-500 hover:bg-red-600"
+                           >
+                             {deleting ? "Deleting..." : "Delete"}
+                           </AlertDialogAction>
+                         </AlertDialogFooter>
+                       </AlertDialogContent>
+                     </AlertDialog>
+                   </div>
+                 </div>
+               ))}
             </div>
           )}
         </div>

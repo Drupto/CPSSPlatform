@@ -149,14 +149,14 @@ export default function CourseLearnPage() {
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-28">
         {/* Progress bar */}
-        <div className="mb-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-slate-900">{course.title}</h2>
-            <span className="text-sm text-slate-500">{completedIds.length} / {content.length} completed</span>
-          </div>
-          <Progress value={progressPercent} className="h-2" />
-          <p className="mt-2 text-sm text-slate-500">{progressPercent}% complete</p>
-        </div>
+         <div className="mb-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+           <div className="flex items-center justify-between mb-3">
+             <h2 className="text-lg font-semibold text-slate-900">{course.title}</h2>
+             <span className="text-sm text-slate-500">{completedIds.length} / {content.length} completed</span>
+           </div>
+           <Progress value={progressPercent} className="h-2" />
+           <p className="mt-2 text-sm text-slate-500">{progressPercent}% complete</p>
+         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
           {/* Main content area */}

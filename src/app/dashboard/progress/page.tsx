@@ -129,42 +129,43 @@ export default function ProgressPage() {
                 const completedCount = getCompletedCount(course.id);
                 const totalCount = getTotalCount(course.id);
 
-                return (
-                  <Card key={enrollment.id} className="border-slate-200">
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <span>{course.title}</span>
-                        <span className="text-sm font-normal text-slate-500">
-                          {progressPercentage}% complete
-                        </span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mb-4">
-                        <div className="flex justify-between text-sm text-slate-600 mb-1">
-                          <span>Progress</span>
-                          <span>{completedCount}/{totalCount} sections completed</span>
-                        </div>
-                        <Progress value={progressPercentage} className="h-2" />
-                      </div>
-                      
-                      <div className="flex gap-3">
-                        <Button 
-                          variant="outline" 
-                          onClick={() => router.push(`/courses/${course.slug}/learn`)}
-                        >
-                          Continue Learning
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => router.push(`/courses/${course.slug}`)}
-                        >
-                          View Course Details
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
+                 return (
+                   <Card key={enrollment.id} className="border-slate-200">
+                     <CardHeader>
+                       <CardTitle className="flex items-center justify-between">
+                         <span>{course.title}</span>
+                         <span className="text-sm font-normal text-slate-500">
+                           {progressPercentage}% complete
+                         </span>
+                       </CardTitle>
+                       <p className="text-xs text-slate-500 mt-1">ID: {course.id}</p>
+                     </CardHeader>
+                     <CardContent>
+                       <div className="mb-4">
+                         <div className="flex justify-between text-sm text-slate-600 mb-1">
+                           <span>Progress</span>
+                           <span>{completedCount}/{totalCount} sections completed</span>
+                         </div>
+                         <Progress value={progressPercentage} className="h-2" />
+                       </div>
+                       
+                       <div className="flex gap-3">
+                         <Button 
+                           variant="outline" 
+                           onClick={() => router.push(`/courses/${course.slug}/learn`)}
+                         >
+                           Continue Learning
+                         </Button>
+                         <Button 
+                           variant="outline" 
+                           onClick={() => router.push(`/courses/${course.slug}`)}
+                         >
+                           View Course Details
+                         </Button>
+                       </div>
+                     </CardContent>
+                   </Card>
+                 );
               })}
             </div>
           )}

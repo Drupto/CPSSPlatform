@@ -89,8 +89,11 @@ export default function DashboardPage() {
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-4xl font-bold mb-2">Welcome to Your Dashboard!</h1>
-          <p className="text-slate-600 mb-8">
+          <p className="text-slate-600 mb-2">
             Hello, <span className="font-semibold">{user?.email}</span>
+          </p>
+          <p className="text-sm text-slate-500 mb-8">
+            User ID: <span className="font-mono">{user?.uid}</span>
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
