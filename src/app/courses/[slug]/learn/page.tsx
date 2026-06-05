@@ -64,8 +64,10 @@ export default function CourseLearnPage() {
     return () => unsubscribe();
   }, [course, loadProgress]);
 
+  // Prevent redirect to course page when user is already on learn page and authorized
   useEffect(() => {
-    if (!loading && course && !authorized) {
+    if (!loading && course && !authorized && !window.location.pathname.endsWith('/learn')) {
+      // Only redirect if we're not already on the learn page
       router.push(`/courses/${slug}`);
     }
   }, [loading, authorized, course, router, slug]);

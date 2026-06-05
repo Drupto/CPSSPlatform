@@ -61,6 +61,8 @@ export default function CourseDetailPage() {
       await createEnrollment(currentUser.uid, course.id);
       setMessage("Enrollment successful. You can now access the course content.");
       setIsEnrolled(true);
+      // Navigate to learn page immediately after enrollment
+      router.push(`/courses/${course.slug}/learn`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to enroll at this time.");
     } finally {
@@ -118,15 +120,15 @@ export default function CourseDetailPage() {
             {error && <div className="mb-4 rounded-2xl bg-red-100 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
             {message && <div className="mb-4 rounded-2xl bg-emerald-100 border border-emerald-200 px-4 py-3 text-sm text-emerald-700">{message}</div>}
 
-            {isEnrolled ? (
-              <Button className="w-full" onClick={() => router.push(`/courses/${course.slug}/learn`)}>
-                Go to Course
-              </Button>
-            ) : (
-              <Button className="w-full" onClick={handleEnroll} disabled={isProcessing}>
-                {isProcessing ? "Enrolling..." : "Enroll Now"}
-              </Button>
-            )}
+              {isEnrolled ? (
+                <Button className="w-full" onClick={() => router.push(`/courses/${course.slug}/learn`)}>
+                  Go to Course
+                </Button>
+              ) : (
+                <Button className="w-full" onClick={handleEnroll} disabled={isProcessing}>
+                  {isProcessing ? "Enrolling..." : "Enroll Now"}
+                </Button>
+              )}
 
             <div className="mt-6 text-sm text-slate-600">
               {currentUser ? "After enrollment, you can access the course lessons immediately." : "Sign in or sign up to enroll."}
