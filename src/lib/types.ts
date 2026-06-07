@@ -40,6 +40,10 @@ export interface Quiz {
   questions: QuizQuestion[];
   createdAt: Timestamp | null;
   updatedAt: Timestamp | null;
+  maxAttempts?: number;
+  timeLimit?: number;
+  randomizeQuestionOrder?: boolean;
+  randomizeAnswerOrder?: boolean;
 }
 
 export interface QuizAttempt {

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import {
+import { 
   getCourseById,
   getCourseContent,
   getUserProfile,
@@ -243,7 +243,11 @@ export default function EditCoursePage() {
             title: quiz.title,
             description: quiz.description,
             passPercentage: quiz.passPercentage,
-            questions: quiz.questions
+            questions: quiz.questions,
+            maxAttempts: quiz.maxAttempts,
+            timeLimit: quiz.timeLimit,
+            randomizeQuestionOrder: quiz.randomizeQuestionOrder,
+            randomizeAnswerOrder: quiz.randomizeAnswerOrder
           });
         } else {
           // This is an existing quiz, update it
@@ -251,7 +255,11 @@ export default function EditCoursePage() {
             title: quiz.title,
             description: quiz.description,
             passPercentage: quiz.passPercentage,
-            questions: quiz.questions
+            questions: quiz.questions,
+            maxAttempts: quiz.maxAttempts,
+            timeLimit: quiz.timeLimit,
+            randomizeQuestionOrder: quiz.randomizeQuestionOrder,
+            randomizeAnswerOrder: quiz.randomizeAnswerOrder
           });
         }
       }
@@ -497,21 +505,30 @@ export default function EditCoursePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Quizzes</h2>
-                <Button type="button" variant="outline" onClick={() => {
-                  // Add a new empty quiz
-                  setQuizzes([...quizzes, {
-                    id: `new-${Date.now()}`,
-                    courseId: courseId as string,
-                    title: "New Quiz",
-                    description: "",
-                    passPercentage: 70,
-                    questions: [],
-                    createdAt: null,
-                    updatedAt: null
-                  }]);
-                }}>
-                  Add Quiz
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" onClick={() => {
+                    // Add a new empty quiz
+                    setQuizzes([...quizzes, {
+                      id: `new-${Date.now()}`,
+                      courseId: courseId as string,
+                      title: "New Quiz",
+                      description: "",
+                      passPercentage: 70,
+                      questions: [],
+                      createdAt: null,
+                      updatedAt: null
+                    }]);
+                  }}>
+                    Add Quiz
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => router.push(`/admin/courses/${courseId}/quizzes`)}
+                  >
+                    View Analytics
+                  </Button>
+                </div>
               </div>
 
               {quizzes.length === 0 ? (
@@ -576,6 +593,71 @@ export default function EditCoursePage() {
                                 setQuizzes(newQuizzes);
                               }}
                             />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Maximum Attempts</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="100"
+                              value={quiz.maxAttempts || 1}
+                              onChange={(e) => {
+                                const newQuizzes = [...quizzes];
+                                newQuizzes[index] = {...newQuizzes[index], maxAttempts: parseInt(e.target.value) || 1};
+                                setQuizzes(newQuizzes);
+                              }}
+                            />
+                            <p className="text-sm text-slate-500">Set to 1 for single attempt, higher numbers for multiple attempts</p>
+                          </div>
+                        </div>
+                        
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label>Time Limit (minutes, optional)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={quiz.timeLimit === null || quiz.timeLimit === undefined ? "" : quiz.timeLimit}
+                              onChange={(e) => {
+                                const newQuizzes = [...quizzes];
+                                const value = e.target.value;
+                                newQuizzes[index] = {...newQuizzes[index], timeLimit: value ? parseInt(value) : null};
+                                setQuizzes(newQuizzes);
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Randomize Question Order</Label>
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={quiz.randomizeQuestionOrder || false}
+                                onChange={(e) => {
+                                  const newQuizzes = [...quizzes];
+                                  newQuizzes[index] = {...newQuizzes[index], randomizeQuestionOrder: e.target.checked};
+                                  setQuizzes(newQuizzes);
+                                }}
+                                className="mr-2 h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                              />
+                              <span>Enable randomization</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Randomize Answer Order</Label>
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={quiz.randomizeAnswerOrder || false}
+                              onChange={(e) => {
+                                const newQuizzes = [...quizzes];
+                                newQuizzes[index] = {...newQuizzes[index], randomizeAnswerOrder: e.target.checked};
+                                setQuizzes(newQuizzes);
+                              }}
+                              className="mr-2 h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                            />
+                            <span>Enable randomization</span>
                           </div>
                         </div>
                         

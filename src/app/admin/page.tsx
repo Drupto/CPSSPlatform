@@ -88,20 +88,24 @@ export default function AdminPage() {
             ))}
           </div>
 
-           <div className="grid gap-4 sm:grid-cols-2">
-             <Link href="/admin/courses" className="rounded-2xl border border-slate-200 bg-slate-50 p-6 hover:border-primary transition">
-               <h2 className="text-xl font-semibold mb-2">Course Management</h2>
-               <p className="text-slate-600">View and edit all available courses.</p>
-             </Link>
-             <Link href="/admin/courses/new" className="rounded-2xl border border-slate-200 bg-slate-50 p-6 hover:border-primary transition">
-               <h2 className="text-xl font-semibold mb-2">Create New Course</h2>
-               <p className="text-slate-600">Build a course using text, video, and document content.</p>
-             </Link>
-             <Link href="/admin/resources" className="rounded-2xl border border-slate-200 bg-slate-50 p-6 hover:border-primary transition">
-               <h2 className="text-xl font-semibold mb-2">Resource Management</h2>
-               <p className="text-slate-600">Manage study materials and additional resources.</p>
-             </Link>
-           </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Link href="/admin/courses" className="rounded-2xl border border-slate-200 bg-slate-50 p-6 hover:border-primary transition">
+                <h2 className="text-xl font-semibold mb-2">Course Management</h2>
+                <p className="text-slate-600">View and edit all available courses.</p>
+              </Link>
+              <Link href="/admin/courses/new" className="rounded-2xl border border-slate-200 bg-slate-50 p-6 hover:border-primary transition">
+                <h2 className="text-xl font-semibold mb-2">Create New Course</h2>
+                <p className="text-slate-600">Build a course using text, video, and document content.</p>
+              </Link>
+              <Link href="/admin/resources" className="rounded-2xl border border-slate-200 bg-slate-50 p-6 hover:border-primary transition">
+                <h2 className="text-xl font-semibold mb-2">Resource Management</h2>
+                <p className="text-slate-600">Manage study materials and additional resources.</p>
+              </Link>
+              <Link href="/admin/courses" className="rounded-2xl border border-slate-200 bg-slate-50 p-6 hover:border-primary transition">
+                <h2 className="text-xl font-semibold mb-2">Quiz Analytics</h2>
+                <p className="text-slate-600">View quiz results and student performance.</p>
+              </Link>
+            </div>
 
           <div className="mt-10">
             <Button onClick={() => router.push("/admin/courses/new")}>Create a Course</Button>

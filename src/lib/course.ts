@@ -354,6 +354,10 @@ export async function createQuiz(courseId: string, quizData: Partial<Quiz>): Pro
     description: quizData.description ?? "",
     passPercentage: quizData.passPercentage ?? 70,
     questions: quizData.questions ?? [],
+    maxAttempts: quizData.maxAttempts ?? 1,
+    timeLimit: quizData.timeLimit === null ? undefined : quizData.timeLimit,
+    randomizeQuestionOrder: quizData.randomizeQuestionOrder ?? false,
+    randomizeAnswerOrder: quizData.randomizeAnswerOrder ?? false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -386,6 +390,7 @@ export async function updateQuiz(quizId: string, updates: Partial<Quiz>): Promis
   const quizRef = doc(db, "courses", updates.courseId!, "quizzes", quizId);
   await setDoc(quizRef, {
     ...updates,
+    timeLimit: updates.timeLimit === null ? undefined : updates.timeLimit,
     updatedAt: serverTimestamp(),
   }, { merge: true });
 }
