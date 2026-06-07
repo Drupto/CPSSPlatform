@@ -190,20 +190,10 @@ export async function deleteStorageFileByUrl(downloadUrl: string): Promise<void>
 }
 
 /**
- * Deletes a course along with all its content items and their uploaded files from Firebase Storage.
+ * Deletes a course. Cloud Function will handle cascading deletion of quizzes and content.
  */
 export async function deleteCourse(courseId: string): Promise<void> {
-  // 1. Delete all content items and their uploaded files from Storage
-  const contentItems = await getCourseContent(courseId);
-  for (const item of contentItems) {
-    if (item.url) {
-      await deleteStorageFileByUrl(item.url);
-    }
-    const contentRef = doc(db, "courses", courseId, "content", item.id);
-    await deleteDoc(contentRef);
-  }
-
-  // 2. Delete the course document
+  // Simply delete the course document - Cloud Functions will handle cascading cleanup
   const courseRef = doc(db, "courses", courseId);
   await deleteDoc(courseRef);
 }
