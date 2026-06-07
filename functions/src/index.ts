@@ -9,6 +9,7 @@ admin.initializeApp();
  * This function handles cascading deletion of all related data:
  * - Quizzes in the quizzes subcollection
  * - Content items in the content subcollection
+ * - Resources in the resources subcollection
  * - Associated storage files
  */
 export const onCourseDelete = functions.firestore
@@ -68,12 +69,36 @@ export const onCourseDelete = functions.firestore
         console.log(`Deleted ${resourcesSnapshot.size} resources`);
       }
       
+      // 4. Delete associated storage files
+      console.log(`Deleting storage files for course: ${courseId}`);
+      try {
+        // Use the storage bucket directly to delete files
+        const bucket = admin.storage().bucket();
+        const courseFilesPrefix = `courses/${courseId}/`;
+        
+        // List all files in the course folder
+        const [files] = await bucket.getFiles({
+          prefix: courseFilesPrefix
+        });
+        
+        // Delete all files in the course folder
+        if (files.length > 0) {
+          const deletePromises = files.map((file: any) => file.delete());
+          await Promise.all(deletePromises);
+          console.log(`Deleted ${files.length} storage files`);
+        }
+      } catch (storageError) {
+        console.error(`Error during storage cleanup for course ${courseId}:`, storageError);
+        // Log the error but don't throw it to prevent the deletion from failing
+        // Storage cleanup is secondary to Firestore cleanup
+      }
+      
       console.log(`Cleanup completed for course: ${courseId}`);
       
     } catch (error) {
-      console.error(`Error during course cleanup for ${courseId}:`, error);
+      console.error(`Critical error during course cleanup for ${courseId}:`, error);
       // Don't throw the error to prevent the deletion from failing
       // The course deletion has already happened, so we log and continue
-      throw new functions.https.HttpsError('internal', 'Cleanup failed, but course was deleted');
+      // Note: We don't throw HttpsError for cleanup operations as they should not block the main deletion
     }
   });
