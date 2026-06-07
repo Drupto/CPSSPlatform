@@ -263,16 +263,16 @@ export default function CreateQuizPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="time-limit">Time Limit (minutes, optional)</Label>
-                  <Input
-                    id="time-limit"
-                    type="number"
-                    min="0"
-                    value={quiz.timeLimit === null || quiz.timeLimit === undefined ? "" : quiz.timeLimit}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setQuiz({...quiz, timeLimit: value ? parseInt(value) : null});
-                    }}
-                  />
+                   <Input
+                     id="time-limit"
+                     type="number"
+                     min="0"
+                     value={quiz.timeLimit === undefined ? "" : quiz.timeLimit}
+                     onChange={(e) => {
+                       const value = e.target.value;
+                       setQuiz({...quiz, timeLimit: value ? parseInt(value) : undefined});
+                     }}
+                   />
                 </div>
                 
                 <div className="space-y-2">
