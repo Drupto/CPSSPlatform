@@ -91,9 +91,9 @@ export default function AdminCoursesPage() {
                    </div>
                     <div className="mt-4 flex items-center gap-3">
                       <Link href={`/courses/${course.slug}`} className="text-primary hover:underline text-sm">View Course</Link>
-                      <Link href={`/admin/courses/${course.id}/edit`} className="text-slate-600 hover:text-slate-900 text-sm">Edit</Link>
+                      <Link href={`/admin/courses/${course.id}/edit`} className="text-slate-600 hover:text-slate-900 text-sm">Edit Course</Link>
                       <Link href={`/admin/courses/${course.id}/quizzes`} className="text-slate-600 hover:text-slate-900 text-sm">View Analytics</Link>
-                      <Link href={`/admin/courses/${course.id}/quizzes/new`} className="text-slate-600 hover:text-slate-900 text-sm">Add Quiz</Link>
+                      <Link href={`/admin/courses/${course.id}/quizzes/new`} className="text-slate-600 hover:text-slate-900 text-sm">Add/Edit Quiz</Link>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <button
