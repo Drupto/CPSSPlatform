@@ -16,6 +16,7 @@ import {
   deleteCourseContentItemWithFile,
   uploadCourseAsset,
   isAdminProfile,
+  getCourseQuizzes,
 } from "@/lib/course";
 import type { Course, CourseContentItem, Quiz } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -97,6 +98,10 @@ export default function EditCoursePage() {
         file: null,
       }));
       setContentBlocks(blocks);
+      
+      // Load quizzes for this course
+      const courseQuizzes = await getCourseQuizzes(courseData.id);
+      setQuizzes(courseQuizzes);
       
       setLoading(false);
     });
@@ -451,6 +456,64 @@ export default function EditCoursePage() {
               ))}
             </div>
 
+            {/* Quizzes Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Quizzes</h2>
+                <Button 
+                  variant="outline" 
+                  onClick={() => router.push(`/admin/courses/${courseId}/quizzes/new`)}
+                >
+                  Add New Quiz
+                </Button>
+              </div>
+
+              {quizzes.length === 0 ? (
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-center">
+                  <p className="text-slate-500">No quizzes found for this course.</p>
+                  <Button 
+                    className="mt-4" 
+                    onClick={() => router.push(`/admin/courses/${courseId}/quizzes/new`)}
+                  >
+                    Create First Quiz
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {quizzes.map((quiz) => (
+                    <div key={quiz.id} className="rounded-3xl border border-slate-200 bg-white p-6">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <h3 className="text-lg font-semibold text-slate-900">{quiz.title}</h3>
+                          <p className="text-slate-500">{quiz.description}</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700 text-sm">
+                              {quiz.questions.length} questions
+                            </span>
+                            <span className="rounded-full bg-green-100 px-3 py-1 text-green-700 text-sm">
+                              Pass: {quiz.passPercentage}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => router.push(`/admin/courses/${courseId}/quizzes/${quiz.id}`)}
+                          >
+                            View Analytics
+                          </Button>
+                          <Button 
+                            onClick={() => router.push(`/admin/courses/${courseId}/quizzes/new?quizId=${quiz.id}`)}
+                          >
+                            Edit Quiz
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div className="flex gap-3">
               <Button type="submit" disabled={isSaving}>

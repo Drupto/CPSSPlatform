@@ -11,7 +11,9 @@ import {
   getUserProfile,
   isAdminProfile,
   createQuiz,
-  getCourseQuizzes
+  getCourseQuizzes,
+  getQuizById,
+  updateQuiz
 } from "@/lib/course";
 import type { Course, Quiz } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -46,6 +48,7 @@ export default function CreateQuizPage() {
     createdAt: null,
     updatedAt: null
   });
+  const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -78,6 +81,20 @@ export default function CreateQuizPage() {
         }
 
         setCourse(courseData);
+        
+        // Check if we're editing an existing quiz
+        const urlParams = new URLSearchParams(window.location.search);
+        const quizIdParam = urlParams.get('quizId');
+        
+        if (quizIdParam) {
+          setEditingQuizId(quizIdParam);
+          // Load the existing quiz data
+          const quizData = await getQuizById(quizIdParam);
+          if (quizData) {
+            setQuiz(quizData);
+          }
+        }
+        
         setLoading(false);
       } catch (err) {
         console.error("Error loading course:", err);
@@ -100,26 +117,43 @@ export default function CreateQuizPage() {
     setSuccess("");
 
     try {
-      // Create the quiz
-      await createQuiz(courseId as string, {
-        title: quiz.title,
-        description: quiz.description,
-        passPercentage: quiz.passPercentage,
-        questions: quiz.questions,
-        maxAttempts: quiz.maxAttempts,
-        timeLimit: quiz.timeLimit,
-        randomizeQuestionOrder: quiz.randomizeQuestionOrder,
-        randomizeAnswerOrder: quiz.randomizeAnswerOrder
-      });
-
-      setSuccess("Quiz created successfully!");
+      if (editingQuizId) {
+        // Update existing quiz
+        await updateQuiz(editingQuizId, {
+          title: quiz.title,
+          description: quiz.description,
+          passPercentage: quiz.passPercentage,
+          questions: quiz.questions,
+          maxAttempts: quiz.maxAttempts,
+          timeLimit: quiz.timeLimit,
+          randomizeQuestionOrder: quiz.randomizeQuestionOrder,
+          randomizeAnswerOrder: quiz.randomizeAnswerOrder
+        });
+        
+        setSuccess("Quiz updated successfully!");
+      } else {
+        // Create new quiz
+        await createQuiz(courseId as string, {
+          title: quiz.title,
+          description: quiz.description,
+          passPercentage: quiz.passPercentage,
+          questions: quiz.questions,
+          maxAttempts: quiz.maxAttempts,
+          timeLimit: quiz.timeLimit,
+          randomizeQuestionOrder: quiz.randomizeQuestionOrder,
+          randomizeAnswerOrder: quiz.randomizeAnswerOrder
+        });
+        
+        setSuccess("Quiz created successfully!");
+      }
+      
       // Redirect to quiz analytics page after a delay
       setTimeout(() => {
         router.push(`/admin/courses/${courseId}/quizzes`);
       }, 1500);
     } catch (err) {
-      console.error("Error creating quiz:", err);
-      setError("Failed to create quiz. Please try again.");
+      console.error("Error saving quiz:", err);
+      setError("Failed to save quiz. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -197,8 +231,14 @@ export default function CreateQuizPage() {
           >
             ← Back to Course
           </Button>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Create New Quiz</h1>
-          <p className="text-slate-600">Create a new quiz for {course?.title}</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            {editingQuizId ? "Edit Quiz" : "Create New Quiz"}
+          </h1>
+          <p className="text-slate-600">
+            {editingQuizId 
+              ? `Editing quiz for ${course?.title}` 
+              : `Create a new quiz for ${course?.title}`}
+          </p>
         </div>
 
         {success && (
@@ -395,7 +435,7 @@ export default function CreateQuizPage() {
               onClick={handleSave} 
               disabled={isSaving || !quiz.title.trim()}
             >
-              {isSaving ? "Creating Quiz..." : "Create Quiz"}
+              {isSaving ? (editingQuizId ? "Updating Quiz..." : "Creating Quiz...") : (editingQuizId ? "Update Quiz" : "Create Quiz")}
             </Button>
             <Button 
               variant="outline" 
