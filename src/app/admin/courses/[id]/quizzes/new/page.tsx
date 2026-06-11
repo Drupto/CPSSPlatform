@@ -29,6 +29,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Edit2, BarChart3 } from "lucide-react";
 
 export default function CreateQuizPage() {
   const { id: courseId } = useParams();
@@ -53,6 +54,7 @@ export default function CreateQuizPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [existingQuizzes, setExistingQuizzes] = useState<Quiz[]>([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser: User | null) => {
@@ -82,6 +84,10 @@ export default function CreateQuizPage() {
 
         setCourse(courseData);
         
+        // Fetch existing quizzes for this course
+        const quizzes = await getCourseQuizzes(courseId as string);
+        setExistingQuizzes(quizzes);
+        
         // Check if we're editing an existing quiz
         const urlParams = new URLSearchParams(window.location.search);
         const quizIdParam = urlParams.get('quizId');
@@ -89,7 +95,7 @@ export default function CreateQuizPage() {
         if (quizIdParam) {
           setEditingQuizId(quizIdParam);
           // Load the existing quiz data
-          const quizData = await getQuizById(quizIdParam);
+          const quizData = await getQuizById(quizIdParam, courseId as string);
           if (quizData) {
             setQuiz(quizData);
           }
@@ -245,6 +251,53 @@ export default function CreateQuizPage() {
           <div className="mb-6 rounded-2xl bg-emerald-100 border border-emerald-200 px-4 py-3 text-emerald-700">
             {success}
           </div>
+        )}
+
+        {/* Existing Quizzes Section */}
+        {existingQuizzes.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Existing Quizzes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {existingQuizzes.map((existingQuiz) => (
+                  <div 
+                    key={existingQuiz.id}
+                    className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <h3 className="font-medium text-slate-900">{existingQuiz.title}</h3>
+                      <p className="text-sm text-slate-600">
+                        {existingQuiz.questions.length} question{existingQuiz.questions.length !== 1 ? 's' : ''}
+                        {existingQuiz.description && ` • ${existingQuiz.description}`}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push(`/admin/courses/${courseId}/quizzes/new?quizId=${existingQuiz.id}`)}
+                        className="flex items-center gap-2"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push(`/admin/courses/${courseId}/quizzes`)}
+                        className="flex items-center gap-2"
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                        Analytics
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         <div className="grid gap-6">

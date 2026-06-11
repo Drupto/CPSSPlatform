@@ -367,10 +367,27 @@ export async function getCourseQuizzes(courseId: string): Promise<Quiz[]> {
 /**
  * Gets a specific quiz by ID
  */
-export async function getQuizById(quizId: string): Promise<Quiz | null> {
-  const quizRef = doc(db, "quizzes", quizId);
-  const snapshot = await getDoc(quizRef);
-  return snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as Quiz) : null;
+export async function getQuizById(quizId: string, courseId?: string): Promise<Quiz | null> {
+  // If courseId is provided, use the correct subcollection path
+  if (courseId) {
+    const quizRef = doc(db, "courses", courseId, "quizzes", quizId);
+    const snapshot = await getDoc(quizRef);
+    return snapshot.exists() ? ({ id: snapshot.id, courseId, ...snapshot.data() } as Quiz) : null;
+  }
+  
+  // Fallback for backward compatibility (searches all courses - slower)
+  const coursesRef = collection(db, "courses");
+  const coursesSnapshot = await getDocs(coursesRef);
+  
+  for (const courseDoc of coursesSnapshot.docs) {
+    const quizRef = doc(db, "courses", courseDoc.id, "quizzes", quizId);
+    const quizSnapshot = await getDoc(quizRef);
+    if (quizSnapshot.exists()) {
+      return { id: quizSnapshot.id, courseId: courseDoc.id, ...quizSnapshot.data() } as Quiz;
+    }
+  }
+  
+  return null;
 }
 
 /**
