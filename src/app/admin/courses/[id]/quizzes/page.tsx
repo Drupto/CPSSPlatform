@@ -170,7 +170,7 @@ export default function CourseQuizAnalyticsPage() {
       a.quizTitle,
       `${a.score}%`,
       a.passed ? "Yes" : "No",
-      new Date(a.completedAt).toLocaleString()
+      a.completedAt ? new Date(a.completedAt.toDate()).toLocaleString() : "N/A"
     ]);
     const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });

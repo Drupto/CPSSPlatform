@@ -1,9 +1,67 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isValidQuizData(data) {
+      return data is map
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 200
+        && data.description is string
+        && data.description.size() <= 2000
+        && data.passPercentage is int
+        && data.passPercentage >= 0
+        && data.passPercentage <= 100
+        && data.maxAttempts is int
+        && data.maxAttempts >= 1
+        && data.maxAttempts <= 100
+        && data.randomizeQuestionOrder is bool
+        && data.randomizeAnswerOrder is bool
+        && data.questions is list
+        && data.questions.size() >= 1
+        && data.questions.size() <= 100
+        && (!('timeLimit' in data) || (data.timeLimit is int && data.timeLimit >= 0))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidQuizAttemptData(data) {
+      return data is map
+        && data.userId is string
+        && data.quizId is string
+        && data.courseId is string
+        && data.answers is list
+        && data.answers.size() <= 100
+        && data.score is int
+        && data.score >= 0
+        && data.score <= 100
+        && data.passed is bool
+        && data.completedAt is timestamp;
+    }
+
+    function isValidQuizAttemptCreate() {
+      return request.auth.uid == request.resource.data.userId
+        && isValidQuizAttemptData(request.resource.data)
+        && exists(/databases/$(database)/documents/courses/$(request.resource.data.courseId))
+        && get(/databases/$(database)/documents/courses/$(request.resource.data.courseId)).data.published == true
+        && exists(/databases/$(database)/documents/courses/$(request.resource.data.courseId)/quizzes/$(request.resource.data.quizId))
+        && get(/databases/$(database)/documents/courses/$(request.resource.data.courseId)/quizzes/$(request.resource.data.quizId)).data.questions.size() == request.resource.data.answers.size();
+    }
+
     // Allow authenticated users to read/write their own user profile
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.role == 'student';
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'updatedAt']);
     }
 
     // Allow anyone to read published courses; admins can create, update, and delete
@@ -20,6 +78,17 @@ service cloud.firestore {
         ) || (request.auth != null && isAdmin());
         allow create: if request.auth != null && isAdmin();
         allow update: if request.auth != null && isAdmin();
+        allow delete: if request.auth != null && isAdmin();
+      }
+
+      // Admins manage quizzes; published quizzes are readable by authenticated learners
+      match /quizzes/{quizId} {
+        allow read: if request.auth != null && (
+          isAdmin()
+          || get(/databases/$(database)/documents/courses/$(courseId)).data.published == true
+        );
+        allow create: if request.auth != null && isAdmin() && isValidQuizData(request.resource.data);
+        allow update: if request.auth != null && isAdmin() && isValidQuizData(request.resource.data);
         allow delete: if request.auth != null && isAdmin();
       }
     }
@@ -48,10 +117,15 @@ service cloud.firestore {
       allow delete: if request.auth != null && isAdmin();
     }
 
-    // Helper function to check if user is admin
-    function isAdmin() {
-      return request.auth != null && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    // Allow students to create and read their own quiz attempts; admins can read/manage all attempts
+    match /quizAttempts/{attemptId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId || isAdmin()
+      );
+      allow create: if request.auth != null
+        && isValidQuizAttemptCreate();
+      allow update: if request.auth != null && isAdmin();
+      allow delete: if request.auth != null && isAdmin();
     }
   }
 }

@@ -254,6 +254,7 @@ export function QuizForm({ mode, courseId, quizId, initialQuiz, onSave, isSaving
                     <Button 
                       variant="destructive" 
                       size="sm"
+                      type="button"
                       onClick={() => removeQuestion(qIndex)}
                     >
                       Remove
@@ -319,6 +320,7 @@ export function QuizForm({ mode, courseId, quizId, initialQuiz, onSave, isSaving
 
       <div className="flex gap-3">
         <Button 
+          type="button"
           onClick={handleSave} 
           disabled={isSaving || !quiz.title?.trim()}
         >

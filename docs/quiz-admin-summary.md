@@ -29,14 +29,19 @@ The original task asked to explain how admins can:
 - Clear indication of which options were selected by the user
 
 ### 4. Quiz Settings Control
-**Implemented in:** `/admin/courses/[id]/edit/page.tsx`
-- **Maximum Attempts Setting:** 
+**Implemented in:** quiz creation and editing flows
+- **Maximum Attempts Setting:**
   - Set to 1 for single attempt quizzes
   - Set to higher numbers for multiple attempts
-  - Direct instruction to users about the setting
 - **Time Limits:** Optional time limits for quiz completion
 - **Randomization Options:** Toggle for question and answer order randomization
 - **Pass Percentage:** Configure minimum score required to pass
+
+### 5. Quiz Creation Flow
+**Implemented in:** `/admin/courses/[id]/quizzes/new/page.tsx`
+- Admins can create quizzes directly from Course Management using the **Add Quiz** link
+- The course edit page also includes an inline **Add New Quiz** form
+- Quiz form buttons are isolated from the parent course form so creating a quiz does not save or redirect away from the course edit page
 
 ## Key Features
 
@@ -58,6 +63,11 @@ The original task asked to explain how admins can:
 - Time-based quiz restrictions
 - Randomization for fair testing
 
+### Direct Quiz Creation
+- Course Management includes an **Add Quiz** link for each course
+- Dedicated create page uses the course ID to store the quiz under `courses/{courseId}/quizzes`
+- Course edit page still supports inline quiz creation for admins working inside the course editor
+
 ## Technical Implementation
 
 ### Database Schema
@@ -72,19 +82,25 @@ Extended `Quiz` interface with:
 - Enhanced `getCourseQuizAttempts()` for detailed analytics
 - Proper TypeScript handling of nullable fields
 
+### Security Rules
+- `firebase.json` references `firestore.rules`
+- Firestore rules allow authenticated admins to manage course quizzes
+- Firestore rules allow students to create and read their own quiz attempts
+
 ## Usage Flow for Admins
 
-1. **Navigate to Course:** Go to course management in admin panel
-2. **View Analytics:** Click "View Analytics" or go to `/admin/courses/[id]/quizzes`
-3. **Review Results:** See all attempts, filter by user/quiz, click "View Details"
-4. **Configure Settings:** Edit course quizzes to set maximum attempts, time limits, etc.
-5. **Control Access:** Set maxAttempts=1 for single attempt, maxAttempts>1 for multiple attempts
+1. **Create Quiz:** Go to Course Management and click **Add Quiz** for the desired course
+2. **Configure Quiz:** Fill in quiz details, settings, questions, answers, and explanations
+3. **View Analytics:** Click **View Analytics** or go to `/admin/courses/[id]/quizzes`
+4. **Review Results:** See all attempts, filter by user/quiz, click **View Details**
+5. **Control Access:** Set `maxAttempts=1` for single attempt, `maxAttempts>1` for multiple attempts
 
 ## Security & Access
 
-- Only authenticated admin users can access analytics
+- Only authenticated admin users can access analytics and quiz management
 - Data is properly secured with user identification
-- Admins can only view results for courses they manage
+- Admins can only manage quiz data when Firestore admin rules allow access
+- Students can create and read only their own quiz attempts
 - All settings are validated before saving
 
-This implementation fully satisfies the original requirements by providing comprehensive quiz administration capabilities for monitoring student performance and controlling quiz behavior.
+This implementation satisfies the original requirements by providing comprehensive quiz administration capabilities for creating quizzes, monitoring student performance, reviewing answers, explaining answers, and controlling quiz behavior.

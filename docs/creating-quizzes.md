@@ -20,9 +20,9 @@ Each quiz consists of:
 
 ## Admin Side: Creating Quizzes
 
-### Creating Quizzes During Course Creation
+### Creating Quizzes After Course Creation
 
-When creating a new course, quizzes cannot be added directly during the initial creation process. This is because the course must first be created in order to have a course ID for storing quiz data in the database.
+Quizzes cannot be added during the initial course creation form. The course must exist first because quiz data is stored in a Firestore subcollection under the course document: `courses/{courseId}/quizzes`.
 
 ### Step-by-Step Process
 
@@ -30,41 +30,41 @@ When creating a new course, quizzes cannot be added directly during the initial 
    - Go to the admin panel (`/admin`)
    - Select "Courses" from the menu
    - Click "Create New Course"
-   - Fill in course details (title, description, price, etc.)
-   - Add content sections to the course
+   - Fill in course details such as title, description, price, and content sections
    - Click "Create Course"
 
-2. **Edit the Course to Add Quizzes**
-   - After creating the course, navigate back to the course list
-   - Click the "Edit" button for the course you just created
-   - Scroll down to the "Quizzes" section in the course editor
-   - This section appears below the course content sections
+2. **Open Quiz Creation**
+   - After creating the course, navigate back to the Course Management page
+   - Find the course row
+   - Click **Add Quiz**
+   - This opens the dedicated quiz creation page at `/admin/courses/[course-id]/quizzes/new`
 
-3. **Add a New Quiz**
-   - Click the "Add Quiz" button
-   - A new quiz form will appear with default values
+   Alternatively, admins can open the course edit page, scroll to the "Quizzes" section, and click **Add New Quiz** to open the inline quiz form.
 
-4. **Configure Quiz Details**
+3. **Configure Quiz Details**
    - **Title**: Enter a descriptive name for the quiz
    - **Description**: Provide a brief overview of what the quiz covers
    - **Pass Percentage**: Set the minimum score required to pass (0-100%)
+   - **Maximum Attempts**: Set how many times a learner can attempt the quiz
+   - **Time Limit**: Optionally set a time limit in minutes
+   - **Randomization**: Optionally randomize question or answer order
 
-5. **Add Questions**
+4. **Add Questions**
    - Click "Add Question" to create a new question
    - Enter the question text
    - Add answer options (minimum 2 required)
    - Select the correct answer using the radio button
    - Optionally add an explanation for the correct answer
 
-6. **Manage Questions**
+5. **Manage Questions**
    - Add more questions as needed
    - Edit existing questions by modifying their content
    - Remove questions using the delete button
-   - Reorder questions using the up/down arrows
 
-7. **Save Changes**
-   - Click "Save Changes" at the bottom of the page
-   - The quiz will be saved to the course and become available to students
+6. **Save the Quiz**
+   - Click "Create Quiz"
+   - The quiz is saved to `courses/{courseId}/quizzes`
+   - After a short success message, the page redirects to the new quiz edit page for review
 
 ### Why This Limitation Exists
 
@@ -76,10 +76,11 @@ The current implementation requires a course to exist before quizzes can be adde
 
 ### Alternative Approach
 
-If you need to create quizzes immediately upon course creation, you can:
+If you need to create quizzes immediately after creating a course, you can:
 1. Create the course with minimal content
-2. Immediately edit the course to add quizzes
-3. Or create a course with placeholder content and then add quizzes in the edit screen
+2. Return to Course Management
+3. Click **Add Quiz** for that course
+4. Complete the quiz form on the dedicated quiz creation page
 
 ## Technical Implementation
 
@@ -95,6 +96,10 @@ interface Quiz {
   description: string;
   passPercentage: number;
   questions: QuizQuestion[];
+  maxAttempts?: number;
+  timeLimit?: number;
+  randomizeQuestionOrder?: boolean;
+  randomizeAnswerOrder?: boolean;
   createdAt: Timestamp | null;
   updatedAt: Timestamp | null;
 }
@@ -112,8 +117,8 @@ interface QuizAttempt {
   userId: string;
   quizId: string;
   courseId: string;
-  answers: number[]; // Array of selected answer indices
-  score: number; // Percentage score
+  answers: number[];
+  score: number;
   passed: boolean;
   completedAt: Timestamp | null;
 }
@@ -122,13 +127,22 @@ interface QuizAttempt {
 ### Key Functions
 
 The platform provides several utility functions for quiz management in `src/lib/course.ts`:
-
 - `createQuiz(courseId, quizData)` - Creates a new quiz for a course
 - `getCourseQuizzes(courseId)` - Retrieves all quizzes for a course
 - `updateQuiz(quizId, updates)` - Updates an existing quiz
 - `deleteQuiz(quizId, courseId)` - Deletes a quiz
 - `createQuizAttempt(attemptData)` - Records a quiz attempt
 - `getCourseQuizAttempts(userId, courseId)` - Gets all quiz attempts for a user in a course
+
+### Security Rules
+
+Firestore rules are configured in `firestore.rules` and referenced by `firebase.json`.
+
+Quiz rules:
+- Authenticated admins can create, update, read, and delete quizzes under `courses/{courseId}/quizzes/{quizId}`
+- Authenticated learners can read published course quizzes
+- Students can create and read their own quiz attempts
+- Admins can read and manage all quiz attempts
 
 ## Student Side: Taking Quizzes
 
@@ -156,7 +170,7 @@ The platform provides several utility functions for quiz management in `src/lib/
 - **Interactive Interface**: Students can select answers and see immediate visual feedback
 - **Results Display**: Shows score percentage and pass/fail status
 - **Explanations**: Correct answers are displayed with explanations when available
-- **Retake Option**: Students can retake quizzes to improve their scores
+- **Retake Option**: Students can retake quizzes if the quiz allows multiple attempts
 
 ## Best Practices
 
@@ -190,11 +204,13 @@ The platform provides several utility functions for quiz management in `src/lib/
    - Make sure all required fields are filled
    - Check that questions have at least 2 options
    - Confirm that a correct answer is selected for each question
+   - Confirm Firestore rules allow admin quiz writes
 
 3. **Results Not Saving**
    - Ensure the user is logged in
    - Verify that the quiz attempt is properly configured
    - Check that the user has enrolled in the course
+   - Confirm Firestore rules allow the student to write their own quiz attempt
 
 ## Future Enhancements
 

@@ -10,16 +10,23 @@ The quiz functionality allows administrators to create multiple-choice quizzes f
 
 ### Admin Side (Admin Panel)
 1. **Quiz Creation Interface**
+   - Create quizzes directly from Course Management using `/admin/courses/[course-id]/quizzes/new`
    - Add multiple quizzes to a course
-   - Define quiz title, description, and pass percentage
+   - Define quiz title, description, pass percentage, maximum attempts, time limit, and randomization options
    - Add questions with multiple-choice options
    - Set correct answers for each question
    - Add explanations for correct answers
 
-2. **Quiz Management**
+2. **Inline Quiz Creation**
+   - Course edit page includes a "Quizzes" section
+   - Admins can open an inline quiz form from the course edit page
+   - Quiz form buttons are isolated from the parent course form so quiz creation does not submit course edits
+
+3. **Quiz Management**
    - Edit existing quizzes
    - Delete quizzes
    - View quiz details
+   - View quiz analytics
 
 ### Student Side (Learning Interface)
 1. **Quiz Access**
@@ -38,7 +45,7 @@ The quiz functionality allows administrators to create multiple-choice quizzes f
    - Score percentage display
    - Pass/fail status
    - Review of correct answers with explanations
-   - Option to retake quizzes
+   - Option to retake quizzes when allowed by quiz settings
 
 ## Database Schema Changes
 
@@ -55,6 +62,10 @@ interface Quiz {
   description: string;
   passPercentage: number;
   questions: QuizQuestion[];
+  maxAttempts?: number;
+  timeLimit?: number;
+  randomizeQuestionOrder?: boolean;
+  randomizeAnswerOrder?: boolean;
   createdAt: Timestamp | null;
   updatedAt: Timestamp | null;
 }
@@ -72,8 +83,8 @@ interface QuizAttempt {
   userId: string;
   quizId: string;
   courseId: string;
-  answers: number[]; // Array of selected answer indices
-  score: number; // Percentage score
+  answers: number[];
+  score: number;
   passed: boolean;
   completedAt: Timestamp | null;
 }
@@ -82,9 +93,11 @@ interface QuizAttempt {
 ## Implementation Details
 
 ### Admin Interface
+- Added dedicated quiz creation page at `/src/app/admin/courses/[id]/quizzes/new/page.tsx`
 - Added quiz section to `/src/app/admin/courses/[id]/edit/page.tsx`
 - Implemented CRUD operations for quizzes using Firebase Firestore
 - Created intuitive UI for quiz creation with question management
+- Prevented nested quiz form buttons from submitting the parent course edit form
 
 ### Student Interface
 - Enhanced `/src/app/courses/[slug]/learn/page.tsx` with quiz functionality
@@ -101,15 +114,27 @@ interface QuizAttempt {
   - `createQuizAttempt()`
   - `getCourseQuizAttempts()`
 
+### Security
+- Firestore rules are configured in `firestore.rules`
+- `firebase.json` explicitly points to `firestore.rules`
+- Admins can manage quizzes under `courses/{courseId}/quizzes/{quizId}`
+- Students can create and read their own quiz attempts
+
 ## Usage Instructions
 
 ### For Admins
-1. Navigate to the course editing page (`/admin/courses/{id}/edit`)
+1. Go to Course Management
+2. Click **Add Quiz** for the desired course
+3. Fill in quiz details such as title, description, pass percentage, attempts, time limit, and randomization
+4. Add questions with options and set correct answers
+5. Click **Create Quiz**
+6. Review or edit the quiz after creation if needed
+
+Alternatively:
+1. Open the course edit page (`/admin/courses/{id}/edit`)
 2. Scroll to the "Quizzes" section
-3. Click "Add Quiz" to create a new quiz
-4. Fill in quiz details (title, description, pass percentage)
-5. Add questions with options and set correct answers
-6. Save the course to persist the quizzes
+3. Click **Add New Quiz**
+4. Complete the inline quiz form
 
 ### For Students
 1. Enroll in a course with quizzes
@@ -123,8 +148,9 @@ interface QuizAttempt {
 ## Security Considerations
 - Only authenticated users can take quizzes
 - Quiz attempts are stored securely with user identification
-- Admins can only create/edit quizzes for courses they manage
+- Admins can create/edit quizzes only when Firestore admin rules allow access
 - Quiz results are tied to specific user IDs
+- Quiz creation writes to the course quiz subcollection, not to the course document itself
 
 ## Future Enhancements
 1. Quiz timer functionality

@@ -540,12 +540,13 @@ if ((block.type === "document" || block.type === "video") && block.file) {
                  <div className="bg-white rounded-3xl border border-slate-200 shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
                    <div className="flex items-center justify-between mb-4">
                      <h2 className="text-2xl font-bold text-slate-900">Add Quiz</h2>
-                     <Button 
-                       variant="outline" 
-                       onClick={() => setShowQuizForm(false)}
-                     >
-                       ×
-                     </Button>
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        onClick={() => setShowQuizForm(false)}
+                      >
+                        ×
+                      </Button>
                    </div>
                    <p className="text-slate-600 mb-4">Create a new quiz for {course?.title}</p>
                    <QuizForm
@@ -555,12 +556,13 @@ if ((block.type === "document" || block.type === "video") && block.file) {
                      isSaving={isSavingQuiz}
                    />
                    <div className="flex gap-3 mt-6">
-                     <Button 
-                       variant="outline" 
-                       onClick={() => setShowQuizForm(false)}
-                     >
-                       Cancel
-                     </Button>
+                      <Button 
+                        type="button"
+                        variant="outline" 
+                        onClick={() => setShowQuizForm(false)}
+                      >
+                        Cancel
+                      </Button>
                    </div>
                  </div>
                </div>

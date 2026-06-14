@@ -7,18 +7,22 @@
 - Go to the main admin dashboard (`/admin`)
 - Click on "Course Management" or "Courses" in the sidebar
 
-### Step 2: Select a Specific Course
+### Step 2: Select a Course Row
 - Browse the list of courses
-- Click on the course name you want to analyze
-- This takes you to the course edit page
+- Use the course row for the course you want to analyze
 
-### Step 3: Access Analytics from Course Edit Page
-On the course edit page, you'll see:
-- A "View Analytics" button next to the "Add Quiz" button
-- Click this button to go directly to the quiz analytics page
+### Step 3: Access Analytics
+On the course row, you can:
+- Click **View Analytics** to go directly to `/admin/courses/[course-id]/quizzes`
+- Click **Add Quiz** to create a new quiz for the course
+- Click **Edit Course** to open the course edit page
 
 **Alternative route**: You can also navigate directly to:
 `/admin/courses/[course-id]/quizzes`
+
+### Step 4: Access Quiz Creation
+- Click **Add Quiz** from Course Management to open `/admin/courses/[course-id]/quizzes/new`
+- Or open the course edit page, scroll to the "Quizzes" section, and click **Add New Quiz**
 
 ## What Admins See in the Analytics Dashboard
 
@@ -57,11 +61,13 @@ On the course edit page, you'll see:
 
 ## Example Workflow
 
-1. **Admin clicks "View Analytics"** on a course edit page
-2. **Dashboard loads** showing all quiz attempts for that course
-3. **Admin filters** by a specific quiz or user if needed
-4. **Admin clicks "View Details"** on any attempt to see the full answer breakdown
-5. **Detailed view shows**:
+1. **Admin opens Course Management**
+2. **Admin clicks "Add Quiz"** to create a new quiz, or **View Analytics** to review attempts
+3. **If creating a quiz**, the admin completes the quiz form and saves it
+4. **If reviewing analytics**, the dashboard loads all quiz attempts for that course
+5. **Admin filters** by a specific quiz or user if needed
+6. **Admin clicks "View Details"** on any attempt to see the full answer breakdown
+7. **Detailed view shows**:
    - User's selected answers
    - Correct answers
    - Explanations for correct answers
@@ -90,4 +96,9 @@ On the course edit page, you'll see:
 - Randomization options for fairness
 - Pass percentage settings
 
-This implementation provides admins with a complete picture of student performance and the ability to control quiz behavior as requested.
+### Quiz Creation
+- Dedicated create page from Course Management
+- Inline create form from the course edit page
+- Quiz form actions are isolated so quiz creation does not submit the parent course edit form
+
+This implementation provides admins with a complete picture of student performance and the ability to create, manage, and control quiz behavior as requested.
