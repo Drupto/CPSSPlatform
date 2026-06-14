@@ -197,20 +197,18 @@ export default function EditCoursePage() {
         const block = contentBlocks[i];
         let contentUrl = block.url;
         
-        if ((block.type === "document" || block.type === "video") && block.file) {
-          try {
-            setUploadProgress(`Uploading ${block.type} for section ${i + 1}/${totalBlocks}...`);
-            contentUrl = await uploadCourseAsset(block.file, courseId as string);
-            console.log(`✓ Successfully uploaded ${block.type}:`, contentUrl);
-          } catch (uploadErr) {
-            const errorMsg = uploadErr instanceof Error ? uploadErr.message : "Unknown error";
-            console.error(`✗ Failed to upload ${block.type} for section ${i + 1}:`, errorMsg);
-            throw new Error(
-              `Failed to upload ${block.type} for section "${block.title}": ${errorMsg}. ` +
-              `Check browser console for more details.`
-            );
-          }
-        }
+if ((block.type === "document" || block.type === "video") && block.file) {
+           try {
+             setUploadProgress(`Uploading ${block.type} for section ${i + 1}/${totalBlocks}...`);
+             contentUrl = await uploadCourseAsset(block.file, courseId as string);
+           } catch (uploadErr) {
+             const errorMsg = uploadErr instanceof Error ? uploadErr.message : "Unknown error";
+             throw new Error(
+               `Failed to upload ${block.type} for section "${block.title}": ${errorMsg}. ` +
+               `Check browser console for more details.`
+             );
+           }
+         }
 
         if (block.isNew) {
           await addCourseContentItem(courseId as string, {
@@ -498,14 +496,14 @@ export default function EditCoursePage() {
                         <div className="flex flex-wrap gap-2">
                           <Button 
                             variant="outline" 
-                            onClick={() => router.push(`/admin/courses/${courseId}/quizzes/${quiz.id}`)}
-                          >
-                            View Analytics
-                          </Button>
-                          <Button 
-                            onClick={() => router.push(`/admin/courses/${courseId}/quizzes/new?quizId=${quiz.id}`)}
+                            onClick={() => router.push(`/admin/courses/${courseId}/quizzes/${quiz.id}/edit`)}
                           >
                             Edit Quiz
+                          </Button>
+                          <Button 
+                            onClick={() => router.push(`/admin/courses/${courseId}/quizzes`)}
+                          >
+                            View Analytics
                           </Button>
                         </div>
                       </div>

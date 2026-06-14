@@ -64,8 +64,8 @@ exports.onCourseDelete = functions.firestore
         // 4. Delete associated storage files
         console.log(`Deleting storage files for course: ${courseId}`);
         try {
-            const storage = admin.storage();
-            const bucket = storage.bucket();
+            // Use the storage bucket directly to delete files
+            const bucket = admin.storage().bucket();
             const courseFilesPrefix = `courses/${courseId}/`;
             // List all files in the course folder
             const [files] = await bucket.getFiles({
@@ -73,7 +73,7 @@ exports.onCourseDelete = functions.firestore
             });
             // Delete all files in the course folder
             if (files.length > 0) {
-                const deletePromises = files.map(file => file.delete());
+                const deletePromises = files.map((file) => file.delete());
                 await Promise.all(deletePromises);
                 console.log(`Deleted ${files.length} storage files`);
             }

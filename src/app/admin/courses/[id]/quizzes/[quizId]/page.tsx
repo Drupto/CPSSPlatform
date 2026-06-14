@@ -10,10 +10,9 @@ import {
   getCourseById,
   getUserProfile,
   isAdminProfile,
-  getCourseQuizAttempts,
+  getAllQuizAttemptsForCourse,
   getQuizById,
-  getUserProfile as getUserProfileFunc,
-  getQuizById as getQuizByIdFunc
+  getUserProfile as getUserProfileFunc
 } from "@/lib/course";
 import type { Course, QuizAttempt, Quiz, QuizQuestion } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
@@ -95,7 +94,7 @@ export default function QuizDetailedResultsPage() {
         setCourse(courseData);
         
         // Get the quiz details
-        const quizData = await getQuizByIdFunc(quizId as string);
+        const quizData = await getQuizById(quizId as string, courseId as string);
         if (!quizData) {
           setError("Quiz not found");
           setLoading(false);
@@ -104,8 +103,8 @@ export default function QuizDetailedResultsPage() {
         
         setQuiz(quizData);
         
-        // Get all quiz attempts for this quiz
-        const allAttempts = await getCourseQuizAttempts(currentUser.uid, courseId as string);
+        // Get all quiz attempts for this quiz (for admin - all students)
+        const allAttempts = await getAllQuizAttemptsForCourse(courseId as string);
         
         // Filter attempts for this specific quiz
         const quizAttempts = allAttempts.filter(attempt => attempt.quizId === quizId);

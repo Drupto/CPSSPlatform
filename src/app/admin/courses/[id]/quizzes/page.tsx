@@ -10,9 +10,9 @@ import {
   getCourseById,
   getUserProfile,
   isAdminProfile,
-  getCourseQuizAttempts,
+  getAllQuizAttemptsForCourse,
   getQuizById,
-  getUserProfile as getUserProfileFunc
+  getCourseQuizzes
 } from "@/lib/course";
 import type { Course, QuizAttempt, Quiz } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
@@ -78,7 +78,7 @@ export default function CourseQuizAnalyticsPage() {
         return;
       }
 
-      const profile = await getUserProfileFunc(currentUser.uid);
+      const profile = await getUserProfile(currentUser.uid);
       if (!isAdminProfile(profile)) {
         router.push("/");
         return;
@@ -103,14 +103,14 @@ export default function CourseQuizAnalyticsPage() {
         const courseQuizzes = await getCourseQuizzes(courseId as string);
         setQuizzes(courseQuizzes);
         
-        // Get all quiz attempts for this course
-        const allAttempts = await getCourseQuizAttempts(currentUser.uid, courseId as string);
+        // Get all quiz attempts for this course (for admin analytics - all students)
+        const allAttempts = await getAllQuizAttemptsForCourse(courseId as string);
         
         // Fetch user details for each attempt
         const attemptsWithUserDetails: UserQuizAttempt[] = await Promise.all(
           allAttempts.map(async (attempt) => {
-            const user = await getUserProfileFunc(attempt.userId);
-            const quiz = await getQuizById(attempt.quizId);
+            const user = await getUserProfile(attempt.userId);
+            const quiz = await getQuizById(attempt.quizId, courseId as string);
             
             return {
               ...attempt,
@@ -123,6 +123,13 @@ export default function CourseQuizAnalyticsPage() {
         
         setAttempts(attemptsWithUserDetails);
         setFilteredAttempts(attemptsWithUserDetails);
+        
+        // Extract unique users from attempts
+        const uniqueUsers = Array.from(
+          new Map(attemptsWithUserDetails.map(a => [a.userId, { id: a.userId, name: a.userName || "Unknown", email: a.userEmail || "" }]))
+        ).map(([_, user]) => user);
+        setUsers(uniqueUsers);
+        
         setLoading(false);
       } catch (err) {
         console.error("Error loading course data:", err);
@@ -148,12 +155,6 @@ export default function CourseQuizAnalyticsPage() {
     
     setFilteredAttempts(result);
   }, [selectedQuiz, selectedUser, attempts]);
-
-  const getCourseQuizzes = async (courseId: string): Promise<Quiz[]> => {
-    // This function should be imported from lib/course.ts
-    // For now, we'll use a placeholder implementation
-    return [];
-  };
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return "N/A";

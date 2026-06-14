@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getAllCourses, getUserProfile, isAdminProfile, deleteCourse } from "@/lib/course";
-import type { Course } from "@/lib/types";
+import { getAllCourses, getUserProfile, isAdminProfile, deleteCourse, getCourseQuizzes } from "@/lib/course";
+import type { Course, Quiz } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -26,6 +26,7 @@ import { Navbar } from "@/components/navbar";
 export default function AdminCoursesPage() {
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [courseQuizzes, setCourseQuizzes] = useState<Record<string, Quiz[]>>({});
   const [loading, setLoading] = useState(true);
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -45,6 +46,14 @@ export default function AdminCoursesPage() {
 
       const loaded = await getAllCourses();
       setCourses(loaded);
+      
+      // Fetch quizzes for each course
+      const quizzesMap: Record<string, Quiz[]> = {};
+      await Promise.all(loaded.map(async (course) => {
+        const quizzes = await getCourseQuizzes(course.id);
+        quizzesMap[course.id] = quizzes;
+      }));
+      setCourseQuizzes(quizzesMap);
       setLoading(false);
     });
 
@@ -74,26 +83,37 @@ export default function AdminCoursesPage() {
             </div>
           ) : (
             <div className="grid gap-4">
-               {courses.map((course) => (
-                 <div key={course.id} className="rounded-3xl border border-slate-200 bg-white p-6">
-                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              {courses.map((course) => {
+                const hasQuizzes = courseQuizzes[course.id]?.length > 0;
+                const firstQuizId = courseQuizzes[course.id]?.[0]?.id || '';
+                return (
+                  <div key={course.id} className="rounded-3xl border border-slate-200 bg-white p-6">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <h2 className="text-xl font-semibold text-slate-900">{course.title}</h2>
                         <p className="text-slate-500">ID: {course.id}</p>
                         <p className="text-slate-500">Slug: {course.slug}</p>
                       </div>
-                     <div className="flex flex-wrap gap-2 text-sm text-slate-500">
-                       <span className={course.published ? "rounded-full bg-emerald-100 px-3 py-1 text-emerald-700" : "rounded-full bg-slate-100 px-3 py-1 text-slate-600"}>
-                         {course.published ? "Published" : "Draft"}
-                       </span>
-                       <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">₹{course.price}</span>
-                     </div>
-                   </div>
+                      <div className="flex flex-wrap gap-2 text-sm text-slate-500">
+                        <span className={course.published ? "rounded-full bg-emerald-100 px-3 py-1 text-emerald-700" : "rounded-full bg-slate-100 px-3 py-1 text-slate-600"}>
+                          {course.published ? "Published" : "Draft"}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">₹{course.price}</span>
+                      </div>
+                    </div>
                     <div className="mt-4 flex items-center gap-3">
                       <Link href={`/courses/${course.slug}`} className="text-primary hover:underline text-sm">View Course</Link>
                       <Link href={`/admin/courses/${course.id}/edit`} className="text-slate-600 hover:text-slate-900 text-sm">Edit Course</Link>
                       <Link href={`/admin/courses/${course.id}/quizzes`} className="text-slate-600 hover:text-slate-900 text-sm">View Analytics</Link>
-                      <Link href={`/admin/courses/${course.id}/quizzes/new`} className="text-slate-600 hover:text-slate-900 text-sm">Add/Edit Quiz</Link>
+                      <Link href={`/admin/courses/${course.id}/quizzes/new`} className="text-slate-600 hover:text-slate-900 text-sm">Add Quiz</Link>
+                      <Link 
+                        href={hasQuizzes ? `/admin/courses/${course.id}/quizzes/${firstQuizId}/edit` : `/admin/courses/${course.id}/quizzes/new`} 
+                        className={`text-sm ${hasQuizzes ? "text-slate-600 hover:text-slate-900" : "text-slate-400 pointer-events-none"}`}
+                        aria-disabled={!hasQuizzes}
+                        tabIndex={hasQuizzes ? 0 : -1}
+                      >
+                        Edit Quiz
+                      </Link>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <button
@@ -134,8 +154,9 @@ export default function AdminCoursesPage() {
                         </AlertDialogContent>
                       </AlertDialog>
                     </div>
-                 </div>
-               ))}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

@@ -101,28 +101,14 @@ export async function getCourseContent(courseId: string): Promise<CourseContentI
 
 export async function uploadCourseAsset(file: File, courseId: string): Promise<string> {
   try {
-    const fileName = file.name;
-    const fileSize = file.size;
-    const storageRef = ref(storage, `courses/${courseId}/${Date.now()}-${fileName}`);
-    
-    console.log(`Uploading file: ${fileName} (${fileSize} bytes) to courses/${courseId}/`);
+    const storageRef = ref(storage, `courses/${courseId}/${Date.now()}-${file.name}`);
     
     const uploadTask = await uploadBytes(storageRef, file);
-    console.log(`Upload complete for ${fileName}, retrieving download URL...`);
-    
     const downloadUrl = await getDownloadURL(uploadTask.ref);
-    console.log(`Download URL retrieved: ${downloadUrl}`);
     
     return downloadUrl;
   } catch (error) {
     const err = error as any;
-    console.error("Upload error details:", {
-      code: err.code,
-      message: err.message,
-      serverResponse: err.serverResponse,
-    });
-    
-    // Provide more helpful error messages
     if (err.code === "storage/unauthorized") {
       throw new Error(
         "Permission denied. Make sure you have admin role in your profile and Firebase Storage rules allow write access."
@@ -393,8 +379,8 @@ export async function getQuizById(quizId: string, courseId?: string): Promise<Qu
 /**
  * Updates a quiz
  */
-export async function updateQuiz(quizId: string, updates: Partial<Quiz>): Promise<void> {
-  const quizRef = doc(db, "courses", updates.courseId!, "quizzes", quizId);
+export async function updateQuiz(courseId: string, quizId: string, updates: Partial<Quiz>): Promise<void> {
+  const quizRef = doc(db, "courses", courseId, "quizzes", quizId);
   await setDoc(quizRef, {
     ...updates,
     timeLimit: updates.timeLimit === null ? undefined : updates.timeLimit,
@@ -447,6 +433,19 @@ export async function getCourseQuizAttempts(userId: string, courseId: string): P
   const attemptsRef = collection(db, "quizAttempts");
   const attemptsQuery = query(attemptsRef, 
     where("userId", "==", userId),
+    where("courseId", "==", courseId),
+    orderBy("completedAt", "desc")
+  );
+  const snapshot = await getDocs(attemptsQuery);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as QuizAttempt));
+}
+
+/**
+ * Gets all quiz attempts for a course (for admin analytics)
+ */
+export async function getAllQuizAttemptsForCourse(courseId: string): Promise<QuizAttempt[]> {
+  const attemptsRef = collection(db, "quizAttempts");
+  const attemptsQuery = query(attemptsRef, 
     where("courseId", "==", courseId),
     orderBy("completedAt", "desc")
   );
