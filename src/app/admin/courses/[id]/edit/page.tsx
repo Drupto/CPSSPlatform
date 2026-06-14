@@ -17,6 +17,7 @@ import {
   uploadCourseAsset,
   isAdminProfile,
   getCourseQuizzes,
+  createQuiz,
 } from "@/lib/course";
 import type { Course, CourseContentItem, Quiz } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Navbar } from "@/components/navbar";
+import { QuizForm } from "@/components/admin/quizzes/QuizForm";
 
 interface ContentBlockForm {
   id: string;
@@ -53,6 +55,8 @@ export default function EditCoursePage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [uploadProgress, setUploadProgress] = useState("");
+  const [showQuizForm, setShowQuizForm] = useState(false);
+  const [isSavingQuiz, setIsSavingQuiz] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser: User | null) => {
@@ -240,6 +244,22 @@ if ((block.type === "document" || block.type === "video") && block.file) {
       setUploadProgress("");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveQuiz = async (quiz: Partial<Quiz>) => {
+    if (!courseId) return;
+    setIsSavingQuiz(true);
+    try {
+      await createQuiz(courseId as string, quiz);
+      const updatedQuizzes = await getCourseQuizzes(courseId as string);
+      setQuizzes(updatedQuizzes);
+      setShowQuizForm(false);
+    } catch (err) {
+      console.error("Error creating quiz:", err);
+      alert("Failed to create quiz. Please try again.");
+    } finally {
+      setIsSavingQuiz(false);
     }
   };
 
@@ -454,64 +474,96 @@ if ((block.type === "document" || block.type === "video") && block.file) {
               ))}
             </div>
 
-            {/* Quizzes Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Quizzes</h2>
-                <Button 
-                  variant="outline" 
-                  onClick={() => router.push(`/admin/courses/${courseId}/quizzes/new`)}
-                >
-                  Add New Quiz
-                </Button>
-              </div>
+             {/* Quizzes Section */}
+             <div className="space-y-4">
+               <div className="flex items-center justify-between">
+                 <h2 className="text-xl font-semibold">Quizzes</h2>
+                 <Button 
+                   variant="outline" 
+                   onClick={() => setShowQuizForm(true)}
+                 >
+                   Add New Quiz
+                 </Button>
+               </div>
 
-              {quizzes.length === 0 ? (
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-center">
-                  <p className="text-slate-500">No quizzes found for this course.</p>
-                  <Button 
-                    className="mt-4" 
-                    onClick={() => router.push(`/admin/courses/${courseId}/quizzes/new`)}
-                  >
-                    Create First Quiz
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  {quizzes.map((quiz) => (
-                    <div key={quiz.id} className="rounded-3xl border border-slate-200 bg-white p-6">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <h3 className="text-lg font-semibold text-slate-900">{quiz.title}</h3>
-                          <p className="text-slate-500">{quiz.description}</p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700 text-sm">
-                              {quiz.questions.length} questions
-                            </span>
-                            <span className="rounded-full bg-green-100 px-3 py-1 text-green-700 text-sm">
-                              Pass: {quiz.passPercentage}%
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Button 
-                            variant="outline" 
-                            onClick={() => router.push(`/admin/courses/${courseId}/quizzes/${quiz.id}/edit`)}
-                          >
-                            Edit Quiz
-                          </Button>
-                          <Button 
-                            onClick={() => router.push(`/admin/courses/${courseId}/quizzes`)}
-                          >
-                            View Analytics
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+               {quizzes.length === 0 ? (
+                 <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-center">
+                   <p className="text-slate-500">No quizzes found for this course.</p>
+                   <Button 
+                     className="mt-4" 
+                     onClick={() => setShowQuizForm(true)}
+                   >
+                     Create First Quiz
+                   </Button>
+                 </div>
+               ) : (
+                 <div className="grid gap-4">
+                   {quizzes.map((quiz) => (
+                     <div key={quiz.id} className="rounded-3xl border border-slate-200 bg-white p-6">
+                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                         <div>
+                           <h3 className="text-lg font-semibold text-slate-900">{quiz.title}</h3>
+                           <p className="text-slate-500">{quiz.description}</p>
+                           <div className="mt-2 flex flex-wrap gap-2">
+                             <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700 text-sm">
+                               {quiz.questions.length} questions
+                             </span>
+                             <span className="rounded-full bg-green-100 px-3 py-1 text-green-700 text-sm">
+                               Pass: {quiz.passPercentage}%
+                             </span>
+                           </div>
+                         </div>
+                         <div className="flex flex-wrap gap-2">
+                           <Button 
+                             variant="outline" 
+                             onClick={() => router.push(`/admin/courses/${courseId}/quizzes/${quiz.id}/edit`)}
+                           >
+                             Edit Quiz
+                           </Button>
+                           <Button 
+                             onClick={() => router.push(`/admin/courses/${courseId}/quizzes`)}
+                           >
+                             View Analytics
+                           </Button>
+                         </div>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               )}
+             </div>
+
+             {/* Quiz Creation Modal */}
+             {showQuizForm && (
+               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                 <div className="bg-white rounded-3xl border border-slate-200 shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+                   <div className="flex items-center justify-between mb-4">
+                     <h2 className="text-2xl font-bold text-slate-900">Add Quiz</h2>
+                     <Button 
+                       variant="outline" 
+                       onClick={() => setShowQuizForm(false)}
+                     >
+                       ×
+                     </Button>
+                   </div>
+                   <p className="text-slate-600 mb-4">Create a new quiz for {course?.title}</p>
+                   <QuizForm
+                     mode="create"
+                     courseId={courseId as string}
+                     onSave={handleSaveQuiz}
+                     isSaving={isSavingQuiz}
+                   />
+                   <div className="flex gap-3 mt-6">
+                     <Button 
+                       variant="outline" 
+                       onClick={() => setShowQuizForm(false)}
+                     >
+                       Cancel
+                     </Button>
+                   </div>
+                 </div>
+               </div>
+             )}
 
             <div className="flex gap-3">
               <Button type="submit" disabled={isSaving}>
