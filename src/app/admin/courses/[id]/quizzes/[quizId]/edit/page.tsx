@@ -60,10 +60,8 @@ export default function EditQuizPage() {
 
         setCourse(courseData);
         
-        const quizzes = await getCourseQuizzes(courseId as string);
-        setExistingQuizzes(quizzes);
-
         if (!quizId) {
+          setError("Quiz ID not found");
           setLoading(false);
           return;
         }
@@ -74,8 +72,12 @@ export default function EditQuizPage() {
           setLoading(false);
           return;
         }
-
+        
         setQuiz(quizData);
+
+        const quizzes = await getCourseQuizzes(courseId as string);
+        setExistingQuizzes(quizzes.filter(q => q.id !== quizId));
+        
         setLoading(false);
       } catch (err) {
         console.error("Error loading course:", err);

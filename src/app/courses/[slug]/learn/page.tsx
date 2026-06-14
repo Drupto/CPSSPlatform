@@ -386,7 +386,7 @@ const QuizModal = ({
                   disabled={answers.some(a => a === -1)}
                   className="flex-1"
                 >
-                  {submitted ? 'Submit' : 'Finish Quiz'}
+                  Submit
                 </Button>
               </div>
             </>

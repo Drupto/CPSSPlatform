@@ -101,10 +101,6 @@ export default function AdminPage() {
                 <h2 className="text-xl font-semibold mb-2">Resource Management</h2>
                 <p className="text-slate-600">Manage study materials and additional resources.</p>
               </Link>
-              <Link href="/admin/courses" className="rounded-2xl border border-slate-200 bg-slate-50 p-6 hover:border-primary transition">
-                <h2 className="text-xl font-semibold mb-2">Quiz Analytics</h2>
-                <p className="text-slate-600">View quiz results and student performance.</p>
-              </Link>
             </div>
 
           <div className="mt-10">

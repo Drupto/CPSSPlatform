@@ -64,6 +64,7 @@ export default function QuizDetailedResultsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedUser, setSelectedUser] = useState<string>("all");
+  const [selectedAttemptId, setSelectedAttemptId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser: User | null) => {
@@ -391,18 +392,15 @@ export default function QuizDetailedResultsPage() {
                       </TableCell>
                       <TableCell>{getPassStatus(attempt.passed)}</TableCell>
                       <TableCell>{formatDate(attempt.completedAt)}</TableCell>
-                      <TableCell>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            // In a real implementation, this would show the detailed view
-                            alert(`Showing detailed results for ${attempt.userName}`);
-                          }}
-                        >
-                          View Details
-                        </Button>
-                      </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setSelectedAttemptId(attempt.id)}
+                          >
+                            View Details
+                          </Button>
+                        </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -412,14 +410,16 @@ export default function QuizDetailedResultsPage() {
         </Card>
 
         {/* Detailed Results Section */}
-        {attempts.length > 0 && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>Detailed Results</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {attempts.slice(0, 1).map((attempt) => (
+        {selectedAttemptId && (() => {
+          const attempt = attempts.find(a => a.id === selectedAttemptId);
+          if (!attempt) return null;
+          return (
+            <Card className="mt-8" id="selected-attempt">
+              <CardHeader>
+                <CardTitle>Detailed Results: {attempt.userName}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
                   <div key={attempt.id} className="border rounded-lg p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div>
@@ -443,11 +443,11 @@ export default function QuizDetailedResultsPage() {
                       {renderQuestionAnswers(attempt)}
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
       </div>
     </main>
   );

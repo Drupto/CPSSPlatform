@@ -161,6 +161,27 @@ export default function CourseQuizAnalyticsPage() {
     return new Date(timestamp.toDate()).toLocaleDateString();
   };
 
+  const exportToCSV = () => {
+    if (filteredAttempts.length === 0) return;
+    const headers = ["User", "Email", "Quiz", "Score", "Passed", "Completed At"];
+    const rows = filteredAttempts.map(a => [
+      a.userName,
+      a.userEmail,
+      a.quizTitle,
+      `${a.score}%`,
+      a.passed ? "Yes" : "No",
+      new Date(a.completedAt).toLocaleString()
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `quiz-attempts-${course?.title || 'export'}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 70) return "bg-green-100 text-green-800";
     if (score >= 50) return "bg-yellow-100 text-yellow-800";
@@ -324,7 +345,7 @@ export default function CourseQuizAnalyticsPage() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Quiz Attempts</span>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={exportToCSV}>
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
               </Button>
