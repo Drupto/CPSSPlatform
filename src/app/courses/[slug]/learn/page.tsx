@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getCourseBySlug, getCourseContent, getEnrollment, getCourseProgress, markContentCompleted, markContentIncomplete, getCourseQuizzes, createQuizAttempt, getCourseQuizAttempts } from "@/lib/course";
+import { getCourseBySlug, getCourseContent, getEnrollment, getCourseProgress, markContentCompleted, markContentIncomplete, getCourseQuizzes, createQuizAttempt, getCourseQuizAttempts, getYouTubeEmbedUrl } from "@/lib/course";
 import { isProfileComplete } from "@/lib/profile-check";
 import type { CourseContentItem, Course } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
@@ -468,10 +468,11 @@ const QuizModal = ({
               {currentItem.type === "video" && currentItem.url && (
                 <div className="mt-4">
                   <iframe
-                    src={currentItem.url}
+                    src={getYouTubeEmbedUrl(currentItem.url)}
                     title={currentItem.title}
                     className="h-80 w-full rounded-3xl border border-slate-200"
                     allowFullScreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   />
                 </div>
               )}

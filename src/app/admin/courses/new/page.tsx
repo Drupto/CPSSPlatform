@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { createCourse, getUserProfile, addCourseContentItem, uploadCourseAsset, isAdminProfile } from "@/lib/course";
+import { addCourseContentItem, createCourse, getYouTubeEmbedUrl, getUserProfile, uploadCourseAsset, isAdminProfile } from "@/lib/course";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -153,7 +153,7 @@ export default function NewCoursePage() {
           type: block.type,
           title: block.title.trim() || "Untitled section",
           body: block.body.trim(),
-          url: contentUrl.trim(),
+          url: (block.type === "video" ? getYouTubeEmbedUrl(contentUrl) : contentUrl).trim(),
           order: block.order,
         });
       }
