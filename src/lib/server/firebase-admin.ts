@@ -8,6 +8,7 @@ let app: App;
 
 function getAdminConfig() {
   const serviceAccountJson = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT;
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
   if (serviceAccountJson) {
     return {
@@ -17,7 +18,6 @@ function getAdminConfig() {
 
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
   if (privateKey && clientEmail) {
     return {
@@ -29,7 +29,13 @@ function getAdminConfig() {
     };
   }
 
-  return undefined;
+  if (projectId) {
+    return { projectId };
+  }
+
+  throw new Error(
+    "Firebase project ID not configured. Set NEXT_PUBLIC_FIREBASE_PROJECT_ID."
+  );
 }
 
 export function getAdminApp() {
