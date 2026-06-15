@@ -55,6 +55,9 @@ export interface QuizAttempt {
   score: number; // Percentage score
   passed: boolean;
   completedAt: Timestamp | null;
+  startedAt?: Timestamp | null;
+  expiresAt?: Timestamp | null;
+  status?: "pending" | "completed" | "expired";
 }
 
 export interface CourseContentItem {

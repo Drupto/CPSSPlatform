@@ -409,22 +409,6 @@ export async function deleteQuiz(quizId: string, courseId: string): Promise<void
 }
 
 /**
- * Creates a quiz attempt
- */
-export async function createQuizAttempt(attemptData: Partial<QuizAttempt>): Promise<string> {
-  const attemptRef = await addDoc(collection(db, "quizAttempts"), {
-    userId: attemptData.userId,
-    quizId: attemptData.quizId,
-    courseId: attemptData.courseId,
-    answers: attemptData.answers ?? [],
-    score: attemptData.score ?? 0,
-    passed: attemptData.passed ?? false,
-    completedAt: serverTimestamp(),
-  });
-  return attemptRef.id;
-}
-
-/**
  * Gets all quiz attempts for a user and quiz
  */
 export async function getUserQuizAttempts(userId: string, quizId: string): Promise<QuizAttempt[]> {

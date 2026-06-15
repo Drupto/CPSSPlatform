@@ -2,17 +2,32 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { getIdToken, onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getCourseBySlug, getCourseContent, getEnrollment, getCourseProgress, markContentCompleted, markContentIncomplete, getCourseQuizzes, createQuizAttempt, getCourseQuizAttempts, getYouTubeEmbedUrl } from "@/lib/course";
+import { getCourseBySlug, getCourseContent, getEnrollment, getCourseProgress, markContentCompleted, markContentIncomplete, getCourseQuizzes, getCourseQuizAttempts, getYouTubeEmbedUrl } from "@/lib/course";
+import { startQuizAttemptAction, submitQuizAttemptAction } from "./actions";
 import { isProfileComplete } from "@/lib/profile-check";
 import type { CourseContentItem, Course } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+
+const getQuizTimeLimitSeconds = (quiz: any) => {
+  if (quiz.timeLimit === undefined || quiz.timeLimit === null) {
+    return null;
+  }
+
+  return Math.max(0, Number(quiz.timeLimit)) * 60;
+};
+
+const formatQuizTime = (seconds: number) => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+};
 
 export default function CourseLearnPage() {
   const { slug } = useParams();
@@ -28,10 +43,16 @@ export default function CourseLearnPage() {
   const [quizAttempts, setQuizAttempts] = useState<any[]>([]); // Will be QuizAttempt type
   const [showQuiz, setShowQuiz] = useState(false);
   const [currentQuiz, setCurrentQuiz] = useState<any>(null);
+  const [currentQuizSessionId, setCurrentQuizSessionId] = useState<string | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState<number | null>(null);
   const [quizPassed, setQuizPassed] = useState<boolean | null>(null);
+  const [quizTimeRemaining, setQuizTimeRemaining] = useState<number | null>(null);
+  const [quizDeadline, setQuizDeadline] = useState<number | null>(null);
+  const [currentQuizAttemptsUsed, setCurrentQuizAttemptsUsed] = useState(0);
+  const [isSubmittingQuiz, setIsSubmittingQuiz] = useState(false);
+  const autoSubmittedQuizRef = useRef(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -137,13 +158,35 @@ export default function CourseLearnPage() {
   };
 
   // Quiz functions
-  const startQuiz = (quiz: any) => {
-    setCurrentQuiz(quiz);
-    setShowQuiz(true);
-    setQuizAnswers(Array(quiz.questions.length).fill(-1)); // Initialize with -1 (unanswered)
-    setQuizSubmitted(false);
-    setQuizScore(null);
-    setQuizPassed(null);
+  const startQuiz = async (quiz: any) => {
+    if (!user || !course) return;
+
+    const maxAttempts = quiz.maxAttempts ?? 1;
+    const attemptsForQuiz = quizAttempts.filter(attempt => attempt.quizId === quiz.id);
+    const timeLimitSeconds = getQuizTimeLimitSeconds(quiz);
+
+    if (attemptsForQuiz.length >= maxAttempts) {
+      return;
+    }
+
+    try {
+      const idToken = await getIdToken(user);
+      const session = await startQuizAttemptAction(course.id, quiz.id, idToken);
+
+      setCurrentQuiz(quiz);
+      setCurrentQuizSessionId(session.sessionId);
+      setShowQuiz(true);
+      setQuizAnswers(Array(quiz.questions.length).fill(-1));
+      setQuizSubmitted(false);
+      setQuizScore(null);
+      setQuizPassed(null);
+      setQuizTimeRemaining(timeLimitSeconds);
+      setQuizDeadline(timeLimitSeconds === null ? null : Date.now() + timeLimitSeconds * 1000);
+      setCurrentQuizAttemptsUsed(session.attemptsUsed);
+      autoSubmittedQuizRef.current = false;
+    } catch (error) {
+      console.error("Error starting quiz attempt:", error);
+    }
   };
 
   const handleQuizAnswerSelect = (questionIndex: number, answerIndex: number) => {
@@ -155,49 +198,94 @@ export default function CourseLearnPage() {
   };
 
   const submitQuiz = async () => {
-    if (!user || !currentQuiz || quizSubmitted) return;
+    if (!user || !currentQuiz || !currentQuizSessionId || quizSubmitted || isSubmittingQuiz) return;
     
-    // Calculate score
-    let correctCount = 0;
-    currentQuiz.questions.forEach((question: any, index: number) => {
-      if (quizAnswers[index] === question.correctAnswerIndex) {
-        correctCount++;
-      }
-    });
+    setIsSubmittingQuiz(true);
     
-    const score = Math.round((correctCount / currentQuiz.questions.length) * 100);
-    const passed = score >= currentQuiz.passPercentage;
-    
-    setQuizScore(score);
-    setQuizPassed(passed);
-    setQuizSubmitted(true);
-    
-    // Save attempt to database
     try {
-      await createQuizAttempt({
+      const idToken = await getIdToken(user);
+      const result = await submitQuizAttemptAction(currentQuizSessionId, [...quizAnswers], idToken);
+      
+      setQuizScore(result.score);
+      setQuizPassed(result.passed);
+      setQuizSubmitted(true);
+      setCurrentQuizAttemptsUsed(result.attemptsUsed);
+      
+      setQuizAttempts(prev => [{
+        id: result.attemptId,
         userId: user.uid,
         quizId: currentQuiz.id,
         courseId: course!.id,
-        answers: quizAnswers,
-        score,
-        passed
-      });
+        answers: [...quizAnswers],
+        score: result.score,
+        passed: result.passed,
+        completedAt: null
+      }, ...prev.filter(attempt => attempt.quizId !== currentQuiz.id)]);
     } catch (error) {
-      console.error("Error saving quiz attempt:", error);
+      console.error("Error submitting quiz attempt:", error);
+    } finally {
+      setIsSubmittingQuiz(false);
+      if (!quizSubmitted) {
+        autoSubmittedQuizRef.current = false;
+      }
     }
   };
 
-  const restartQuiz = () => {
-    setQuizAnswers(Array(currentQuiz.questions.length).fill(-1));
-    setQuizSubmitted(false);
-    setQuizScore(null);
-    setQuizPassed(null);
+  const restartQuiz = async () => {
+    if (!currentQuiz || !course || !user) return;
+
+    const attemptsForQuiz = quizAttempts.filter(attempt => attempt.quizId === currentQuiz.id).length;
+    const timeLimitSeconds = getQuizTimeLimitSeconds(currentQuiz);
+
+    try {
+      const idToken = await getIdToken(user);
+      const session = await startQuizAttemptAction(course.id, currentQuiz.id, idToken);
+
+      setCurrentQuizSessionId(session.sessionId);
+      setQuizAnswers(Array(currentQuiz.questions.length).fill(-1));
+      setQuizSubmitted(false);
+      setQuizScore(null);
+      setQuizPassed(null);
+      setQuizTimeRemaining(timeLimitSeconds);
+      setQuizDeadline(timeLimitSeconds === null ? null : Date.now() + timeLimitSeconds * 1000);
+      setCurrentQuizAttemptsUsed(session.attemptsUsed);
+      autoSubmittedQuizRef.current = false;
+    } catch (error) {
+      console.error("Error restarting quiz attempt:", error);
+    }
   };
 
   const closeQuiz = () => {
     setShowQuiz(false);
     setCurrentQuiz(null);
+    setCurrentQuizSessionId(null);
+    setQuizTimeRemaining(null);
+    setQuizDeadline(null);
+    setCurrentQuizAttemptsUsed(0);
+    autoSubmittedQuizRef.current = false;
   };
+
+  useEffect(() => {
+    if (!showQuiz || !currentQuiz || quizSubmitted || quizDeadline === null) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((quizDeadline - Date.now()) / 1000));
+      setQuizTimeRemaining((current) => current === remaining ? current : remaining);
+
+      if (remaining <= 1 && !quizSubmitted && !autoSubmittedQuizRef.current) {
+        autoSubmittedQuizRef.current = true;
+        submitQuiz().finally(() => {
+          if (!quizSubmitted) {
+            autoSubmittedQuizRef.current = false;
+          }
+        });
+      }
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [showQuiz, currentQuiz?.id, quizSubmitted, quizDeadline, submitQuiz]);
 
   if (loading) {
     return (
@@ -240,19 +328,27 @@ const QuizModal = ({
   answers, 
   onAnswerSelect, 
   onSubmit, 
+  onRestart,
   onClose, 
   submitted, 
   score, 
-  passed 
+  passed,
+  canRetake,
+  timeRemaining,
+  isSubmitting
 }: { 
   quiz: any; 
   answers: number[]; 
   onAnswerSelect: (questionIndex: number, answerIndex: number) => void; 
   onSubmit: () => void; 
+  onRestart: () => void;
   onClose: () => void; 
   submitted: boolean; 
   score: number | null; 
-  passed: boolean | null; 
+  passed: boolean | null;
+  canRetake: boolean;
+  timeRemaining: number | null;
+  isSubmitting: boolean;
 }) => {
   if (!quiz) return null;
 
@@ -269,6 +365,17 @@ const QuizModal = ({
               ✕
             </button>
           </div>
+
+          {timeRemaining !== null ? (
+            <div className={`mb-4 rounded-2xl border p-4 text-center ${
+              timeRemaining !== null && timeRemaining <= 60
+                ? "border-red-200 bg-red-50 text-red-700"
+                : "border-slate-200 bg-slate-50 text-slate-700"
+            }`}>
+              <div className="text-sm font-medium">Time remaining</div>
+              <div className="text-3xl font-bold">{formatQuizTime(timeRemaining ?? 0)}</div>
+            </div>
+          ) : null}
           
           {score !== null && passed !== null ? (
             <div className="mb-6">
@@ -327,12 +434,21 @@ const QuizModal = ({
               </div>
               
               <div className="flex gap-3 mt-6">
-                <Button 
-                  onClick={onSubmit} 
-                  className="flex-1"
-                >
-                  Retake Quiz
-                </Button>
+                {canRetake ? (
+                  <Button 
+                    onClick={onRestart} 
+                    className="flex-1"
+                  >
+                    Retake Quiz
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={onClose} 
+                    className="flex-1"
+                  >
+                    Close
+                  </Button>
+                )}
               </div>
             </div>
           ) : (
@@ -383,10 +499,10 @@ const QuizModal = ({
                 </Button>
                 <Button 
                   onClick={onSubmit} 
-                  disabled={answers.some(a => a === -1)}
+                  disabled={isSubmitting || answers.some(a => a === -1)}
                   className="flex-1"
                 >
-                  Submit
+                  {isSubmitting ? "Submitting..." : "Submit"}
                 </Button>
               </div>
             </>
@@ -544,17 +660,23 @@ const QuizModal = ({
                 
                 {/* Quiz buttons */}
                 {quizzes.map((quiz, quizIdx) => {
-                  const quizAttempt = quizAttempts.find(attempt => attempt.quizId === quiz.id);
+                  const quizAttemptsForQuiz = quizAttempts.filter(attempt => attempt.quizId === quiz.id);
+                  const quizAttempt = quizAttemptsForQuiz[0];
                   const passed = quizAttempt ? quizAttempt.passed : null;
+                  const maxAttempts = quiz.maxAttempts ?? 1;
+                  const canStartQuiz = quizAttemptsForQuiz.length < maxAttempts;
                   
                   return (
                     <li key={`quiz-${quiz.id}`}>
                       <button
                         onClick={() => startQuiz(quiz)}
+                        disabled={!canStartQuiz}
                         className={`w-full text-left text-sm py-1.5 px-3 rounded-lg transition ${
-                          passed 
-                            ? "bg-emerald-100 text-emerald-700" 
-                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          !canStartQuiz
+                            ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                            : passed 
+                              ? "bg-emerald-100 text-emerald-700" 
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         }`}
                       >
                         <span className="flex items-center gap-2">
@@ -569,6 +691,11 @@ const QuizModal = ({
                           {passed && (
                             <span className="ml-auto text-xs">
                               {quizAttempt?.score}% passed
+                            </span>
+                          )}
+                          {!passed && !canStartQuiz && (
+                            <span className="ml-auto text-xs">
+                              Attempts used
                             </span>
                           )}
                         </span>
@@ -601,10 +728,14 @@ const QuizModal = ({
           answers={quizAnswers}
           onAnswerSelect={handleQuizAnswerSelect}
           onSubmit={submitQuiz}
+          onRestart={restartQuiz}
           onClose={closeQuiz}
           submitted={quizSubmitted}
           score={quizScore}
           passed={quizPassed}
+          canRetake={currentQuiz ? currentQuizAttemptsUsed < (currentQuiz.maxAttempts ?? 1) : false}
+          timeRemaining={quizTimeRemaining}
+          isSubmitting={isSubmittingQuiz}
         />
       )}
     </main>

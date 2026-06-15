@@ -29,29 +29,6 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
-    function isValidQuizAttemptData(data) {
-      return data is map
-        && data.userId is string
-        && data.quizId is string
-        && data.courseId is string
-        && data.answers is list
-        && data.answers.size() <= 100
-        && data.score is int
-        && data.score >= 0
-        && data.score <= 100
-        && data.passed is bool
-        && data.completedAt is timestamp;
-    }
-
-    function isValidQuizAttemptCreate() {
-      return request.auth.uid == request.resource.data.userId
-        && isValidQuizAttemptData(request.resource.data)
-        && exists(/databases/$(database)/documents/courses/$(request.resource.data.courseId))
-        && get(/databases/$(database)/documents/courses/$(request.resource.data.courseId)).data.published == true
-        && exists(/databases/$(database)/documents/courses/$(request.resource.data.courseId)/quizzes/$(request.resource.data.quizId))
-        && get(/databases/$(database)/documents/courses/$(request.resource.data.courseId)/quizzes/$(request.resource.data.quizId)).data.questions.size() == request.resource.data.answers.size();
-    }
-
     // Allow authenticated users to read/write their own user profile
     match /users/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
@@ -117,13 +94,22 @@ service cloud.firestore {
       allow delete: if request.auth != null && isAdmin();
     }
 
-    // Allow students to create and read their own quiz attempts; admins can read/manage all attempts
+    // Quiz attempts are written by server-side quiz actions only.
     match /quizAttempts/{attemptId} {
       allow read: if request.auth != null && (
         request.auth.uid == resource.data.userId || isAdmin()
       );
-      allow create: if request.auth != null
-        && isValidQuizAttemptCreate();
+      allow create: if false;
+      allow update: if request.auth != null && isAdmin();
+      allow delete: if request.auth != null && isAdmin();
+    }
+
+    // Quiz sessions are created and completed by server-side quiz actions only.
+    match /quizSessions/{sessionId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId || isAdmin()
+      );
+      allow create: if false;
       allow update: if request.auth != null && isAdmin();
       allow delete: if request.auth != null && isAdmin();
     }
