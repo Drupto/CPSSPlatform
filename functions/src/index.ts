@@ -20,13 +20,6 @@ export const onCourseDelete = functions.firestore
     try {
       console.log(`Starting cleanup for course: ${courseId}`);
       
-      // Get the course data to check if it exists
-      const courseSnapshot = await admin.firestore().doc(`courses/${courseId}`).get();
-      if (!courseSnapshot.exists) {
-        console.log(`Course ${courseId} already deleted, skipping cleanup`);
-        return;
-      }
-      
       // 1. Delete all quizzes from the quizzes subcollection
       console.log(`Deleting quizzes for course: ${courseId}`);
       const quizzesRef = admin.firestore().collection(`courses/${courseId}/quizzes`);
