@@ -52,6 +52,7 @@ export default function CourseLearnPage() {
   const [quizDeadline, setQuizDeadline] = useState<number | null>(null);
   const [currentQuizAttemptsUsed, setCurrentQuizAttemptsUsed] = useState(0);
   const [isSubmittingQuiz, setIsSubmittingQuiz] = useState(false);
+  const [isQuizTimerActive, setIsQuizTimerActive] = useState(false);
   const autoSubmittedQuizRef = useRef(false);
 
   useEffect(() => {
@@ -183,6 +184,7 @@ export default function CourseLearnPage() {
       setQuizTimeRemaining(timeLimitSeconds);
       setQuizDeadline(timeLimitSeconds === null ? null : Date.now() + timeLimitSeconds * 1000);
       setCurrentQuizAttemptsUsed(session.attemptsUsed);
+      setIsQuizTimerActive(true);
       autoSubmittedQuizRef.current = false;
     } catch (error) {
       console.error("Error starting quiz attempt:", error);
@@ -210,6 +212,7 @@ export default function CourseLearnPage() {
       setQuizPassed(result.passed);
       setQuizSubmitted(true);
       setCurrentQuizAttemptsUsed(result.attemptsUsed);
+      setIsQuizTimerActive(false);
       
       setQuizAttempts(prev => [{
         id: result.attemptId,
@@ -225,9 +228,6 @@ export default function CourseLearnPage() {
       console.error("Error submitting quiz attempt:", error);
     } finally {
       setIsSubmittingQuiz(false);
-      if (!quizSubmitted) {
-        autoSubmittedQuizRef.current = false;
-      }
     }
   };
 
@@ -249,6 +249,7 @@ export default function CourseLearnPage() {
       setQuizTimeRemaining(timeLimitSeconds);
       setQuizDeadline(timeLimitSeconds === null ? null : Date.now() + timeLimitSeconds * 1000);
       setCurrentQuizAttemptsUsed(session.attemptsUsed);
+      setIsQuizTimerActive(true);
       autoSubmittedQuizRef.current = false;
     } catch (error) {
       console.error("Error restarting quiz attempt:", error);
@@ -262,11 +263,12 @@ export default function CourseLearnPage() {
     setQuizTimeRemaining(null);
     setQuizDeadline(null);
     setCurrentQuizAttemptsUsed(0);
+    setIsQuizTimerActive(false);
     autoSubmittedQuizRef.current = false;
   };
 
   useEffect(() => {
-    if (!showQuiz || !currentQuiz || quizSubmitted || quizDeadline === null) {
+    if (!showQuiz || !currentQuiz || quizSubmitted || quizDeadline === null || !isQuizTimerActive) {
       return;
     }
 
@@ -277,15 +279,13 @@ export default function CourseLearnPage() {
       if (remaining <= 1 && !quizSubmitted && !autoSubmittedQuizRef.current) {
         autoSubmittedQuizRef.current = true;
         submitQuiz().finally(() => {
-          if (!quizSubmitted) {
-            autoSubmittedQuizRef.current = false;
-          }
+          setIsQuizTimerActive(false);
         });
       }
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [showQuiz, currentQuiz?.id, quizSubmitted, quizDeadline, submitQuiz]);
+  }, [showQuiz, currentQuiz?.id, quizSubmitted, quizDeadline, isQuizTimerActive, submitQuiz]);
 
   if (loading) {
     return (
@@ -373,7 +373,7 @@ const QuizModal = ({
                 : "border-slate-200 bg-slate-50 text-slate-700"
             }`}>
               <div className="text-sm font-medium">Time remaining</div>
-              <div className="text-3xl font-bold">{formatQuizTime(timeRemaining ?? 0)}</div>
+              <div className="text-3xl font-bold">{formatQuizTime(timeRemaining)}</div>
             </div>
           ) : null}
           
@@ -398,27 +398,33 @@ const QuizModal = ({
                   <div key={qIndex} className="border border-slate-200 rounded-2xl p-4">
                     <h3 className="font-semibold text-slate-900 mb-2">{question.question}</h3>
                     <div className="space-y-2">
-                      {question.options.map((option: string, oIndex: number) => {
+                       {question.options.map((option: string, oIndex: number) => {
                         const isCorrect = oIndex === question.correctAnswerIndex;
                         const isSelected = answers[qIndex] === oIndex;
+                        const isSkipped = answers[qIndex] === -1;
                         const isWrong = isSelected && !isCorrect;
                         
                         return (
                           <div 
                             key={oIndex} 
-                            className={`p-3 rounded-lg ${
+                            className={`p-3 rounded-lg border ${
                               isCorrect 
                                 ? 'bg-emerald-100 border-emerald-500 text-emerald-800' 
                                 : isWrong 
                                   ? 'bg-red-100 border-red-500 text-red-800' 
-                                  : 'bg-slate-100 border-slate-200'
+                                  : isSkipped
+                                    ? 'bg-amber-50 border-amber-300 text-amber-800'
+                                    : 'bg-slate-100 border-slate-200'
                             } border`}
                           >
                             <div className="flex items-center">
                               <span className="mr-2">
-                                {isCorrect ? '✓' : isWrong ? '✗' : oIndex + 1}
+                                {isCorrect ? '✓' : isWrong ? '✗' : isSkipped ? '?' : oIndex + 1}
                               </span>
                               {option}
+                              {isSkipped && (
+                                <span className="ml-auto text-xs font-medium text-amber-700">Skipped</span>
+                              )}
                             </div>
                             {question.explanation && isCorrect && (
                               <p className="text-sm text-slate-600 mt-2 italic">
