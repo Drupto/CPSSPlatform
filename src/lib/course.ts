@@ -162,6 +162,13 @@ export async function getEnrollmentsForUser(userId: string): Promise<Enrollment[
   return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Enrollment));
 }
 
+export async function getEnrollmentsForCourse(courseId: string): Promise<Enrollment[]> {
+  const enrollmentsRef = collection(db, "enrollments");
+  const enrollmentQuery = query(enrollmentsRef, where("courseId", "==", courseId), orderBy("enrolledAt", "desc"));
+  const snapshot = await getDocs(enrollmentQuery);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Enrollment));
+}
+
 /**
  * Deletes a file from Firebase Storage given its download URL.
  * Parses the Firebase Storage download URL to extract the object path and deletes it.
@@ -447,6 +454,13 @@ export async function getAllQuizAttemptsForCourse(courseId: string): Promise<Qui
   );
   const snapshot = await getDocs(attemptsQuery);
   return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as QuizAttempt));
+}
+
+export async function getAllProgressForCourse(courseId: string): Promise<CourseProgress[]> {
+  const progressRef = collection(db, "progress");
+  const progressQuery = query(progressRef, where("courseId", "==", courseId));
+  const snapshot = await getDocs(progressQuery);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as CourseProgress));
 }
 
 export function isAdminProfile(profile: UserProfile | null) {
