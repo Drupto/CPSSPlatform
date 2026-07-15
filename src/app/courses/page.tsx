@@ -6,18 +6,31 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { getPublishedCourses } from "@/lib/course";
+import { describeFirestoreError } from "@/lib/firebase";
 import type { Course } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
     getPublishedCourses()
-      .then(setCourses)
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (!cancelled) setCourses(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(describeFirestoreError(err));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const filteredCourses = useMemo(() => {
@@ -55,6 +68,10 @@ export default function CoursesPage() {
 
         {loading ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-10 text-slate-600">Loading courses...</div>
+        ) : error ? (
+          <div className="rounded-3xl border border-red-300 bg-red-50 p-10 text-red-700 whitespace-pre-line">
+            {error}
+          </div>
         ) : filteredCourses.length === 0 ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-slate-600">
             {searchQuery.trim() ? (
