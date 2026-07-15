@@ -51,7 +51,8 @@ import {
   Link as LinkIcon, 
   ExternalLink,
   Save,
-  X
+  X,
+  CreditCard
 } from "lucide-react";
 
 export default function AdminResourcesPage() {
@@ -70,7 +71,9 @@ export default function AdminResourcesPage() {
     type: 'document',
     body: '',
     url: '',
-    order: 0
+    order: 0,
+    front: '',
+    back: ''
   });
 
   useEffect(() => {
@@ -135,25 +138,26 @@ export default function AdminResourcesPage() {
     if (!selectedCourse) return;
     
     try {
-      // Prepare data for API call - exclude id and courseId which are not needed for creation/update
-      const resourceData = {
+      const resourceData: any = {
         title: formData.title,
-        type: formData.type as "document" | "video" | "link",
+        type: formData.type as "document" | "video" | "link" | "flashcard",
         body: formData.body,
         url: formData.url,
         order: formData.order
       };
       
+      if (formData.type === 'flashcard') {
+        resourceData.front = formData.front;
+        resourceData.back = formData.back;
+      }
+      
       if (editingResource) {
-        // Update existing resource
         await updateCourseResource(selectedCourse.id, editingResource.id, resourceData);
         setEditingResource(null);
       } else {
-        // Create new resource
         await addCourseResource(selectedCourse.id, resourceData);
       }
       
-      // Refresh resources
       await loadResources(selectedCourse.id);
       setShowForm(false);
       setFormData({
@@ -161,7 +165,9 @@ export default function AdminResourcesPage() {
         type: 'document',
         body: '',
         url: '',
-        order: 0
+        order: 0,
+        front: '',
+        back: ''
       });
     } catch (error) {
       console.error("Error saving resource:", error);
@@ -172,10 +178,12 @@ export default function AdminResourcesPage() {
     setEditingResource(resource);
     setFormData({
       title: resource.title,
-      type: resource.type as "document" | "video" | "link",
+      type: resource.type as "document" | "video" | "link" | "flashcard",
       body: resource.body || '',
       url: resource.url || '',
-      order: resource.order
+      order: resource.order,
+      front: (resource as any).front || '',
+      back: (resource as any).back || ''
     });
     setShowForm(true);
   };
@@ -201,6 +209,8 @@ export default function AdminResourcesPage() {
         return <Video className="h-5 w-5" />;
       case "link":
         return <ExternalLink className="h-5 w-5" />;
+      case "flashcard":
+        return <CreditCard className="h-5 w-5" />;
       default:
         return <FileText className="h-5 w-5" />;
     }
@@ -214,6 +224,8 @@ export default function AdminResourcesPage() {
         return <Badge variant="secondary">Video</Badge>;
       case "link":
         return <Badge variant="secondary">Link</Badge>;
+      case "flashcard":
+        return <Badge variant="secondary">Flashcard</Badge>;
       default:
         return <Badge variant="secondary">Resource</Badge>;
     }
@@ -284,7 +296,9 @@ export default function AdminResourcesPage() {
                             type: 'document',
                             body: '',
                             url: '',
-                            order: 0
+                            order: 0,
+                            front: '',
+                            back: ''
                           });
                         }}
                       >
@@ -320,9 +334,34 @@ export default function AdminResourcesPage() {
                               <SelectItem value="document">Document</SelectItem>
                               <SelectItem value="video">Video</SelectItem>
                               <SelectItem value="link">Link</SelectItem>
+                              <SelectItem value="flashcard">Flashcard</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
+                        
+                        {formData.type === 'flashcard' && (
+                          <>
+                            <div>
+                              <label className="text-sm font-medium text-slate-700">Front</label>
+                              <Input
+                                name="front"
+                                value={formData.front}
+                                onChange={handleInputChange}
+                                placeholder="Front of flashcard"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-slate-700">Back</label>
+                              <Textarea
+                                name="back"
+                                value={formData.back}
+                                onChange={handleInputChange}
+                                placeholder="Back of flashcard"
+                                rows={3}
+                              />
+                            </div>
+                          </>
+                        )}
                         
                         <div>
                           <label className="text-sm font-medium text-slate-700">Description</label>
@@ -404,7 +443,9 @@ export default function AdminResourcesPage() {
                                 {getResourceIcon(resource.type)}
                                 <div>
                                   <div className="font-medium">{resource.title}</div>
-                                  <div className="text-sm text-slate-500 mt-1 line-clamp-2">{resource.body}</div>
+                                  <div className="text-sm text-slate-500 mt-1 line-clamp-2">
+                                    {resource.type === 'flashcard' ? (resource as any).front : resource.body}
+                                  </div>
                                 </div>
                               </div>
                             </TableCell>

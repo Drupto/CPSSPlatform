@@ -1,6 +1,6 @@
 import type { Timestamp } from "firebase/firestore";
 
-export type CourseContentType = "text" | "video" | "document" | "link";
+export type CourseContentType = "text" | "video" | "document" | "link" | "flashcard";
 
 export interface UserProfile {
   uid: string;
@@ -68,6 +68,12 @@ export interface CourseContentItem {
   body?: string;
   url?: string;
   order: number;
+}
+
+export interface Flashcard extends Omit<CourseContentItem, "body"> {
+  type: "flashcard";
+  front: string;
+  back: string;
 }
 
 export interface Enrollment {

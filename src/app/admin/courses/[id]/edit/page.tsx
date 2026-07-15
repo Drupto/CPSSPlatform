@@ -92,15 +92,17 @@ export default function EditCoursePage() {
       setCoverImageUrl(courseData.coverImageUrl);
 
       const content = await getCourseContent(courseData.id);
-      const blocks: ContentBlockForm[] = content.map((item) => ({
-        id: item.id,
-        type: item.type,
-        title: item.title,
-        body: item.body || "",
-        url: item.url || "",
-        order: item.order,
-        file: null,
-      }));
+      const blocks: ContentBlockForm[] = content
+        .filter((item) => item.type !== "flashcard")
+        .map((item) => ({
+          id: item.id,
+          type: item.type as "text" | "video" | "document" | "link",
+          title: item.title,
+          body: item.body || "",
+          url: item.url || "",
+          order: item.order,
+          file: null,
+        }));
       setContentBlocks(blocks);
       
       // Load quizzes for this course
