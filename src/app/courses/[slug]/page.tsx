@@ -6,9 +6,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getCourseBySlug, createEnrollment, getEnrollment, getCourseContent } from "@/lib/course";
+import { getCourseBySlug, requestEnrollment, getEnrollment } from "@/lib/course";
 import { isProfileComplete } from "@/lib/profile-check";
-import type { Course } from "@/lib/types";
+import type { Course, EnrollmentStatus } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 
@@ -18,7 +18,7 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrollmentStatus, setEnrollmentStatus] = useState<EnrollmentStatus | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -36,8 +36,8 @@ export default function CourseDetailPage() {
       setCurrentUser(user);
       if (user && course) {
         const enrollment = await getEnrollment(user.uid, course.id);
-        setIsEnrolled(Boolean(enrollment));
-        
+        setEnrollmentStatus(enrollment ? enrollment.status : null);
+
         // Check if user has completed their profile
         const isComplete = await isProfileComplete(user);
         if (!isComplete && !window.location.pathname.startsWith('/dashboard/profile')) {
@@ -49,7 +49,7 @@ export default function CourseDetailPage() {
     return () => unsubscribe();
   }, [course, router]);
 
-  const handleEnroll = async () => {
+  const handleRequest = async () => {
     setError("");
     setMessage("");
 
@@ -64,13 +64,11 @@ export default function CourseDetailPage() {
 
     setIsProcessing(true);
     try {
-      await createEnrollment(currentUser.uid, course.id);
-      setMessage("Enrollment successful. You can now access the course content.");
-      setIsEnrolled(true);
-      // Navigate to learn page immediately after enrollment
-      router.push(`/courses/${course.slug}/learn`);
+      await requestEnrollment(currentUser.uid, course.id);
+      setEnrollmentStatus("pending");
+      setMessage("Enrollment request sent. You'll get access once an admin approves it.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to enroll at this time.");
+      setError(err instanceof Error ? err.message : "Unable to send request at this time.");
     } finally {
       setIsProcessing(false);
     }
@@ -127,18 +125,30 @@ export default function CourseDetailPage() {
             {error && <div className="mb-4 rounded-2xl bg-red-100 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
             {message && <div className="mb-4 rounded-2xl bg-emerald-100 border border-emerald-200 px-4 py-3 text-sm text-emerald-700">{message}</div>}
 
-              {isEnrolled ? (
+              {enrollmentStatus === "approved" ? (
                 <Button className="w-full" onClick={() => router.push(`/courses/${course.slug}/learn`)}>
                   Go to Course
                 </Button>
+              ) : enrollmentStatus === "pending" ? (
+                <Button className="w-full" disabled>
+                  Request Pending Approval
+                </Button>
+              ) : enrollmentStatus === "rejected" ? (
+                <Button className="w-full" onClick={handleRequest} disabled={isProcessing}>
+                  {isProcessing ? "Sending..." : "Request Again"}
+                </Button>
               ) : (
-                <Button className="w-full" onClick={handleEnroll} disabled={isProcessing}>
-                  {isProcessing ? "Enrolling..." : "Enroll Now"}
+                <Button className="w-full" onClick={handleRequest} disabled={isProcessing}>
+                  {isProcessing ? "Sending..." : "Request Access"}
                 </Button>
               )}
 
             <div className="mt-6 text-sm text-slate-600">
-              {currentUser ? "After enrollment, you can access the course lessons immediately." : "Sign in or sign up to enroll."}
+              {currentUser
+                ? (enrollmentStatus === "approved"
+                  ? "You have access to this course."
+                  : "Submit a request and an admin will approve your access.")
+                : "Sign in or sign up to request access."}
             </div>
           </div>
         </div>

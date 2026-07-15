@@ -74,29 +74,47 @@ export default function MyCoursesPage() {
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2">
-              {enrollments.map((enrollment) => {
-                const course = courses.get(enrollment.courseId);
-                if (!course) return null;
+               {enrollments.map((enrollment) => {
+                 const course = courses.get(enrollment.courseId);
+                 if (!course) return null;
 
-                 return (
-                   <article key={enrollment.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
-                     <div className="space-y-4">
-                        <div>
-                          <p className="text-sm uppercase tracking-[0.3em] text-secondary">Course</p>
-                          <h2 className="mt-2 text-xl font-semibold text-slate-900">{course.title}</h2>
-                          <p className="text-xs text-slate-500 mt-1">ID: {course.id}</p>
+                 const status = enrollment.status ?? "pending";
+                 const statusBadge =
+                   status === "approved"
+                     ? "bg-emerald-100 text-emerald-700"
+                     : status === "pending"
+                       ? "bg-amber-100 text-amber-700"
+                       : "bg-red-100 text-red-700";
+                 const statusLabel =
+                   status === "approved" ? "Approved" : status === "pending" ? "Pending" : "Declined";
+
+                  return (
+                    <article key={enrollment.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
+                      <div className="space-y-4">
+                         <div>
+                           <p className="text-sm uppercase tracking-[0.3em] text-secondary">Course</p>
+                           <h2 className="mt-2 text-xl font-semibold text-slate-900">{course.title}</h2>
+                           <p className="text-xs text-slate-500 mt-1">ID: {course.id}</p>
+                         </div>
+                        <p className="text-slate-600 line-clamp-2">{course.description}</p>
+                        <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200">
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusBadge}`}>
+                            {statusLabel}
+                          </span>
+                          {status === "approved" ? (
+                            <Link href={`/courses/${course.slug}/learn`} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90">
+                              Continue Learning
+                            </Link>
+                          ) : (
+                            <Link href={`/courses/${course.slug}`} className="rounded-full bg-slate-500 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-600">
+                              View Course
+                            </Link>
+                          )}
                         </div>
-                       <p className="text-slate-600 line-clamp-2">{course.description}</p>
-                       <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200">
-                         <span className="text-sm text-slate-500">₹{course.price}</span>
-                         <Link href={`/courses/${course.slug}/learn`} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90">
-                           Continue Learning
-                         </Link>
-                       </div>
-                     </div>
-                   </article>
-                 );
-              })}
+                      </div>
+                    </article>
+                  );
+               })}
             </div>
           )}
 

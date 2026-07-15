@@ -117,7 +117,7 @@ export default function CourseAnalyticsPage() {
               userId: enrollment.userId,
               name: user?.displayName || "Unknown User",
               email: user?.email || "No Email",
-              enrolledAt: enrollment.enrolledAt,
+              enrolledAt: enrollment.enrolledAt ?? null,
               completedContentIds: progress?.completedContentIds || [],
               totalContent: contentItems.length,
               quizAttempts: attemptsByUser.get(enrollment.userId) || 0,

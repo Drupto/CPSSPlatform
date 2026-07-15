@@ -36,6 +36,7 @@ export default function CourseLearnPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
+  const [enrollmentStatus, setEnrollmentStatus] = useState<string | null>(null);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [quizzes, setQuizzes] = useState<any[]>([]); // Will be Quiz type
@@ -84,8 +85,9 @@ export default function CourseLearnPage() {
       }
       setUser(authUser);
       const enrollment = await getEnrollment(authUser.uid, course.id);
-      const isAuthorized = Boolean(enrollment);
+      const isAuthorized = enrollment?.status === "approved";
       setAuthorized(isAuthorized);
+      setEnrollmentStatus(enrollment ? enrollment.status : null);
       
       // Check if user has completed their profile
       const isComplete = await isProfileComplete(authUser);
@@ -315,6 +317,40 @@ export default function CourseLearnPage() {
           <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
             <h1 className="text-4xl font-bold text-slate-900">{course.title}</h1>
             <p className="mt-4 text-slate-600">This course has no content sections yet.</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!authorized) {
+    const isPending = enrollmentStatus === "pending";
+    const isRejected = enrollmentStatus === "rejected";
+    return (
+      <main className="relative min-h-screen bg-slate-50">
+        <Navbar />
+        <div className="max-w-4xl mx-auto px-6 py-28 text-center">
+          <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+            <h1 className="text-3xl font-bold text-slate-900">{course.title}</h1>
+            <div className={`mt-6 rounded-2xl border px-4 py-3 text-sm ${
+              isRejected
+                ? "bg-red-100 border-red-200 text-red-700"
+                : "bg-amber-100 border-amber-200 text-amber-700"
+            }`}>
+              {isRejected
+                ? "Your enrollment request for this course was declined by an admin."
+                : isPending
+                  ? "Your enrollment request is awaiting admin approval. You'll get access once it's approved."
+                  : "You don't have access to this course yet. Request access to get started."}
+            </div>
+            <div className="mt-8 flex justify-center gap-3">
+              <Button variant="outline" onClick={() => router.push(`/courses/${course.slug}`)}>
+                Back to Course
+              </Button>
+              <Button onClick={() => router.push("/dashboard/available-courses")}>
+                Browse Courses
+              </Button>
+            </div>
           </div>
         </div>
       </main>

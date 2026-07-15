@@ -71,16 +71,18 @@ service cloud.firestore {
     }
 
     // Allow authenticated users to read their own enrollments or if admin
-    // Allow students to create their own enrollment; admins can create/update/delete
+    // Students may only create a PENDING enrollment for themselves; approval is admin-only
     match /enrollments/{enrollmentId} {
       allow read: if request.auth != null && (
         request.auth.uid == get(/databases/$(database)/documents/enrollments/$(enrollmentId)).data.userId
         || isAdmin()
       );
-      allow create: if request.auth != null && (
-        request.auth.uid == request.resource.data.userId || isAdmin()
-      );
-      allow update: if request.auth != null && isAdmin();
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.userId
+        && request.resource.data.status == 'pending'
+        && request.resource.data.keys().hasOnly(['id', 'userId', 'courseId', 'status', 'requestedAt']);
+      allow update: if request.auth != null && isAdmin()
+        && request.resource.data.keys().hasOnly(['status', 'reviewedAt', 'reviewedBy', 'enrolledAt']);
       allow delete: if request.auth != null && isAdmin();
     }
 

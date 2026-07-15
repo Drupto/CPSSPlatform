@@ -1,5 +1,5 @@
 import type { User } from "firebase/auth";
-import type { Course, CourseContentItem, CourseProgress, Enrollment, UserProfile, Quiz, QuizAttempt } from "./types";
+import type { Course, CourseContentItem, CourseProgress, Enrollment, EnrollmentStatus, UserProfile, Quiz, QuizAttempt } from "./types";
 import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
@@ -139,34 +139,107 @@ export async function uploadCourseAsset(file: File, courseId: string): Promise<s
   }
 }
 
-export async function createEnrollment(userId: string, courseId: string): Promise<void> {
+/**
+ * Submits an enrollment request for a course. The request starts in "pending"
+ * status and only grants course access once an admin approves it.
+ */
+export async function requestEnrollment(userId: string, courseId: string): Promise<void> {
   const enrollmentRef = doc(db, "enrollments", `${userId}_${courseId}`);
   await setDoc(enrollmentRef, {
     id: `${userId}_${courseId}`,
     userId,
     courseId,
-    enrolledAt: serverTimestamp(),
+    status: "pending",
+    requestedAt: serverTimestamp(),
   });
+}
+
+/**
+ * Normalizes a raw Firestore enrollment document into the Enrollment type.
+ * Legacy enrollments created before the approval system have no `status` field;
+ * they represent already-granted access, so they default to "approved".
+ */
+function normalizeEnrollment(docSnap: { id: string; data: () => Record<string, any> }): Enrollment {
+  const data = docSnap.data();
+  return {
+    id: docSnap.id,
+    ...data,
+    status: (data.status as EnrollmentStatus) ?? "approved",
+  } as Enrollment;
 }
 
 export async function getEnrollment(userId: string, courseId: string): Promise<Enrollment | null> {
   const enrollmentRef = doc(db, "enrollments", `${userId}_${courseId}`);
   const snapshot = await getDoc(enrollmentRef);
-  return snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as Enrollment) : null;
+  return snapshot.exists() ? normalizeEnrollment(snapshot) : null;
 }
 
 export async function getEnrollmentsForUser(userId: string): Promise<Enrollment[]> {
   const enrollmentsRef = collection(db, "enrollments");
-  const enrollmentQuery = query(enrollmentsRef, where("userId", "==", userId), orderBy("enrolledAt", "desc"));
+  const enrollmentQuery = query(enrollmentsRef, where("userId", "==", userId), orderBy("requestedAt", "desc"));
   const snapshot = await getDocs(enrollmentQuery);
-  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Enrollment));
+  return snapshot.docs.map(normalizeEnrollment);
 }
 
 export async function getEnrollmentsForCourse(courseId: string): Promise<Enrollment[]> {
   const enrollmentsRef = collection(db, "enrollments");
-  const enrollmentQuery = query(enrollmentsRef, where("courseId", "==", courseId), orderBy("enrolledAt", "desc"));
+  const enrollmentQuery = query(enrollmentsRef, where("courseId", "==", courseId), orderBy("requestedAt", "desc"));
   const snapshot = await getDocs(enrollmentQuery);
-  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Enrollment));
+  return snapshot.docs.map(normalizeEnrollment);
+}
+
+/**
+ * Returns all enrollment requests with the given status. Used by the admin
+ * approval dashboard.
+ */
+export async function getEnrollmentRequestsByStatus(status: EnrollmentStatus): Promise<Enrollment[]> {
+  const enrollmentsRef = collection(db, "enrollments");
+  const enrollmentQuery = query(
+    enrollmentsRef,
+    where("status", "==", status),
+    orderBy("requestedAt", "desc")
+  );
+  const snapshot = await getDocs(enrollmentQuery);
+  return snapshot.docs.map(normalizeEnrollment);
+}
+
+/**
+ * Returns every enrollment. Used by the admin dashboard's "Approved" tab so that
+ * legacy enrollments (created before the approval system, no `status` field) are
+ * also shown — normalizeEnrollment marks those as "approved".
+ */
+export async function getAllEnrollments(): Promise<Enrollment[]> {
+  const enrollmentsRef = collection(db, "enrollments");
+  const enrollmentQuery = query(enrollmentsRef, orderBy("requestedAt", "desc"));
+  const snapshot = await getDocs(enrollmentQuery);
+  return snapshot.docs.map(normalizeEnrollment);
+}
+
+/**
+ * Approves a pending enrollment request, granting the student access to the
+ * course. Only callable by an admin (enforced by Firestore rules).
+ */
+export async function approveEnrollment(enrollmentId: string, adminUid: string): Promise<void> {
+  const enrollmentRef = doc(db, "enrollments", enrollmentId);
+  await setDoc(enrollmentRef, {
+    status: "approved",
+    reviewedAt: serverTimestamp(),
+    reviewedBy: adminUid,
+    enrolledAt: serverTimestamp(),
+  }, { merge: true });
+}
+
+/**
+ * Rejects a pending enrollment request. Only callable by an admin
+ * (enforced by Firestore rules).
+ */
+export async function rejectEnrollment(enrollmentId: string, adminUid: string): Promise<void> {
+  const enrollmentRef = doc(db, "enrollments", enrollmentId);
+  await setDoc(enrollmentRef, {
+    status: "rejected",
+    reviewedAt: serverTimestamp(),
+    reviewedBy: adminUid,
+  }, { merge: true });
 }
 
 /**
@@ -336,7 +409,15 @@ export async function getTotalCourses(): Promise<number> {
 
 export async function getTotalEnrollments(): Promise<number> {
   const enrollmentsRef = collection(db, "enrollments");
-  const snapshot = await getDocs(enrollmentsRef);
+  const enrollmentQuery = query(enrollmentsRef, where("status", "==", "approved"));
+  const snapshot = await getDocs(enrollmentQuery);
+  return snapshot.size;
+}
+
+export async function getPendingEnrollmentCount(): Promise<number> {
+  const enrollmentsRef = collection(db, "enrollments");
+  const enrollmentQuery = query(enrollmentsRef, where("status", "==", "pending"));
+  const snapshot = await getDocs(enrollmentQuery);
   return snapshot.size;
 }
 

@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getAllCourses, getEnrollmentsForUser, createEnrollment } from "@/lib/course";
+import { getAllCourses, getEnrollmentsForUser, requestEnrollment } from "@/lib/course";
 import { isProfileComplete } from "@/lib/profile-check";
-import type { Course, Enrollment } from "@/lib/types";
+import type { Course, Enrollment, EnrollmentStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
 import { toast } from "@/hooks/use-toast";
@@ -19,6 +19,11 @@ export default function AvailableCoursesPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState<Record<string, boolean>>({});
+
+  const getEnrollmentStatus = (courseId: string): EnrollmentStatus | null => {
+    const enrollment = enrollments.find((e) => e.courseId === courseId);
+    return enrollment ? enrollment.status : null;
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
@@ -58,37 +63,33 @@ export default function AvailableCoursesPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleEnroll = async (courseId: string) => {
+  const handleRequest = async (courseId: string) => {
     const user = auth.currentUser;
     if (!user) return;
 
     setEnrolling(prev => ({ ...prev, [courseId]: true }));
-    
+
     try {
-      await createEnrollment(user.uid, courseId);
-      
+      await requestEnrollment(user.uid, courseId);
+
       // Refresh enrollments
       const updatedEnrollments = await getEnrollmentsForUser(user.uid);
       setEnrollments(updatedEnrollments);
-      
+
       toast({
-        title: "Success",
-        description: "You have been enrolled in the course!",
+        title: "Request Sent",
+        description: "Your enrollment request is awaiting admin approval.",
       });
     } catch (error) {
-      console.error("Error enrolling in course:", error);
+      console.error("Error requesting enrollment:", error);
       toast({
         title: "Error",
-        description: "Failed to enroll in course. Please try again.",
+        description: "Failed to send enrollment request. Please try again.",
         variant: "destructive",
       });
     } finally {
       setEnrolling(prev => ({ ...prev, [courseId]: false }));
     }
-  };
-
-  const isEnrolled = (courseId: string) => {
-    return enrollments.some(enrollment => enrollment.courseId === courseId);
   };
 
   return (
@@ -122,22 +123,37 @@ export default function AvailableCoursesPage() {
                          <p className="text-xs text-slate-500 mt-1">ID: {course.id}</p>
                        </div>
                      <p className="text-slate-600 line-clamp-2">{course.description}</p>
-                     <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200">
-                       <span className="text-sm text-slate-500">₹{course.price}</span>
-                       {isEnrolled(course.id) ? (
-                         <Button disabled className="rounded-full bg-green-500 px-4 py-2 text-sm font-semibold text-white">
-                           Already Enrolled
-                         </Button>
-                       ) : (
-                         <Button 
-                           onClick={() => handleEnroll(course.id)}
-                           disabled={enrolling[course.id]}
-                           className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
-                         >
-                           {enrolling[course.id] ? "Enrolling..." : "Enroll Now"}
-                         </Button>
-                       )}
-                     </div>
+                      <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200">
+                        <span className="text-sm text-slate-500">₹{course.price}</span>
+                        {getEnrollmentStatus(course.id) === "approved" ? (
+                          <Link
+                            href={`/courses/${course.slug}/learn`}
+                            className="rounded-full bg-green-500 px-4 py-2 text-sm font-semibold text-white"
+                          >
+                            Go to Course
+                          </Link>
+                        ) : getEnrollmentStatus(course.id) === "pending" ? (
+                          <Button disabled className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white">
+                            Pending Approval
+                          </Button>
+                        ) : getEnrollmentStatus(course.id) === "rejected" ? (
+                          <Button
+                            onClick={() => handleRequest(course.id)}
+                            disabled={enrolling[course.id]}
+                            className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
+                          >
+                            {enrolling[course.id] ? "Sending..." : "Request Again"}
+                          </Button>
+                        ) : (
+                          <Button 
+                            onClick={() => handleRequest(course.id)}
+                            disabled={enrolling[course.id]}
+                            className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
+                          >
+                            {enrolling[course.id] ? "Sending..." : "Request Access"}
+                          </Button>
+                        )}
+                      </div>
                    </div>
                  </article>
               ))}

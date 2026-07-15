@@ -76,11 +76,17 @@ export interface Flashcard extends Omit<CourseContentItem, "body"> {
   back: string;
 }
 
+export type EnrollmentStatus = "pending" | "approved" | "rejected";
+
 export interface Enrollment {
   id: string;
   userId: string;
   courseId: string;
-  enrolledAt: Timestamp | null;
+  status: EnrollmentStatus;
+  requestedAt: Timestamp | null;
+  reviewedAt?: Timestamp | null;
+  reviewedBy?: string;
+  enrolledAt?: Timestamp | null;
 }
 
 export interface CourseProgress {
