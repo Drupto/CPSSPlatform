@@ -15,6 +15,7 @@ import {
 } from "@/lib/course";
 import type { Course, QuizAttempt, Quiz } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
+import { BackToAdminButton } from "@/components/admin/BackToAdminButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -225,6 +226,7 @@ export default function CourseQuizAnalyticsPage() {
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-8">
+          <BackToAdminButton />
           <Button 
             variant="outline" 
             onClick={() => router.push(`/admin/courses/${courseId}/edit`)}

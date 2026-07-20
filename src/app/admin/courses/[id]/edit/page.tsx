@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Navbar } from "@/components/navbar";
+import { BackToAdminButton } from "@/components/admin/BackToAdminButton";
 import { QuizForm } from "@/components/admin/quizzes/QuizForm";
 
 interface ContentBlockForm {
@@ -278,6 +279,7 @@ if ((block.type === "document" || block.type === "video") && block.file) {
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-24">
         <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+           <BackToAdminButton />
            <h1 className="text-3xl font-bold text-slate-900 mb-2">Edit Course</h1>
            <p className="text-slate-600 mb-8">Update course information and content sections.</p>
 

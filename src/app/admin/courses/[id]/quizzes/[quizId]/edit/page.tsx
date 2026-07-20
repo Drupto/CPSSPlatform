@@ -16,6 +16,7 @@ import {
 import type { Course, Quiz } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
+import { BackToAdminButton } from "@/components/admin/BackToAdminButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit2, BarChart3 } from "lucide-react";
 import { QuizForm } from "@/components/admin/quizzes/QuizForm";
@@ -149,6 +150,7 @@ export default function EditQuizPage() {
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-6">
+          <BackToAdminButton />
           <Button 
             variant="outline" 
             onClick={() => router.push(`/admin/courses/${courseId}/edit`)}

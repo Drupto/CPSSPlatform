@@ -14,6 +14,7 @@ import {
 import type { Course, Quiz } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
+import { BackToAdminButton } from "@/components/admin/BackToAdminButton";
 import { QuizForm } from "@/components/admin/quizzes/QuizForm";
 
 export default function CreateQuizPage() {
@@ -115,6 +116,7 @@ export default function CreateQuizPage() {
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-6">
+          <BackToAdminButton />
           <Button
             variant="outline"
             onClick={() => router.push(`/admin/courses/${courseId}/edit`)}

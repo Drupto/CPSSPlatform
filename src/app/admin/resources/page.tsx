@@ -8,6 +8,7 @@ import { auth } from "@/lib/firebase";
 import { getUserProfile, isAdminProfile, getAllCourses, getCourseResources, addCourseResource, updateCourseResource, deleteCourseResource } from "@/lib/course";
 import type { Course, CourseContentItem } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
+import { BackToAdminButton } from "@/components/admin/BackToAdminButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -244,6 +245,7 @@ export default function AdminResourcesPage() {
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-24">
         <div className="bg-white rounded-3xl shadow-lg p-10">
+          <BackToAdminButton />
           <h1 className="text-4xl font-bold text-slate-900 mb-4">Resource Management</h1>
           <p className="text-slate-600 mb-8">
             Manage study materials and additional resources for your courses.

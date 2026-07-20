@@ -9,6 +9,7 @@ import { auth } from "@/lib/firebase";
 import { getAllCourses, getUserProfile, isAdminProfile, deleteCourse, getCourseQuizzes } from "@/lib/course";
 import type { Course, Quiz } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { BackToAdminButton } from "@/components/admin/BackToAdminButton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,6 +64,7 @@ export default function AdminCoursesPage() {
     <main className="relative min-h-screen bg-slate-50">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-24">
+        <BackToAdminButton />
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
