@@ -3,12 +3,13 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getIdToken, onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { getCourseBySlug, getCourseContent, getEnrollment, getCourseProgress, markContentCompleted, markContentIncomplete, getCourseQuizzes, getCourseQuizAttempts, getYouTubeEmbedUrl } from "@/lib/course";
-import { startQuizAttemptAction, submitQuizAttemptAction } from "./actions";
 import { isProfileComplete } from "@/lib/profile-check";
 import type { CourseContentItem, Course } from "@/lib/types";
+import type { StartQuizAttemptResponse, SubmitQuizAttemptResponse } from "@/lib/types/quiz-functions";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -54,6 +55,10 @@ export default function CourseLearnPage() {
   const [isSubmittingQuiz, setIsSubmittingQuiz] = useState(false);
   const [isQuizTimerActive, setIsQuizTimerActive] = useState(false);
   const autoSubmittedQuizRef = useRef(false);
+
+  const functionsInstance = getFunctions();
+  const startQuizAttemptFn = httpsCallable(functionsInstance, "startQuizAttempt");
+  const submitQuizAttemptFn = httpsCallable(functionsInstance, "submitQuizAttempt");
 
   useEffect(() => {
     if (!slug) return;
@@ -172,8 +177,8 @@ export default function CourseLearnPage() {
     }
 
     try {
-      const idToken = await getIdToken(user);
-      const session = await startQuizAttemptAction(course.id, quiz.id, idToken);
+      const sessionResult = await startQuizAttemptFn({ courseId: course.id, quizId: quiz.id });
+      const session = sessionResult.data as StartQuizAttemptResponse;
 
       setCurrentQuiz(quiz);
       setCurrentQuizSessionId(session.sessionId);
@@ -206,23 +211,23 @@ export default function CourseLearnPage() {
     setIsSubmittingQuiz(true);
     
     try {
-      const idToken = await getIdToken(user);
-      const result = await submitQuizAttemptAction(currentQuizSessionId, [...quizAnswers], idToken);
-      
-      setQuizScore(result.score);
-      setQuizPassed(result.passed);
+      const result = await submitQuizAttemptFn({ sessionId: currentQuizSessionId, answers: [...quizAnswers] });
+      const response = result.data as SubmitQuizAttemptResponse;
+
+      setQuizScore(response.score);
+      setQuizPassed(response.passed);
       setQuizSubmitted(true);
-      setCurrentQuizAttemptsUsed(result.attemptsUsed);
-      setIsQuizTimerActive(false);
-      
+      setCurrentQuizAttemptsUsed(response.attemptsUsed);
+      setIsSubmittingQuiz(false);
+
       setQuizAttempts(prev => [{
-        id: result.attemptId,
+        id: response.attemptId,
         userId: user.uid,
         quizId: currentQuiz.id,
         courseId: course!.id,
         answers: [...quizAnswers],
-        score: result.score,
-        passed: result.passed,
+        score: response.score,
+        passed: response.passed,
         completedAt: null
       }, ...prev.filter(attempt => attempt.quizId !== currentQuiz.id)]);
     } catch (error) {
@@ -239,8 +244,8 @@ export default function CourseLearnPage() {
     const timeLimitSeconds = getQuizTimeLimitSeconds(currentQuiz);
 
     try {
-      const idToken = await getIdToken(user);
-      const session = await startQuizAttemptAction(course.id, currentQuiz.id, idToken);
+      const sessionResult = await startQuizAttemptFn({ courseId: course.id, quizId: currentQuiz.id });
+      const session = sessionResult.data as StartQuizAttemptResponse;
 
       setCurrentQuizSessionId(session.sessionId);
       setQuizAnswers(Array(currentQuiz.questions.length).fill(-1));

@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onCourseDelete = void 0;
+exports.submitQuizAttempt = exports.startQuizAttempt = exports.onCourseDelete = void 0;
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const quiz_attempts_1 = require("./quiz-attempts");
 // Initialize Firebase Admin SDK
 admin.initializeApp();
 /**
@@ -14,7 +15,7 @@ admin.initializeApp();
  * - Associated storage files
  */
 exports.onCourseDelete = functions.firestore
-    .document('courses/{courseId}')
+    .document("courses/{courseId}")
     .onDelete(async (snap, context) => {
     const courseId = context.params.courseId;
     try {
@@ -63,7 +64,7 @@ exports.onCourseDelete = functions.firestore
             const courseFilesPrefix = `courses/${courseId}/`;
             // List all files in the course folder
             const [files] = await bucket.getFiles({
-                prefix: courseFilesPrefix
+                prefix: courseFilesPrefix,
             });
             // Delete all files in the course folder
             if (files.length > 0) {
@@ -86,4 +87,7 @@ exports.onCourseDelete = functions.firestore
         // Note: We don't throw HttpsError for cleanup operations as they should not block the main deletion
     }
 });
+// Quiz attempt functions
+exports.startQuizAttempt = quiz_attempts_1.startQuizAttempt;
+exports.submitQuizAttempt = quiz_attempts_1.submitQuizAttempt;
 //# sourceMappingURL=index.js.map

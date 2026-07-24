@@ -4,6 +4,7 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, initializeFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -39,6 +40,7 @@ let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 let db: Firestore | undefined;
 let storage: FirebaseStorage | undefined;
+let functions: ReturnType<typeof getFunctions> | undefined;
 
 if (typeof window !== "undefined") {
   validateConfig();
@@ -53,6 +55,15 @@ if (typeof window !== "undefined") {
   // initializeFirestore lets us set SDK settings explicitly (e.g. long-polling fallback)
   db = initializeFirestore(app, {});
   storage = getStorage(app);
+  functions = getFunctions(app);
+
+  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+    try {
+      connectFunctionsEmulator(functions, "localhost", 5001);
+    } catch {
+      // Already connected or emulator not running
+    }
+  }
 }
 
 /**
@@ -75,5 +86,5 @@ export function describeFirestoreError(error: unknown): string {
   return message;
 }
 
-export { app, auth, db, storage };
+export { app, auth, db, storage, functions };
 export default app;
