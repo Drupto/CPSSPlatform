@@ -88,6 +88,10 @@ export default function CourseLearnPage() {
   }, []);
 
   useEffect(() => {
+    if (!auth || !course) {
+      setAuthorized(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (!authUser || !course) {
         setAuthorized(false);
@@ -199,10 +203,11 @@ export default function CourseLearnPage() {
       setCurrentQuizAttemptsUsed(session.attemptsUsed);
       setIsQuizTimerActive(true);
       autoSubmittedQuizRef.current = false;
-    } catch (error) {
+} catch (error) {
       console.error("Error starting quiz attempt:", error);
+      console.error("Error details:", error instanceof Error ? error.message : String(error));
     }
-  };
+   };
 
   const handleQuizAnswerSelect = (questionIndex: number, answerIndex: number) => {
     if (quizSubmitted) return;
