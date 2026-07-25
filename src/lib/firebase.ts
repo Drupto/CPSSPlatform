@@ -55,7 +55,7 @@ if (typeof window !== "undefined") {
   // initializeFirestore lets us set SDK settings explicitly (e.g. long-polling fallback)
   db = initializeFirestore(app, {});
   storage = getStorage(app);
-  functions = getFunctions(app);
+  functions = getFunctions(app, "us-central1");
 
   if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
     try {
