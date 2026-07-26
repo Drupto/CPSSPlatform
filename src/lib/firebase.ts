@@ -35,12 +35,14 @@ function validateConfig() {
   }
 }
 
+const useEmulators = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true";
+
 // Initialize Firebase only on client-side to prevent build-time errors
 let app: FirebaseApp | undefined;
-let auth: Auth | undefined;
-let db: Firestore | undefined;
-let storage: FirebaseStorage | undefined;
-let functions: ReturnType<typeof getFunctions> | undefined;
+let authInstance: Auth | undefined;
+let dbInstance: Firestore | undefined;
+let storageInstance: FirebaseStorage | undefined;
+let functionsInstance: ReturnType<typeof getFunctions> | undefined;
 
 if (typeof window !== "undefined") {
   validateConfig();
@@ -51,20 +53,25 @@ if (typeof window !== "undefined") {
     app = getApps()[0];
   }
 
-  auth = getAuth(app);
+  authInstance = getAuth(app);
   // initializeFirestore lets us set SDK settings explicitly (e.g. long-polling fallback)
-  db = initializeFirestore(app, {});
-  storage = getStorage(app);
-  functions = getFunctions(app, "us-central1");
+  dbInstance = initializeFirestore(app, {});
+  storageInstance = getStorage(app);
+  functionsInstance = getFunctions(app, "us-central1");
 
-  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+  if (useEmulators && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
     try {
-      connectFunctionsEmulator(functions, "localhost", 5001);
+      connectFunctionsEmulator(functionsInstance, "localhost", 5001);
     } catch {
       // Already connected or emulator not running
     }
   }
 }
+
+const auth = authInstance as Auth;
+const db = dbInstance as Firestore;
+const storage = storageInstance as FirebaseStorage;
+const functions = functionsInstance as ReturnType<typeof getFunctions>;
 
 /**
  * Translates opaque network errors (e.g. "Failed to fetch") into a clear,

@@ -1,4 +1,4 @@
-import { onCall } from "firebase-functions/v2/https";
+import { HttpsError, onCall } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { Timestamp, FieldValue } from "firebase-admin/firestore";
 
@@ -73,7 +73,7 @@ function assertEnrolled(
   courseId: string
 ): void {
   if (!enrollmentData || enrollmentData.userId !== userId || enrollmentData.courseId !== courseId) {
-    throw new Error("User is not enrolled in this course");
+    throw new HttpsError("permission-denied", "User is not enrolled in this course");
   }
 }
 
@@ -82,13 +82,13 @@ export const startQuizAttempt = onCall<StartQuizAttemptRequest, Promise<StartQui
     const { courseId, quizId } = request.data;
 
     if (!courseId || !quizId) {
-      throw new Error("Missing courseId or quizId");
+      throw new HttpsError("invalid-argument", "Missing courseId or quizId");
     }
 
     const userId = request.auth?.uid;
 
     if (!userId) {
-      throw new Error("Unauthenticated");
+      throw new HttpsError("unauthenticated", "Please sign in to start a quiz");
     }
 
     const db = admin.firestore();
@@ -103,11 +103,11 @@ export const startQuizAttempt = onCall<StartQuizAttemptRequest, Promise<StartQui
       ]);
 
       if (!courseSnap.exists || !courseSnap.data()?.published) {
-        throw new Error("Quiz is not available");
+        throw new HttpsError("failed-precondition", "Quiz is not available");
       }
 
       if (!quizSnap.exists) {
-        throw new Error("Quiz was not found");
+        throw new HttpsError("not-found", "Quiz was not found");
       }
 
       const enrollmentSnap = await transaction.get(db.doc(`enrollments/${userId}_${courseId}`));
@@ -118,15 +118,16 @@ export const startQuizAttempt = onCall<StartQuizAttemptRequest, Promise<StartQui
 
       const attemptsQuery = db
         .collection("quizAttempts")
-        .where("userId", "==", userId)
-        .where("courseId", "==", courseId)
-        .where("quizId", "==", quizId)
-        .limit(maxAttempts);
+        .where("userId", "==", userId);
 
       const attemptsSnap = await transaction.get(attemptsQuery);
+      const attemptsForQuiz = attemptsSnap.docs.filter((doc) => {
+        const data = doc.data() as Record<string, unknown>;
+        return data.courseId === courseId && data.quizId === quizId;
+      }).length;
 
-      if (attemptsSnap.size >= maxAttempts) {
-        throw new Error("Quiz attempts have been used");
+      if (attemptsForQuiz >= maxAttempts) {
+        throw new HttpsError("failed-precondition", "Quiz attempts have been used");
       }
 
       const now = Date.now();
@@ -142,7 +143,7 @@ export const startQuizAttempt = onCall<StartQuizAttemptRequest, Promise<StartQui
         const existingExpiresAtMs = (existingSession.expiresAt as { toMillis: () => number } | undefined)?.toMillis?.() ?? null;
 
         if (existingExpiresAtMs === null || Date.now() <= existingExpiresAtMs + QUIZ_SUBMISSION_GRACE_MS) {
-          throw new Error("Quiz attempt already in progress");
+          throw new HttpsError("already-exists", "Quiz attempt already in progress");
         }
       }
 
@@ -160,7 +161,7 @@ export const startQuizAttempt = onCall<StartQuizAttemptRequest, Promise<StartQui
 
       return {
         sessionId: sessionRef.id,
-        attemptsUsed: attemptsSnap.size,
+        attemptsUsed: attemptsForQuiz,
         expiresAtMs: expiresAt?.toMillis() ?? null,
       };
     });
@@ -172,13 +173,13 @@ export const submitQuizAttempt = onCall<SubmitQuizAttemptRequest, Promise<Submit
     const { sessionId, answers } = request.data;
 
     if (!sessionId || !Array.isArray(answers)) {
-      throw new Error("Missing sessionId or answers");
+      throw new HttpsError("invalid-argument", "Missing sessionId or answers");
     }
 
     const userId = request.auth?.uid;
 
     if (!userId) {
-      throw new Error("Unauthenticated");
+      throw new HttpsError("unauthenticated", "Please sign in to submit your quiz");
     }
 
     const db = admin.firestore();
@@ -188,21 +189,21 @@ export const submitQuizAttempt = onCall<SubmitQuizAttemptRequest, Promise<Submit
       const sessionSnap = await transaction.get(sessionRef);
 
       if (!sessionSnap.exists) {
-        throw new Error("Quiz session was not found");
+        throw new HttpsError("not-found", "Quiz session was not found");
       }
 
       const session = sessionSnap.data() as Record<string, unknown>;
 
       if (session.userId !== userId) {
-        throw new Error("Quiz session does not belong to this user");
+        throw new HttpsError("permission-denied", "Quiz session does not belong to this user");
       }
 
       if (session.status === "completed") {
-        throw new Error("Quiz has already been submitted");
+        throw new HttpsError("failed-precondition", "Quiz has already been submitted");
       }
 
       if (session.status === "expired") {
-        throw new Error("Quiz session has expired");
+        throw new HttpsError("failed-precondition", "Quiz session has expired");
       }
 
       const enrollmentSnap = await transaction.get(db.doc(`enrollments/${userId}_${session.courseId}`));
@@ -217,11 +218,11 @@ export const submitQuizAttempt = onCall<SubmitQuizAttemptRequest, Promise<Submit
       ]);
 
       if (!courseSnap.exists || !courseSnap.data()?.published) {
-        throw new Error("Quiz is not available");
+        throw new HttpsError("failed-precondition", "Quiz is not available");
       }
 
       if (!quizSnap.exists) {
-        throw new Error("Quiz was not found");
+        throw new HttpsError("not-found", "Quiz was not found");
       }
 
       const quiz = { id: quizSnap.id, ...quizSnap.data() } as Record<string, unknown>;
@@ -232,21 +233,22 @@ export const submitQuizAttempt = onCall<SubmitQuizAttemptRequest, Promise<Submit
 
       const attemptsQuery = db
         .collection("quizAttempts")
-        .where("userId", "==", userId)
-        .where("courseId", "==", session.courseId)
-        .where("quizId", "==", session.quizId)
-        .limit(maxAttempts);
+        .where("userId", "==", userId);
 
       const attemptsSnap = await transaction.get(attemptsQuery);
+      const attemptsForQuiz = attemptsSnap.docs.filter((doc) => {
+        const data = doc.data() as Record<string, unknown>;
+        return data.courseId === session.courseId && data.quizId === session.quizId;
+      }).length;
 
-      if (attemptsSnap.size >= maxAttempts) {
-        throw new Error("Quiz attempts have been used");
+      if (attemptsForQuiz >= maxAttempts) {
+        throw new HttpsError("failed-precondition", "Quiz attempts have been used");
       }
 
       const expiresAtMs = (session.expiresAt as { toMillis: () => number } | undefined)?.toMillis?.() ?? null;
 
       if (expiresAtMs !== null && Date.now() > expiresAtMs + QUIZ_SUBMISSION_GRACE_MS) {
-        throw new Error("Quiz time limit exceeded");
+        throw new HttpsError("deadline-exceeded", "Quiz time limit exceeded");
       }
 
       validateAnswers(quiz, answers);
@@ -287,7 +289,7 @@ export const submitQuizAttempt = onCall<SubmitQuizAttemptRequest, Promise<Submit
         attemptId: attemptRef.id,
         score,
         passed,
-        attemptsUsed: attemptsSnap.size + 1,
+        attemptsUsed: attemptsForQuiz + 1,
       };
     });
   }

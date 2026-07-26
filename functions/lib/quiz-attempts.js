@@ -41,18 +41,18 @@ function getSessionDocId(userId, quizId) {
 }
 function assertEnrolled(enrollmentData, userId, courseId) {
     if (!enrollmentData || enrollmentData.userId !== userId || enrollmentData.courseId !== courseId) {
-        throw new Error("User is not enrolled in this course");
+        throw new https_1.HttpsError("permission-denied", "User is not enrolled in this course");
     }
 }
 exports.startQuizAttempt = (0, https_1.onCall)(async (request) => {
     var _a;
     const { courseId, quizId } = request.data;
     if (!courseId || !quizId) {
-        throw new Error("Missing courseId or quizId");
+        throw new https_1.HttpsError("invalid-argument", "Missing courseId or quizId");
     }
     const userId = (_a = request.auth) === null || _a === void 0 ? void 0 : _a.uid;
     if (!userId) {
-        throw new Error("Unauthenticated");
+        throw new https_1.HttpsError("unauthenticated", "Please sign in to start a quiz");
     }
     const db = admin.firestore();
     return db.runTransaction(async (transaction) => {
@@ -64,10 +64,10 @@ exports.startQuizAttempt = (0, https_1.onCall)(async (request) => {
             transaction.get(quizRef),
         ]);
         if (!courseSnap.exists || !((_a = courseSnap.data()) === null || _a === void 0 ? void 0 : _a.published)) {
-            throw new Error("Quiz is not available");
+            throw new https_1.HttpsError("failed-precondition", "Quiz is not available");
         }
         if (!quizSnap.exists) {
-            throw new Error("Quiz was not found");
+            throw new https_1.HttpsError("not-found", "Quiz was not found");
         }
         const enrollmentSnap = await transaction.get(db.doc(`enrollments/${userId}_${courseId}`));
         assertEnrolled(enrollmentSnap.data(), userId, courseId);
@@ -75,13 +75,14 @@ exports.startQuizAttempt = (0, https_1.onCall)(async (request) => {
         const maxAttempts = Math.max(1, Number((_b = quiz.maxAttempts) !== null && _b !== void 0 ? _b : 1));
         const attemptsQuery = db
             .collection("quizAttempts")
-            .where("userId", "==", userId)
-            .where("courseId", "==", courseId)
-            .where("quizId", "==", quizId)
-            .limit(maxAttempts);
+            .where("userId", "==", userId);
         const attemptsSnap = await transaction.get(attemptsQuery);
-        if (attemptsSnap.size >= maxAttempts) {
-            throw new Error("Quiz attempts have been used");
+        const attemptsForQuiz = attemptsSnap.docs.filter((doc) => {
+            const data = doc.data();
+            return data.courseId === courseId && data.quizId === quizId;
+        }).length;
+        if (attemptsForQuiz >= maxAttempts) {
+            throw new https_1.HttpsError("failed-precondition", "Quiz attempts have been used");
         }
         const now = Date.now();
         const timeLimitSeconds = getQuizTimeLimitSeconds(quiz);
@@ -93,7 +94,7 @@ exports.startQuizAttempt = (0, https_1.onCall)(async (request) => {
         if ((existingSession === null || existingSession === void 0 ? void 0 : existingSession.status) === "pending") {
             const existingExpiresAtMs = (_e = (_d = (_c = existingSession.expiresAt) === null || _c === void 0 ? void 0 : _c.toMillis) === null || _d === void 0 ? void 0 : _d.call(_c)) !== null && _e !== void 0 ? _e : null;
             if (existingExpiresAtMs === null || Date.now() <= existingExpiresAtMs + QUIZ_SUBMISSION_GRACE_MS) {
-                throw new Error("Quiz attempt already in progress");
+                throw new https_1.HttpsError("already-exists", "Quiz attempt already in progress");
             }
         }
         transaction.set(sessionRef, {
@@ -109,7 +110,7 @@ exports.startQuizAttempt = (0, https_1.onCall)(async (request) => {
         });
         return {
             sessionId: sessionRef.id,
-            attemptsUsed: attemptsSnap.size,
+            attemptsUsed: attemptsForQuiz,
             expiresAtMs: (_f = expiresAt === null || expiresAt === void 0 ? void 0 : expiresAt.toMillis()) !== null && _f !== void 0 ? _f : null,
         };
     });
@@ -118,11 +119,11 @@ exports.submitQuizAttempt = (0, https_1.onCall)(async (request) => {
     var _a;
     const { sessionId, answers } = request.data;
     if (!sessionId || !Array.isArray(answers)) {
-        throw new Error("Missing sessionId or answers");
+        throw new https_1.HttpsError("invalid-argument", "Missing sessionId or answers");
     }
     const userId = (_a = request.auth) === null || _a === void 0 ? void 0 : _a.uid;
     if (!userId) {
-        throw new Error("Unauthenticated");
+        throw new https_1.HttpsError("unauthenticated", "Please sign in to submit your quiz");
     }
     const db = admin.firestore();
     return db.runTransaction(async (transaction) => {
@@ -130,17 +131,17 @@ exports.submitQuizAttempt = (0, https_1.onCall)(async (request) => {
         const sessionRef = db.doc(`quizSessions/${sessionId}`);
         const sessionSnap = await transaction.get(sessionRef);
         if (!sessionSnap.exists) {
-            throw new Error("Quiz session was not found");
+            throw new https_1.HttpsError("not-found", "Quiz session was not found");
         }
         const session = sessionSnap.data();
         if (session.userId !== userId) {
-            throw new Error("Quiz session does not belong to this user");
+            throw new https_1.HttpsError("permission-denied", "Quiz session does not belong to this user");
         }
         if (session.status === "completed") {
-            throw new Error("Quiz has already been submitted");
+            throw new https_1.HttpsError("failed-precondition", "Quiz has already been submitted");
         }
         if (session.status === "expired") {
-            throw new Error("Quiz session has expired");
+            throw new https_1.HttpsError("failed-precondition", "Quiz session has expired");
         }
         const enrollmentSnap = await transaction.get(db.doc(`enrollments/${userId}_${session.courseId}`));
         assertEnrolled(enrollmentSnap.data(), userId, session.courseId);
@@ -151,26 +152,27 @@ exports.submitQuizAttempt = (0, https_1.onCall)(async (request) => {
             transaction.get(quizRef),
         ]);
         if (!courseSnap.exists || !((_a = courseSnap.data()) === null || _a === void 0 ? void 0 : _a.published)) {
-            throw new Error("Quiz is not available");
+            throw new https_1.HttpsError("failed-precondition", "Quiz is not available");
         }
         if (!quizSnap.exists) {
-            throw new Error("Quiz was not found");
+            throw new https_1.HttpsError("not-found", "Quiz was not found");
         }
         const quiz = Object.assign({ id: quizSnap.id }, quizSnap.data());
         const maxAttempts = Math.max(1, Number((_c = (_b = session.maxAttempts) !== null && _b !== void 0 ? _b : quiz.maxAttempts) !== null && _c !== void 0 ? _c : 1));
         const attemptsQuery = db
             .collection("quizAttempts")
-            .where("userId", "==", userId)
-            .where("courseId", "==", session.courseId)
-            .where("quizId", "==", session.quizId)
-            .limit(maxAttempts);
+            .where("userId", "==", userId);
         const attemptsSnap = await transaction.get(attemptsQuery);
-        if (attemptsSnap.size >= maxAttempts) {
-            throw new Error("Quiz attempts have been used");
+        const attemptsForQuiz = attemptsSnap.docs.filter((doc) => {
+            const data = doc.data();
+            return data.courseId === session.courseId && data.quizId === session.quizId;
+        }).length;
+        if (attemptsForQuiz >= maxAttempts) {
+            throw new https_1.HttpsError("failed-precondition", "Quiz attempts have been used");
         }
         const expiresAtMs = (_f = (_e = (_d = session.expiresAt) === null || _d === void 0 ? void 0 : _d.toMillis) === null || _e === void 0 ? void 0 : _e.call(_d)) !== null && _f !== void 0 ? _f : null;
         if (expiresAtMs !== null && Date.now() > expiresAtMs + QUIZ_SUBMISSION_GRACE_MS) {
-            throw new Error("Quiz time limit exceeded");
+            throw new https_1.HttpsError("deadline-exceeded", "Quiz time limit exceeded");
         }
         validateAnswers(quiz, answers);
         const score = getQuizScore(quiz, answers);
@@ -201,7 +203,7 @@ exports.submitQuizAttempt = (0, https_1.onCall)(async (request) => {
             attemptId: attemptRef.id,
             score,
             passed,
-            attemptsUsed: attemptsSnap.size + 1,
+            attemptsUsed: attemptsForQuiz + 1,
         };
     });
 });

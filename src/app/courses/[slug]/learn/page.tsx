@@ -54,10 +54,29 @@ export default function CourseLearnPage() {
   const [currentQuizAttemptsUsed, setCurrentQuizAttemptsUsed] = useState(0);
   const [isSubmittingQuiz, setIsSubmittingQuiz] = useState(false);
   const [isQuizTimerActive, setIsQuizTimerActive] = useState(false);
+  const [quizError, setQuizError] = useState<string | null>(null);
   const autoSubmittedQuizRef = useRef(false);
 
   const startQuizAttemptFnRef = useRef<HttpsCallable | null>(null);
   const submitQuizAttemptFnRef = useRef<HttpsCallable | null>(null);
+
+  const getCallable = useCallback((name: "startQuizAttempt" | "submitQuizAttempt") => {
+    if (!functions) {
+      return null;
+    }
+
+    if (name === "startQuizAttempt") {
+      if (!startQuizAttemptFnRef.current) {
+        startQuizAttemptFnRef.current = httpsCallable(functions, name);
+      }
+      return startQuizAttemptFnRef.current;
+    }
+
+    if (!submitQuizAttemptFnRef.current) {
+      submitQuizAttemptFnRef.current = httpsCallable(functions, name);
+    }
+    return submitQuizAttemptFnRef.current;
+  }, []);
 
   useEffect(() => {
     if (!functions) return;
@@ -175,20 +194,30 @@ export default function CourseLearnPage() {
 
   // Quiz functions
   const startQuiz = async (quiz: any) => {
-    if (!user || !course) return;
+    if (!user || !course) {
+      setQuizError("Please sign in and open this course again before starting a quiz.");
+      return;
+    }
 
     const maxAttempts = quiz.maxAttempts ?? 1;
     const attemptsForQuiz = quizAttempts.filter(attempt => attempt.quizId === quiz.id);
     const timeLimitSeconds = getQuizTimeLimitSeconds(quiz);
 
     if (attemptsForQuiz.length >= maxAttempts) {
+      setQuizError("You have already used all attempts for this quiz.");
       return;
     }
 
-    if (!startQuizAttemptFnRef.current) return;
+    const callable = getCallable("startQuizAttempt");
+    if (!callable) {
+      setQuizError("Quiz service is not ready yet. Please refresh the page and try again.");
+      return;
+    }
+
+    setQuizError(null);
 
     try {
-      const sessionResult = await startQuizAttemptFnRef.current({ courseId: course.id, quizId: quiz.id });
+      const sessionResult = await callable({ courseId: course.id, quizId: quiz.id });
       const session = sessionResult.data as StartQuizAttemptResponse;
 
       setCurrentQuiz(quiz);
@@ -203,11 +232,15 @@ export default function CourseLearnPage() {
       setCurrentQuizAttemptsUsed(session.attemptsUsed);
       setIsQuizTimerActive(true);
       autoSubmittedQuizRef.current = false;
-} catch (error) {
+    } catch (error) {
       console.error("Error starting quiz attempt:", error);
-      console.error("Error details:", error instanceof Error ? error.message : String(error));
+      const message = error instanceof Error ? error.message : String(error);
+      const friendlyMessage = message.includes("Failed to fetch") || message.includes("fetch")
+        ? "The quiz service could not be reached. If you are testing locally, make sure the Functions emulator is running or disable emulator mode in your environment settings."
+        : message || "Unable to start the quiz right now. Please try again.";
+      setQuizError(friendlyMessage);
     }
-   };
+  };
 
   const handleQuizAnswerSelect = (questionIndex: number, answerIndex: number) => {
     if (quizSubmitted) return;
@@ -218,12 +251,16 @@ export default function CourseLearnPage() {
   };
 
   const submitQuiz = async () => {
-    if (!user || !currentQuiz || !currentQuizSessionId || quizSubmitted || isSubmittingQuiz || !submitQuizAttemptFnRef.current) return;
+    const callable = getCallable("submitQuizAttempt");
+    if (!user || !currentQuiz || !currentQuizSessionId || quizSubmitted || isSubmittingQuiz || !callable) {
+      return;
+    }
     
     setIsSubmittingQuiz(true);
+    setQuizError(null);
     
     try {
-      const result = await submitQuizAttemptFnRef.current({ sessionId: currentQuizSessionId, answers: [...quizAnswers] });
+      const result = await callable({ sessionId: currentQuizSessionId, answers: [...quizAnswers] });
       const response = result.data as SubmitQuizAttemptResponse;
 
       setQuizScore(response.score);
@@ -244,19 +281,35 @@ export default function CourseLearnPage() {
       }, ...prev.filter(attempt => attempt.quizId !== currentQuiz.id)]);
     } catch (error) {
       console.error("Error submitting quiz attempt:", error);
+      const message = error instanceof Error ? error.message : String(error);
+      const friendlyMessage = message.includes("Failed to fetch") || message.includes("fetch")
+        ? "The quiz service could not be reached. If you are testing locally, make sure the Functions emulator is running or disable emulator mode in your environment settings."
+        : message || "Unable to submit the quiz right now. Please try again.";
+      setQuizError(friendlyMessage);
     } finally {
       setIsSubmittingQuiz(false);
     }
   };
 
   const restartQuiz = async () => {
-    if (!currentQuiz || !course || !user || !startQuizAttemptFnRef.current) return;
+    if (!currentQuiz || !course || !user) {
+      setQuizError("Please sign in and open this course again before restarting a quiz.");
+      return;
+    }
+
+    const callable = getCallable("startQuizAttempt");
+    if (!callable) {
+      setQuizError("Quiz service is not ready yet. Please refresh the page and try again.");
+      return;
+    }
 
     const attemptsForQuiz = quizAttempts.filter(attempt => attempt.quizId === currentQuiz.id).length;
     const timeLimitSeconds = getQuizTimeLimitSeconds(currentQuiz);
 
+    setQuizError(null);
+
     try {
-      const sessionResult = await startQuizAttemptFnRef.current({ courseId: course.id, quizId: currentQuiz.id });
+      const sessionResult = await callable({ courseId: course.id, quizId: currentQuiz.id });
       const session = sessionResult.data as StartQuizAttemptResponse;
 
       setCurrentQuizSessionId(session.sessionId);
@@ -271,11 +324,17 @@ export default function CourseLearnPage() {
       autoSubmittedQuizRef.current = false;
     } catch (error) {
       console.error("Error restarting quiz attempt:", error);
+      const message = error instanceof Error ? error.message : String(error);
+      const friendlyMessage = message.includes("Failed to fetch") || message.includes("fetch")
+        ? "The quiz service could not be reached. If you are testing locally, make sure the Functions emulator is running or disable emulator mode in your environment settings."
+        : message || "Unable to restart the quiz right now. Please try again.";
+      setQuizError(friendlyMessage);
     }
   };
 
   const closeQuiz = () => {
     setShowQuiz(false);
+    setQuizError(null);
     setCurrentQuiz(null);
     setCurrentQuizSessionId(null);
     setQuizTimeRemaining(null);
@@ -666,6 +725,12 @@ const QuizModal = ({
               )}
             </section>
 
+            {quizError && (
+              <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                {quizError}
+              </div>
+            )}
+
             {/* Navigation buttons */}
             <div className="flex items-center justify-between">
               <Button
@@ -777,6 +842,37 @@ const QuizModal = ({
             </div>
           </aside>
         </div>
+
+        {showQuiz && currentQuiz && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-8">
+            <div className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-primary">Quiz</p>
+                  <h3 className="mt-1 text-2xl font-bold text-slate-900">{currentQuiz.title}</h3>
+                  <p className="mt-2 text-sm text-slate-600">{currentQuiz.description || "Answer the questions below to submit your attempt."}</p>
+                </div>
+                <Button variant="outline" onClick={closeQuiz}>Close</Button>
+              </div>
+
+              {quizError && (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                  {quizError}
+                </div>
+              )}
+
+              <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                <p>This quiz session is now active. The quiz UI is ready and the current request is being handled.</p>
+                <p className="mt-2">If you still see a problem, the error message above will tell you what blocked the request.</p>
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
+                <Button variant="outline" onClick={closeQuiz}>Cancel</Button>
+                <Button onClick={() => submitQuiz()}>Submit Quiz</Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Quiz Modal */}
