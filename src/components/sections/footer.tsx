@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
@@ -29,9 +30,15 @@ export function Footer() {
 
         {/* Footer Links */}
         <div className="py-12 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="text-2xl font-bold">
-            KINÉTIKA
-          </div>
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/logo.png"
+              alt="KINÉTIKA"
+              width={120}
+              height={40}
+              className="h-10 w-auto"
+            />
+          </Link>
           
           <div className="flex flex-wrap justify-center gap-x-10 gap-y-4 text-sm font-medium text-slate-400">
             <a href="#" className="hover:text-white transition-colors">Course</a>

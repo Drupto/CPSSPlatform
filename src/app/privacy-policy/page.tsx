@@ -2,7 +2,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/sections/footer"
 
 export const metadata = {
-  title: "Privacy Policy | CSCS ProPass",
+  title: "Privacy Policy | Kinetika",
 }
 
 export default function PrivacyPolicy() {
@@ -17,7 +17,7 @@ export default function PrivacyPolicy() {
               Privacy Policy
             </p>
             <h1 className="text-4xl md:text-5xl font-extrabold text-slate-950 leading-tight">
-              Your privacy matters at CSCS ProPass
+              Your privacy matters at Kinetika
             </h1>
             <p className="text-slate-600 text-lg leading-8">
               This Privacy Policy explains how we collect, use, and protect your personal information when you use our website and services.

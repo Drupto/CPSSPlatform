@@ -2,7 +2,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/sections/footer"
 
 export const metadata = {
-  title: "Terms of Service | CSCS ProPass",
+  title: "Terms of Service | Kinetika",
 }
 
 export default function TermsOfService() {
@@ -17,10 +17,10 @@ export default function TermsOfService() {
               Terms of Service
             </p>
             <h1 className="text-4xl md:text-5xl font-extrabold text-slate-950 leading-tight">
-              Terms and conditions for using CSCS ProPass
+              Terms and conditions for using Kinetika
             </h1>
             <p className="text-slate-600 text-lg leading-8">
-              These Terms of Service govern your use of the CSCS ProPass website. By accessing or using this site, you agree to these terms.
+              These Terms of Service govern your use of the Kinetika website. By accessing or using this site, you agree to these terms.
             </p>
 
             <div className="space-y-8 text-slate-700">
@@ -34,7 +34,7 @@ export default function TermsOfService() {
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold text-slate-900">Intellectual Property</h2>
                 <p>
-                  All course content, materials, and design remain the property of CSCS ProPass. You may not reproduce or distribute content without written permission.
+                  All course content, materials, and design remain the property of Kinetika. You may not reproduce or distribute content without written permission.
                 </p>
               </div>
 
@@ -55,7 +55,7 @@ export default function TermsOfService() {
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold text-slate-900">Limitation of Liability</h2>
                 <p>
-                  CSCS ProPass is not liable for any indirect, incidental, or consequential losses arising from use of the site or course materials.
+                  Kinetika is not liable for any indirect, incidental, or consequential losses arising from use of the site or course materials.
                 </p>
               </div>
 

@@ -64,7 +64,7 @@ export default function DashboardPage() {
       <nav className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold tracking-tight">
-            CSCS<span className="text-primary">ProPass</span>
+            KINÉTIKA
           </Link>
           <div className="flex items-center gap-3">
             {isAdmin && (

@@ -79,7 +79,7 @@ export default function AuthPage() {
       <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
         <div className="text-center mb-8">
           <Link href="/" className="text-3xl font-bold tracking-tight inline-block">
-            CSCS<span className="text-primary">ProPass</span>
+            KINÉTIKA
           </Link>
           <p className="text-slate-600 mt-2">Join thousands of certified professionals</p>
         </div>

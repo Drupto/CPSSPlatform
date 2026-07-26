@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Menu, X, Shield } from "lucide-react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -68,8 +69,16 @@ export function Navbar() {
       }`}
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold tracking-tight">
-          KINÉTIKA
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src="/logo.png"
+            alt="KINÉTIKA"
+            width={120}
+            height={40}
+            className="h-10 w-auto"
+            priority
+          />
+          <span className="text-2xl font-bold tracking-tight">KINÉTIKA</span>
         </Link>
 
         {/* Desktop Links */}
