@@ -14,7 +14,6 @@ import { Progress } from "@/components/ui/progress";
 import {
   Download,
   FileText,
-  Link as LinkIcon,
   Video,
   ExternalLink,
   CreditCard,
@@ -23,6 +22,9 @@ import {
   X,
   BookOpen,
   Play,
+  Sparkles,
+  RotateCcw,
+  Brain,
 } from "lucide-react";
 
 interface FlashcardStudyState {
@@ -184,6 +186,11 @@ export default function ResourcesPage() {
     }
   };
 
+  const currentCard = studyState?.cards[studyState.currentIndex];
+  const progressValue = studyState
+    ? ((studyState.currentIndex + 1) / studyState.cards.length) * 100
+    : 0;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -313,81 +320,100 @@ export default function ResourcesPage() {
       </div>
 
       {studyState && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 md:p-10">
-              <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-4xl overflow-hidden rounded-[28px] border border-white/10 bg-white shadow-2xl">
+            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-500" />
+            <div className="relative p-4 sm:p-6 md:p-8 lg:p-10">
+              <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">Study Flashcards</h2>
-                  <p className="text-sm text-slate-500 mt-1">
-                    {studyState.courseTitle} • Card {studyState.currentIndex + 1} of{" "}
-                    {studyState.cards.length}
+                  <div className="flex items-center gap-2 text-sm font-medium text-indigo-600">
+                    <Brain className="h-4 w-4" />
+                    Study Session
+                  </div>
+                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Flashcard Review</h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {studyState.courseTitle} • Card {studyState.currentIndex + 1} of {studyState.cards.length}
                   </p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={closeStudyMode}>
-                  <X className="h-5 w-5" />
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
+                    {studyState.cards.length} cards
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={closeStudyMode} className="rounded-full">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
-              <div className="flex items-center gap-3 mb-6">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={goPrev}
-                  className="gap-1"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                <Progress
-                  value={((studyState.currentIndex + 1) / studyState.cards.length) * 100}
-                  className="h-2 flex-1"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={goNext}
-                  className="gap-1"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+              <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-3 flex items-center justify-between text-sm text-slate-500">
+                  <span>Progress</span>
+                  <span>{Math.round(progressValue)}%</span>
+                </div>
+                <Progress value={progressValue} className="h-2" />
               </div>
 
-              <div className="perspective-1000">
-                <div
-                  className={`relative w-full bg-slate-50 border border-slate-200 rounded-2xl p-8 md:p-12 cursor-pointer select-none transition-transform duration-500 transform-style-3d ${
-                    studyState.isFlipped ? "rotate-y-180" : ""
-                  }`}
-                  onClick={flipCard}
-                  style={{ minHeight: "280px" }}
-                >
-                  <div className="absolute inset-0 flex items-center justify-center p-8">
-                    <div className="text-center">
-                      <p className="text-sm text-slate-500 mb-3">
-                        {studyState.isFlipped ? "Back" : "Front"}
-                      </p>
-                      <p className="text-xl md:text-2xl font-medium text-slate-900 leading-relaxed">
-                        {studyState.isFlipped
-                          ? studyState.cards[studyState.currentIndex].back
-                          : studyState.cards[studyState.currentIndex].front}
-                      </p>
+              <div className="mt-6 rounded-[24px] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-3 shadow-inner sm:p-4">
+                <div className="perspective-1000">
+                  <div
+                    className={`relative h-[320px] w-full cursor-pointer select-none rounded-[20px] shadow-lg transition-transform duration-700 sm:h-[380px] ${
+                      studyState.isFlipped ? "rotate-y-180" : ""
+                    }`}
+                    onClick={flipCard}
+                  >
+                    <div className="card-face rounded-[20px] border border-slate-200 bg-gradient-to-br from-white to-slate-100 p-6 sm:p-8">
+                      <div className="text-center">
+                        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                          <Sparkles className="h-5 w-5" />
+                        </div>
+                        <p className="mt-4 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
+                          Front
+                        </p>
+                        <p className="mt-3 text-lg font-semibold text-slate-900 sm:text-2xl">
+                          {currentCard?.front}
+                        </p>
+                        <p className="mt-4 text-sm text-slate-500">
+                          {currentCard?.title}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="card-face rotate-y-180 rounded-[20px] border border-indigo-500/30 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 p-6 text-white sm:p-8">
+                      <div className="text-center">
+                        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/20 text-white">
+                          <RotateCcw className="h-5 w-5" />
+                        </div>
+                        <p className="mt-4 text-sm font-semibold uppercase tracking-[0.2em] text-white/70">
+                          Back
+                        </p>
+                        <p className="mt-3 text-lg font-semibold sm:text-2xl">
+                          {currentCard?.back}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-4 mt-6">
-                <Button onClick={flipCard} size="lg" className="gap-2 px-8">
-                  <Play className="h-4 w-4" />
-                  {studyState.isFlipped ? "Show Front" : "Show Back"}
-                </Button>
-              </div>
-
-              <div className="flex items-center justify-center gap-6 mt-6 text-xs text-slate-400">
-                <span>Space - Flip card</span>
-                <span>← → - Navigate</span>
-                <span>Esc - Close</span>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                  <span className="rounded-full bg-slate-100 px-3 py-1">Tap card to flip</span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1">Space / Arrow keys</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={goPrev} className="gap-2">
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <Button onClick={flipCard} className="gap-2">
+                    <Play className="h-4 w-4" />
+                    {studyState.isFlipped ? "Show Front" : "Show Back"}
+                  </Button>
+                  <Button variant="outline" onClick={goNext} className="gap-2">
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -398,7 +424,13 @@ export default function ResourcesPage() {
         .perspective-1000 {
           perspective: 1000px;
         }
-        .transform-style-3d {
+        .card-face {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          backface-visibility: hidden;
           transform-style: preserve-3d;
         }
         .rotate-y-180 {
