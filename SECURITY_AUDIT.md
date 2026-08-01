@@ -1,6 +1,7 @@
 # 🔒 Security Audit Report — CPSSPlatform (KINÉTIKA / CSCS Prep)
 
 **Audit Date:** 2026-08-01
+**Last Updated:** 2026-08-01 (remediation pass)
 **Auditor:** Cline Security Audit
 **Scope:** Full project — Firestore rules, Storage rules, Cloud Functions, Next.js client code, auth/authz, secrets, dependencies, input validation, AI flows
 **Project:** Firebase + Next.js 15 course platform with quiz engine, admin panel, enrollment approval workflow, and Genkit AI assistant
@@ -9,27 +10,35 @@
 
 ## Executive Summary
 
-The application has a **reasonable security foundation** — Firestore rules enforce admin checks via an `isAdmin()` function, quiz attempts are server-side via Cloud Functions, and enrollments require admin approval. However, there are **several critical and high-severity issues** that must be addressed before any production deployment.
+The application has a **reasonable security foundation** — Firestore rules enforce admin checks via an `isAdmin()` function, quiz attempts are server-side via Cloud Functions, and enrollments require admin approval. After the initial audit, **several critical and high-severity issues have been remediated** (see ✅ RESOLVED markers below). Remaining items should be addressed before production deployment.
 
-| Severity | Count |
-|----------|-------|
-| 🔴 CRITICAL | 3 |
-| 🟠 HIGH | 7 |
-| 🟡 MEDIUM | 6 |
-| 🔵 LOW / INFO | 5 |
+| Severity | Count | Resolved |
+|----------|-------|----------|
+| 🔴 CRITICAL | 3 | 2 ✅ |
+| 🟠 HIGH | 7 | 3 ✅ |
+| 🟡 MEDIUM | 6 | 1 ✅ |
+| 🔵 LOW / INFO | 5 | 1 ✅ |
 
-**Top risks:** Firestore path traversal in Cloud Functions, unrestricted `progress` writes, iframe injection via unsanitized URLs, admin pages protected only by client-side redirects, and a committed `.env` containing live Firebase web config.
+**Top risks (remaining):** iframe injection via unsanitized URLs, admin pages protected only by client-side redirects, and a committed `.env` containing live Firebase web config.
+
+**Resolved in this pass:**
+- ✅ C1 + H4: Firestore path traversal in Cloud Functions — IDs now validated with strict regex
+- ✅ C2: `progress` collection now enforces `hasOnly`, type, and size limits
+- ✅ H2: Admins can now read any user profile
+- ✅ H5: Quiz attempt count query now uses a composite index-backed query
+- ✅ M4: `onCourseDelete` migrated from Gen 1 to Gen 2 with retry enabled
+- ✅ L4: `firebase-admin` versions aligned (functions now v13)
 
 ---
 
 ## 🔴 CRITICAL Severity
 
-### C1. Firestore Path Traversal in Cloud Functions — `courseId`/`quizId` not sanitized
+### C1. ✅ RESOLVED — Firestore Path Traversal in Cloud Functions — `courseId`/`quizId` not sanitized
 
-**Files:** `functions/src/quiz-attempts.ts:82-98`, `functions/src/quiz-attempts.ts:188-213`
-**Status:** Verified
+**Files:** `functions/src/quiz-attempts.ts`
+**Status:** ✅ Resolved (2026-08-01)
 
-User-supplied `courseId` and `quizId` are interpolated directly into Firestore document paths with only a truthy check — **no validation that they don't contain `/`**.
+User-supplied `courseId` and `quizId` were interpolated directly into Firestore document paths with only a truthy check — **no validation that they don't contain `/`**.
 
 ```ts
 // functions/src/quiz-attempts.ts:82-98
@@ -44,21 +53,23 @@ const quizRef = db.doc(`courses/${courseId}/quizzes/${quizId}`);
 
 **Impact:** A malicious authenticated user can pass `courseId = "x/quizzes/<targetQuiz>/../../y"` (or any value containing slashes) to target unintended document paths, potentially reading or writing documents outside the intended course/quiz scope. Because the function runs with Admin SDK privileges, **Firestore security rules are bypassed entirely**.
 
-**Fix:** Validate IDs with a strict regex before use:
+**Fix (applied):** IDs are now validated with a strict regex before use:
 ```ts
 const ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
-if (!ID_RE.test(courseId) || !ID_RE.test(quizId)) {
-  throw new HttpsError("invalid-argument", "Invalid courseId or quizId");
+function assertValidId(value: unknown, fieldName: string): void {
+  if (typeof value !== "string" || !ID_RE.test(value)) {
+    throw new HttpsError("invalid-argument", `Invalid ${fieldName}`);
+  }
 }
 ```
-Apply the same to `sessionId` in `submitQuizAttempt` (line 173-188).
+`assertValidId` is called for `courseId` and `quizId` in `startQuizAttempt`, and `assertValidSessionId` validates `sessionId` in `submitQuizAttempt` (see H4).
 
 ---
 
-### C2. `progress` collection allows unrestricted field writes (no `hasOnly` / type / enrollment check)
+### C2. ✅ RESOLVED — `progress` collection allows unrestricted field writes (no `hasOnly` / type / enrollment check)
 
-**File:** `firestore.rules:90-97`
-**Status:** Verified
+**File:** `firestore.rules`
+**Status:** ✅ Resolved (2026-08-01)
 
 ```javascript
 match /progress/{progressId} {
@@ -80,16 +91,22 @@ match /progress/{progressId} {
 
 **Impact:** A user can pollute the `progress` collection with arbitrary data, spoof progress for courses they don't own, or inflate documents to consume Firestore storage.
 
-**Fix:**
+**Fix (applied):** The `progress` rules now enforce `hasOnly`, type validation, and size limits:
 ```javascript
 allow create: if request.auth != null
   && request.auth.uid == request.resource.data.userId
   && request.resource.data.keys().hasOnly(['id','userId','courseId','completedContentIds','updatedAt'])
+  && request.resource.data.userId is string
+  && request.resource.data.courseId is string
   && request.resource.data.completedContentIds is list
-  && request.resource.data.completedContentIds.size() <= 1000;
+  && request.resource.data.completedContentIds.size() <= 1000
+  && request.resource.data.updatedAt is timestamp;
 allow update: if request.auth != null
   && request.auth.uid == resource.data.userId
-  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completedContentIds','updatedAt']);
+  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completedContentIds','updatedAt'])
+  && request.resource.data.completedContentIds is list
+  && request.resource.data.completedContentIds.size() <= 1000
+  && request.resource.data.updatedAt is timestamp;
 ```
 
 ---
@@ -166,10 +183,10 @@ export function getYouTubeEmbedUrl(url: string): string {
 
 ---
 
-### H2. `users` collection read rule blocks admin functionality and creates inconsistency
+### H2. ✅ RESOLVED — `users` collection read rule blocks admin functionality and creates inconsistency
 
-**File:** `firestore.rules:33-34`
-**Status:** Verified
+**File:** `firestore.rules`
+**Status:** ✅ Resolved (2026-08-01)
 
 ```javascript
 match /users/{uid} {
@@ -185,7 +202,7 @@ match /users/{uid} {
 
 The admin pages catch this and show "Failed to load dashboard data", but it means **admin features are broken by design** and the rules don't match the intended admin capability model.
 
-**Fix:** Allow admins to read any user profile:
+**Fix (applied):** Admins can now read any user profile:
 ```javascript
 allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
 ```
@@ -212,10 +229,10 @@ match /courses/{courseId}/{asset} {
 
 ---
 
-### H4. `submitQuizAttempt` — `sessionId` not validated for path traversal
+### H4. ✅ RESOLVED — `submitQuizAttempt` — `sessionId` not validated for path traversal
 
-**File:** `functions/src/quiz-attempts.ts:173-188`
-**Status:** Verified
+**File:** `functions/src/quiz-attempts.ts`
+**Status:** ✅ Resolved (2026-08-01)
 
 ```ts
 const { sessionId, answers } = request.data;
@@ -228,14 +245,22 @@ const sessionRef = db.doc(`quizSessions/${sessionId}`);
 
 **Impact:** A user could attempt to read/submit against another user's session path. The subsequent `session.userId !== userId` check (line 197) prevents cross-user submission, but the path traversal still allows targeting arbitrary `quizSessions` docs, and combined with C1 could be chained.
 
-**Fix:** Validate `sessionId` with `ID_RE` (same as C1), or decode and verify format.
+**Fix (applied):** `sessionId` is now validated with a dedicated regex that allows URL-encoded characters (since session IDs are encoded `userId:quizId` pairs) but rejects slashes:
+```ts
+const SESSION_ID_RE = /^[A-Za-z0-9_%-]{1,256}$/;
+function assertValidSessionId(value: unknown): void {
+  if (typeof value !== "string" || !SESSION_ID_RE.test(value)) {
+    throw new HttpsError("invalid-argument", "Invalid sessionId");
+  }
+}
+```
 
 ---
 
-### H5. Quiz attempt count query is inefficient and race-prone
+### H5. ✅ RESOLVED — Quiz attempt count query is inefficient and race-prone
 
-**File:** `functions/src/quiz-attempts.ts:119-127`, `234-242`
-**Status:** Verified
+**File:** `functions/src/quiz-attempts.ts`
+**Status:** ✅ Resolved (2026-08-01)
 
 ```ts
 const attemptsQuery = db.collection("quizAttempts").where("userId", "==", userId);
@@ -250,7 +275,17 @@ const attemptsForQuiz = attemptsSnap.docs.filter(...).length;
 
 **Security angle:** If a user has thousands of attempts, this could be a DoS vector (expensive transaction reads billed to the project).
 
-**Fix:** Add a composite query `where("userId","==",userId).where("quizId","==",quizId)` and a matching composite index in `firestore.indexes.json`. Consider a counter document for attempt counts.
+**Fix (applied):** The query now uses a composite `where` clause backed by the composite index in `firestore.indexes.json`:
+```ts
+const attemptsQuery = db
+  .collection("quizAttempts")
+  .where("userId", "==", userId)
+  .where("courseId", "==", courseId)
+  .where("quizId", "==", quizId);
+const attemptsSnap = await transaction.get(attemptsQuery);
+return attemptsSnap.size;
+```
+The matching composite index (`userId` ASC, `courseId` ASC, `quizId` ASC) already exists in `firestore.indexes.json`.
 
 ---
 
@@ -361,10 +396,10 @@ The client sets `id: ${userId}_${courseId}` (see `src/lib/course.ts:147-154`). T
 
 ---
 
-### M4. `onCourseDelete` Cloud Function uses Gen 1 SDK and swallows all errors
+### M4. ✅ RESOLVED — `onCourseDelete` Cloud Function uses Gen 1 SDK and swallows all errors
 
-**File:** `functions/src/index.ts:16-98`
-**Status:** Verified
+**File:** `functions/src/index.ts`
+**Status:** ✅ Resolved (2026-08-01)
 
 ```ts
 export const onCourseDelete = functions.firestore
@@ -383,7 +418,13 @@ export const onCourseDelete = functions.firestore
 2. **Swallows all errors** — if storage cleanup fails, orphaned files accumulate silently. If Firestore subcollection cleanup fails, orphaned quizzes/content remain accessible.
 3. No retry logic.
 
-**Fix:** Migrate to Gen 2 trigger, add retry with exponential backoff, and alert on persistent failures (e.g. write failures to an `errors` collection).
+**Fix (applied):** Migrated to Gen 2 `onDocumentDeleted` trigger with `retry: true` enabled. Errors now propagate (no catch-all swallow) so Cloud Functions retries failed operations. All operations are idempotent — deleting already-deleted docs/files is a no-op, making retries safe:
+```ts
+export const onCourseDelete = onDocumentDeleted(
+  { document: "courses/{courseId}", retry: true },
+  async (event) => { ... }
+);
+```
 
 ---
 
@@ -435,8 +476,8 @@ The signup form has no client-side password length/complexity check. Firebase Au
 ### L3. CORS config is reasonably scoped
 `cors.json` lists specific origins (localhost, netlify, firebase app) — no wildcard `*`. Good. Ensure production origins are kept up to date and localhost is removed in production.
 
-### L4. `firebase-admin` version mismatch
-Root `package.json` has `firebase-admin: ^13.10.0` but `functions/package.json` has `firebase-admin: ^12.0.0`. The Functions deploy will use v12. Not a security issue per se, but keep versions aligned to avoid surprise behavior differences.
+### L4. ✅ RESOLVED — `firebase-admin` version mismatch
+Root `package.json` has `firebase-admin: ^13.10.0` and `functions/package.json` now also has `firebase-admin: ^13.0.0` (installed: 13.10.0). `firebase-functions` also updated to `^6.0.0` (installed: 6.6.0). Versions are now aligned.
 
 ### L5. No App Check enabled
 No evidence of Firebase App Check configuration. Enabling App Check (with reCAPTCHA Enterprise or Play Integrity) would protect Cloud Functions and Firestore from abuse by non-app clients.
@@ -449,34 +490,34 @@ No evidence of Firebase App Check configuration. Enabling App Check (with reCAPT
 |---------|----------------|-------|
 | `next` | 15.5.9 | Recent; check for advisories at deploy time |
 | `firebase` | ^11.9.1 | Current |
-| `firebase-admin` | ^13.10.0 (root) / ^12.0.0 (functions) | **Mismatch** — align versions |
+| `firebase-admin` | ^13.10.0 (root) / ^13.10.0 (functions) | ✅ Aligned |
 | `react` / `react-dom` | ^19.2.1 | Current |
 | `zod` | ^3.24.2 | Current |
 | `genkit` | ^1.28.0 | Current |
 
-**Recommendation:** Run `npm audit` in both root and `functions/` before each deploy, and enable Dependabot. No known critical CVEs identified at audit time for the pinned versions, but `firebase-admin` v12 in functions is behind the root v13 — update functions to v13.
+**Recommendation:** Run `npm audit` in both root and `functions/` before each deploy, and enable Dependabot. No known critical CVEs identified at audit time for the pinned versions. `firebase-admin` versions are now aligned at v13.
 
 ---
 
 ## Prioritized Remediation Plan
 
-| Priority | Issue | Effort |
-|----------|-------|--------|
-| 🔴 P0 | C1 + H4: Add ID validation regex in Cloud Functions | Small |
-| 🔴 P0 | C2: Add `hasOnly` + type + size limits to `progress` rules | Small |
-| 🔴 P0 | C3: Add server-side / middleware admin auth enforcement | Medium |
-| 🟠 P1 | H1: Fix `getYouTubeEmbedUrl` fallback + iframe sanitization | Small |
-| 🟠 P1 | H2: Allow admin read on `users` collection | Small |
-| 🟠 P1 | H3: Restrict Storage reads to enrolled users | Medium |
-| 🟠 P1 | H6: Add `.env.example`, expand `.gitignore` | Small |
-| 🟠 P1 | H7: Add auth + length limits + injection defense to AI flow | Medium |
-| 🟡 P2 | M1: Expand `.gitignore` for credential files | Small |
-| 🟡 P2 | M2: Remove `role` param from `createUserProfile` | Small |
-| 🟡 P2 | M4: Migrate `onCourseDelete` to Gen 2 + add retry | Medium |
-| 🟡 P2 | M5: Validate storage path prefix before delete | Small |
-| 🟡 P2 | M6: Add password strength enforcement | Small |
-| 🔵 P3 | L4: Align `firebase-admin` versions | Small |
-| 🔵 P3 | L5: Enable Firebase App Check | Medium |
+| Priority | Issue | Effort | Status |
+|----------|-------|--------|--------|
+| 🔴 P0 | C1 + H4: Add ID validation regex in Cloud Functions | Small | ✅ Resolved |
+| 🔴 P0 | C2: Add `hasOnly` + type + size limits to `progress` rules | Small | ✅ Resolved |
+| 🔴 P0 | C3: Add server-side / middleware admin auth enforcement | Medium | ⬜ Pending |
+| 🟠 P1 | H1: Fix `getYouTubeEmbedUrl` fallback + iframe sanitization | Small | ⬜ Pending |
+| 🟠 P1 | H2: Allow admin read on `users` collection | Small | ✅ Resolved |
+| 🟠 P1 | H3: Restrict Storage reads to enrolled users | Medium | ⬜ Pending |
+| 🟠 P1 | H6: Add `.env.example`, expand `.gitignore` | Small | ⬜ Pending |
+| 🟠 P1 | H7: Add auth + length limits + injection defense to AI flow | Medium | ⬜ Pending |
+| 🟡 P2 | M1: Expand `.gitignore` for credential files | Small | ⬜ Pending |
+| 🟡 P2 | M2: Remove `role` param from `createUserProfile` | Small | ⬜ Pending |
+| 🟡 P2 | M4: Migrate `onCourseDelete` to Gen 2 + add retry | Medium | ✅ Resolved |
+| 🟡 P2 | M5: Validate storage path prefix before delete | Small | ⬜ Pending |
+| 🟡 P2 | M6: Add password strength enforcement | Small | ⬜ Pending |
+| 🔵 P3 | L4: Align `firebase-admin` versions | Small | ✅ Resolved |
+| 🔵 P3 | L5: Enable Firebase App Check | Medium | ⬜ Pending |
 
 ---
 

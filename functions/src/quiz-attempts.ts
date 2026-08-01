@@ -27,6 +27,31 @@ export interface SubmitQuizAttemptResponse {
 
 const QUIZ_SUBMISSION_GRACE_MS = 5000;
 
+/**
+ * Strict ID validation regex — prevents Firestore path traversal.
+ * Allows alphanumeric, underscore, and hyphen only (no slashes).
+ */
+const ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
+
+/**
+ * Session IDs are URL-encoded "userId:quizId" pairs. After encoding,
+ * the colon becomes %3A, so the allowed charset is expanded to include
+ * % and the encoded colon. We still reject slashes.
+ */
+const SESSION_ID_RE = /^[A-Za-z0-9_%-]{1,256}$/;
+
+function assertValidId(value: unknown, fieldName: string): void {
+  if (typeof value !== "string" || !ID_RE.test(value)) {
+    throw new HttpsError("invalid-argument", `Invalid ${fieldName}`);
+  }
+}
+
+function assertValidSessionId(value: unknown): void {
+  if (typeof value !== "string" || !SESSION_ID_RE.test(value)) {
+    throw new HttpsError("invalid-argument", "Invalid sessionId");
+  }
+}
+
 function getQuizTimeLimitSeconds(quiz: Record<string, unknown>): number | null {
   if (quiz.timeLimit === undefined || quiz.timeLimit === null) {
     return null;
@@ -77,6 +102,28 @@ function assertEnrolled(
   }
 }
 
+/**
+ * Counts completed attempts for a specific user + course + quiz using a
+ * composite query (backed by the composite index in firestore.indexes.json).
+ * This avoids fetching all of a user's attempts across every course/quiz.
+ */
+async function countAttemptsForQuiz(
+  transaction: admin.firestore.Transaction,
+  db: admin.firestore.Firestore,
+  userId: string,
+  courseId: string,
+  quizId: string
+): Promise<number> {
+  const attemptsQuery = db
+    .collection("quizAttempts")
+    .where("userId", "==", userId)
+    .where("courseId", "==", courseId)
+    .where("quizId", "==", quizId);
+
+  const attemptsSnap = await transaction.get(attemptsQuery);
+  return attemptsSnap.size;
+}
+
 export const startQuizAttempt = onCall<StartQuizAttemptRequest, Promise<StartQuizAttemptResponse>>(
   async (request) => {
     const { courseId, quizId } = request.data;
@@ -84,6 +131,10 @@ export const startQuizAttempt = onCall<StartQuizAttemptRequest, Promise<StartQui
     if (!courseId || !quizId) {
       throw new HttpsError("invalid-argument", "Missing courseId or quizId");
     }
+
+    // C1: Validate IDs to prevent Firestore path traversal
+    assertValidId(courseId, "courseId");
+    assertValidId(quizId, "quizId");
 
     const userId = request.auth?.uid;
 
@@ -116,15 +167,7 @@ export const startQuizAttempt = onCall<StartQuizAttemptRequest, Promise<StartQui
       const quiz = { id: quizSnap.id, ...quizSnap.data() } as Record<string, unknown>;
       const maxAttempts = Math.max(1, Number(quiz.maxAttempts ?? 1));
 
-      const attemptsQuery = db
-        .collection("quizAttempts")
-        .where("userId", "==", userId);
-
-      const attemptsSnap = await transaction.get(attemptsQuery);
-      const attemptsForQuiz = attemptsSnap.docs.filter((doc) => {
-        const data = doc.data() as Record<string, unknown>;
-        return data.courseId === courseId && data.quizId === quizId;
-      }).length;
+      const attemptsForQuiz = await countAttemptsForQuiz(transaction, db, userId, courseId, quizId);
 
       if (attemptsForQuiz >= maxAttempts) {
         throw new HttpsError("failed-precondition", "Quiz attempts have been used");
@@ -176,6 +219,9 @@ export const submitQuizAttempt = onCall<SubmitQuizAttemptRequest, Promise<Submit
       throw new HttpsError("invalid-argument", "Missing sessionId or answers");
     }
 
+    // H4: Validate sessionId to prevent Firestore path traversal
+    assertValidSessionId(sessionId);
+
     const userId = request.auth?.uid;
 
     if (!userId) {
@@ -206,11 +252,14 @@ export const submitQuizAttempt = onCall<SubmitQuizAttemptRequest, Promise<Submit
         throw new HttpsError("failed-precondition", "Quiz session has expired");
       }
 
-      const enrollmentSnap = await transaction.get(db.doc(`enrollments/${userId}_${session.courseId}`));
-      assertEnrolled(enrollmentSnap.data(), userId, session.courseId as string);
+      const sessionCourseId = session.courseId as string;
+      const sessionQuizId = session.quizId as string;
 
-      const courseRef = db.doc(`courses/${session.courseId}`);
-      const quizRef = db.doc(`courses/${session.courseId}/quizzes/${session.quizId}`);
+      const enrollmentSnap = await transaction.get(db.doc(`enrollments/${userId}_${sessionCourseId}`));
+      assertEnrolled(enrollmentSnap.data(), userId, sessionCourseId);
+
+      const courseRef = db.doc(`courses/${sessionCourseId}`);
+      const quizRef = db.doc(`courses/${sessionCourseId}/quizzes/${sessionQuizId}`);
 
       const [courseSnap, quizSnap] = await Promise.all([
         transaction.get(courseRef),
@@ -231,15 +280,13 @@ export const submitQuizAttempt = onCall<SubmitQuizAttemptRequest, Promise<Submit
         Number(session.maxAttempts ?? quiz.maxAttempts ?? 1)
       );
 
-      const attemptsQuery = db
-        .collection("quizAttempts")
-        .where("userId", "==", userId);
-
-      const attemptsSnap = await transaction.get(attemptsQuery);
-      const attemptsForQuiz = attemptsSnap.docs.filter((doc) => {
-        const data = doc.data() as Record<string, unknown>;
-        return data.courseId === session.courseId && data.quizId === session.quizId;
-      }).length;
+      const attemptsForQuiz = await countAttemptsForQuiz(
+        transaction,
+        db,
+        userId,
+        sessionCourseId,
+        sessionQuizId
+      );
 
       if (attemptsForQuiz >= maxAttempts) {
         throw new HttpsError("failed-precondition", "Quiz attempts have been used");
@@ -261,8 +308,8 @@ export const submitQuizAttempt = onCall<SubmitQuizAttemptRequest, Promise<Submit
 
       transaction.set(attemptRef, {
         userId,
-        quizId: session.quizId,
-        courseId: session.courseId,
+        quizId: sessionQuizId,
+        courseId: sessionCourseId,
         answers,
         score,
         passed,

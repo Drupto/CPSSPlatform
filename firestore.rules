@@ -29,9 +29,11 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
-    // Allow authenticated users to read/write their own user profile
+    // Allow authenticated users to read/write their own user profile.
+    // Admins can read any user profile (required for admin dashboards,
+    // enrollment review, and analytics).
     match /users/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
       allow create: if request.auth != null
         && request.auth.uid == uid
         && request.resource.data.uid == uid
@@ -86,13 +88,28 @@ service cloud.firestore {
       allow delete: if request.auth != null && isAdmin();
     }
 
-    // Allow authenticated users to track their own progress
+    // Allow authenticated users to track their own progress.
+    // Field writes are restricted: only completedContentIds and updatedAt
+    // may be modified, the array is size-capped, and the document must
+    // belong to the authenticated user.
     match /progress/{progressId} {
       allow read: if request.auth != null && (
         request.auth.uid == resource.data.userId || isAdmin()
       );
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.userId
+        && request.resource.data.keys().hasOnly(['id', 'userId', 'courseId', 'completedContentIds', 'updatedAt'])
+        && request.resource.data.userId is string
+        && request.resource.data.courseId is string
+        && request.resource.data.completedContentIds is list
+        && request.resource.data.completedContentIds.size() <= 1000
+        && request.resource.data.updatedAt is timestamp;
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completedContentIds', 'updatedAt'])
+        && request.resource.data.completedContentIds is list
+        && request.resource.data.completedContentIds.size() <= 1000
+        && request.resource.data.updatedAt is timestamp;
       allow delete: if request.auth != null && isAdmin();
     }
 
