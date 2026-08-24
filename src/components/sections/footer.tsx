@@ -40,13 +40,13 @@ export function Footer() {
             />
           </Link>
           
-          <div className="flex flex-wrap justify-center gap-x-10 gap-y-4 text-sm font-medium text-slate-400">
-            <a href="#" className="hover:text-white transition-colors">Course</a>
-            <a href="#" className="hover:text-white transition-colors">Curriculum</a>
-            <a href="#" className="hover:text-white transition-colors">Instructor</a>
+          <nav className="flex flex-wrap justify-center gap-x-10 gap-y-4 text-sm font-medium text-slate-400" aria-label="Footer">
+            <Link href="/courses" className="hover:text-white transition-colors">Courses</Link>
+            <Link href="/#curriculum" className="hover:text-white transition-colors">Curriculum</Link>
+            <Link href="/#instructor" className="hover:text-white transition-colors">Instructor</Link>
             <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link href="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link>
-          </div>
+          </nav>
 
           <div className="text-sm text-slate-500">
             &copy; 2024 KINÉTIKA. All rights reserved.

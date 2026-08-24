@@ -1,9 +1,15 @@
+import type { Metadata } from "next";
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/sections/footer"
+import { buildMetadata } from "@/lib/seo"
 
-export const metadata = {
-  title: "Privacy Policy | Kinetika",
-}
+export const metadata: Metadata = buildMetadata({
+  title: "Privacy Policy",
+  description:
+    "Read the KINÉTIKA Privacy Policy to understand how we collect, use, and protect your personal information when you use our fitness education platform and CSCS exam prep courses.",
+  path: "/privacy-policy",
+  keywords: ["privacy policy", "KINÉTIKA privacy", "data protection", "fitness education privacy"],
+});
 
 export default function PrivacyPolicy() {
   return (
@@ -17,7 +23,7 @@ export default function PrivacyPolicy() {
               Privacy Policy
             </p>
             <h1 className="text-4xl md:text-5xl font-extrabold text-slate-950 leading-tight">
-              Your privacy matters at Kinetika
+              Your privacy matters at KINÉTIKA
             </h1>
             <p className="text-slate-600 text-lg leading-8">
               This Privacy Policy explains how we collect, use, and protect your personal information when you use our website and services.
