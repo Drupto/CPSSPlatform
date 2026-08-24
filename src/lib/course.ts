@@ -1,5 +1,5 @@
 import type { User } from "firebase/auth";
-import type { Course, CourseContentItem, CourseProgress, Enrollment, EnrollmentStatus, UserProfile, Quiz, QuizAttempt } from "./types";
+import type { Course, CourseContentItem, CourseProgress, Enrollment, EnrollmentStatus, UserProfile, UserRole, Quiz, QuizAttempt } from "./types";
 import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
@@ -28,7 +28,7 @@ function slugify(value: string) {
 export type CourseCreateData = Omit<Course, "id" | "createdAt" | "updatedAt">;
 export type CourseContentCreateData = Omit<CourseContentItem, "id" | "courseId">;
 
-export async function createUserProfile(user: User, role: "student" | "admin" = "student") {
+export async function createUserProfile(user: User, role: UserRole = "student") {
   const profileRef = doc(db, "users", user.uid);
   await setDoc(profileRef, {
     uid: user.uid,
@@ -544,6 +544,22 @@ export async function getAllProgressForCourse(courseId: string): Promise<CourseP
   return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as CourseProgress));
 }
 
+/**
+ * Legacy guard used by the pre-SaaS admin surfaces.
+ * Under DruptoLMS the platform-wide admin role is `super`.
+ */
 export function isAdminProfile(profile: UserProfile | null) {
-  return profile?.role === "admin";
+  return profile?.role === "super";
+}
+
+export function isSuperProfile(profile: UserProfile | null) {
+  return profile?.role === "super";
+}
+
+export function isInstituteProfile(profile: UserProfile | null) {
+  return profile?.role === "institute";
+}
+
+export function isStudentProfile(profile: UserProfile | null) {
+  return profile?.role === "student";
 }
