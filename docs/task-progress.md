@@ -34,7 +34,7 @@
 > Plan: `docs/druptolms-transition-plan.md` · Gateway: Razorpay
 
 - [x] **Phase 0 — Types & libs** (`types.ts`, `course.ts` role helpers, `institute.ts`, `orders.ts`, `razorpay.ts`, `currency.ts`, `utils.slugify`) — `npm run typecheck` ✅
-- [ ] Phase 1 — Razorpay Cloud Functions (`createCheckout`, webhook, `verifyPayment`, refunds, scheduled jobs) + `.env.example`
+- [x] **Phase 1 — Razorpay Cloud Functions** (`functions/src/payments.ts`): `createCheckout`, `handleRazorpayWebhook`, `verifyPayment`, `refundOrder`, `revokeEnrollment`, `syncUserClaims`, `reconcilePendingOrders`, `expireInstitutes`, `onInstituteDelete`; wired in `index.ts`; `.env.example` ×2; Firestore composite indexes; `razorpay@2.9.4` — functions build + root typecheck ✅
 - [ ] Phase 2 — Firestore rules rewrite + `middleware.ts` + custom claims
 - [ ] Phase 3 — Super admin panel `/super` (plans, institutes, orders, payouts)
 - [ ] Phase 4 — Institute panel `/institute` (tenant-scoped courses, students, sales, billing)

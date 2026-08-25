@@ -68,6 +68,8 @@ export async function getAllOrders(): Promise<Order[]> {
 /**
  * Finds the single "blocking" course order for a buyer: either a paid order
  * (already enrolled) or an in-flight pending one (prevent duplicate checkout).
+ * Uses a minimal (buyerId, courseId) query and filters in memory to avoid
+ * a 4-field composite index.
  */
 export async function getBlockingCourseOrder(
   buyerId: string,
@@ -76,12 +78,14 @@ export async function getBlockingCourseOrder(
   const q = query(
     collection(db, "orders"),
     where("buyerId", "==", buyerId),
-    where("courseId", "==", courseId),
-    where("status", "in", ["pending", "paid"]),
-    orderBy("createdAt", "desc")
+    where("courseId", "==", courseId)
   );
   const snapshot = await getDocs(q);
-  return snapshot.empty ? null : ({ id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Order);
+  const blocking = snapshot.docs
+    .map((d) => ({ id: d.id, ...d.data() }) as Order)
+    .filter((o) => o.status === "pending" || o.status === "paid")
+    .sort((a, b) => ((b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)));
+  return blocking[0] ?? null;
 }
 
 /* -------------------------------------------------------------------------- */

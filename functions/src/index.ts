@@ -1,6 +1,17 @@
 import { onDocumentDeleted } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 import { startQuizAttempt as startQuizAttemptRaw, submitQuizAttempt as submitQuizAttemptRaw } from "./quiz-attempts";
+import {
+  createCheckout as payments_createCheckout,
+  handleRazorpayWebhook as payments_handleRazorpayWebhook,
+  verifyPayment as payments_verifyPayment,
+  refundOrder as payments_refundOrder,
+  revokeEnrollment as payments_revokeEnrollment,
+  syncUserClaims as payments_syncUserClaims,
+  reconcilePendingOrders as payments_reconcilePendingOrders,
+  expireInstitutes as payments_expireInstitutes,
+  onInstituteDelete as payments_onInstituteDelete,
+} from "./payments";
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -96,3 +107,14 @@ export const onCourseDelete = onDocumentDeleted(
 // Quiz attempt functions
 export const startQuizAttempt = startQuizAttemptRaw;
 export const submitQuizAttempt = submitQuizAttemptRaw;
+
+// DruptoLMS payment + subscription functions
+export const createCheckout = payments_createCheckout;
+export const handleRazorpayWebhook = payments_handleRazorpayWebhook;
+export const verifyPayment = payments_verifyPayment;
+export const refundOrder = payments_refundOrder;
+export const revokeEnrollment = payments_revokeEnrollment;
+export const syncUserClaims = payments_syncUserClaims;
+export const reconcilePendingOrders = payments_reconcilePendingOrders;
+export const expireInstitutes = payments_expireInstitutes;
+export const onInstituteDelete = payments_onInstituteDelete;
