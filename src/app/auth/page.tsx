@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, AuthError } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { createUserProfile } from "@/lib/course";
+import { setSessionCookie } from "@/lib/session";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -38,6 +39,7 @@ export default function AuthPage() {
           return;
         }
         await sendEmailVerification(userCredential.user);
+        await setSessionCookie();
       }
       setMessage(
         `A verification email has been sent to ${email}. Please verify your email before signing in.`
@@ -59,6 +61,7 @@ export default function AuthPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       if (userCredential.user.emailVerified) {
+        await setSessionCookie();
         router.push("/dashboard");
       } else {
         await sendEmailVerification(userCredential.user);

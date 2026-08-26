@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Menu, X, Shield } from "lucide-react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { clearSessionCookie } from "@/lib/session";
 import { getUserProfile, isAdminProfile } from "@/lib/course";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,7 @@ export function Navbar() {
 
   const handleLogout = async () => {
     try {
+      await clearSessionCookie();
       await signOut(auth);
       setUser(false);
       setMobileMenuOpen(false);

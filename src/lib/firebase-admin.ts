@@ -15,6 +15,7 @@
 
 import { getApps, initializeApp, cert, type App } from "firebase-admin/app";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
+import { getAuth, type Auth } from "firebase-admin/auth";
 
 let app: App;
 
@@ -36,4 +37,5 @@ if (!getApps().length) {
 }
 
 export const adminDb: Firestore = getFirestore(app);
+export const adminAuth: Auth = getAuth(app);
 export default app;
