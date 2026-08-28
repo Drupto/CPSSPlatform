@@ -90,7 +90,7 @@ export interface Flashcard extends Omit<CourseContentItem, "body"> {
   back: string;
 }
 
-export type EnrollmentStatus = "pending" | "approved" | "rejected";
+export type EnrollmentStatus = "pending" | "approved" | "rejected" | "revoked";
 
 export type EnrollmentSource = "order" | "manual";
 
@@ -107,6 +107,9 @@ export interface Enrollment {
   source?: EnrollmentSource;
   /** Populated when source === "order". */
   orderId?: string;
+  /** Denormalized buyer display info (set on paid orders so institutes can show students). */
+  studentName?: string;
+  studentEmail?: string;
   requestedAt: Timestamp | null;
   reviewedAt?: Timestamp | null;
   reviewedBy?: string;
@@ -206,6 +209,9 @@ export interface Order {
   id: string;
   type: OrderType;
   buyerId: string;
+  /** Denormalized buyer display info (for institute/sales views). */
+  buyerName?: string;
+  buyerEmail?: string;
   instituteId?: string; // recipient institute (plan order OR course's tenant)
   courseId?: string; // only for type === "course"
   planId?: string; // only for type === "plan"

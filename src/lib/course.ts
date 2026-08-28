@@ -53,6 +53,21 @@ export async function getAllCourses(): Promise<Course[]> {
   return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Course));
 }
 
+/**
+ * Tenant-scoped course list: only courses owned by `instituteId`.
+ * Used by the institute panel so staff only see/manage their own content.
+ */
+export async function getCoursesForInstitute(instituteId: string): Promise<Course[]> {
+  const coursesRef = collection(db, "courses");
+  const courseQuery = query(
+    coursesRef,
+    where("instituteId", "==", instituteId),
+    orderBy("createdAt", "desc")
+  );
+  const snapshot = await getDocs(courseQuery);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Course));
+}
+
 export async function getPublishedCourses(): Promise<Course[]> {
   const coursesRef = collection(db, "courses");
   const courseQuery = query(coursesRef, where("published", "==", true), orderBy("createdAt", "desc"));
@@ -86,6 +101,8 @@ export async function createCourse(courseData: Partial<CourseCreateData>): Promi
     price: courseData.price ?? 0,
     published: courseData.published ?? false,
     coverImageUrl: courseData.coverImageUrl ?? "",
+    // Tenant ownership — institute-managed courses set this; platform courses omit it.
+    instituteId: courseData.instituteId ?? null,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });

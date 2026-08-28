@@ -228,6 +228,8 @@ async function grantPaidOrder(
       });
 
       if (order.type === "course") {
+        const buyerSnap = await tx.get(db.doc(`users/${order.buyerId}`));
+        const buyer = buyerSnap.exists ? (buyerSnap.data() as { displayName?: string; email?: string } | undefined) : undefined;
         tx.set(
           db.doc(`enrollments/${order.buyerId}_${order.courseId}`),
           {
@@ -239,6 +241,10 @@ async function grantPaidOrder(
             orderId,
             requestedAt: order.createdAt ?? now,
             enrolledAt: now,
+            // Denormalized buyer info so the institute can display students
+            // without reading other users' profiles (blocked by rules).
+            studentName: buyer?.displayName ?? "",
+            studentEmail: buyer?.email ?? "",
           },
           { merge: true }
         );
@@ -386,10 +392,16 @@ async function createCourseCheckout(
   const split = computeSplit(amountPaise, commissionPct);
   const orderRef = db.collection("orders").doc();
   const orderDocId = orderRef.id;
+
+  const buyerSnap = await db.doc(`users/${uid}`).get();
+  const buyer = buyerSnap.exists ? (buyerSnap.data() as { displayName?: string; email?: string } | undefined) : undefined;
+
   await orderRef.set({
     id: orderDocId,
     type: "course",
     buyerId: uid,
+    buyerName: buyer?.displayName ?? "",
+    buyerEmail: buyer?.email ?? "",
     instituteId: instituteId ?? undefined,
     courseId,
     amount: amountPaise,

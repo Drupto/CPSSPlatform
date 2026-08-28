@@ -20,15 +20,21 @@ import type { UserRole } from "@/lib/types";
  *   await requireRole("institute");
  *   const profile = await sessionProfile(); // returns { uid, role } or null
  */
-export async function sessionProfile(): Promise<{ uid: string; role?: UserRole } | null> {
+export interface SessionProfile {
+  uid: string;
+  role?: UserRole;
+  instituteId?: string | null;
+}
+
+export async function sessionProfile(): Promise<SessionProfile | null> {
   const token = (await cookies()).get("__session")?.value;
   if (!token) return null;
   try {
     const decoded = await adminAuth.verifySessionCookie(token, true);
     const role = (decoded.role as UserRole | undefined) ?? undefined;
-    return { uid: decoded.uid, role };
+    const instituteId = decoded.instituteId as string | null | undefined;
+    return { uid: decoded.uid, role, instituteId: instituteId ?? null };
   } catch (err) {
-    // Invalid/expired cookie.
     if (process.env.NODE_ENV !== "production") {
       console.error("[sessionProfile] verification failed:", err);
     }
@@ -39,7 +45,7 @@ export async function sessionProfile(): Promise<{ uid: string; role?: UserRole }
 export async function requireRole(
   role: UserRole,
   redirectPath = "/auth"
-): Promise<{ uid: string; role?: UserRole }> {
+): Promise<SessionProfile> {
   const profile = await sessionProfile();
   if (!profile || profile.role !== role) {
     redirect(`${redirectPath}?redirect=${encodeURIComponent("/")}`);

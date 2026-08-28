@@ -129,7 +129,7 @@ async function grantPaidOrder(db, orderId, paymentId) {
     let granted;
     try {
         granted = await db.runTransaction(async (tx) => {
-            var _a, _b, _c, _d;
+            var _a, _b, _c, _d, _e, _f;
             const orderRef = db.doc(`orders/${orderId}`);
             const orderSnap = await tx.get(orderRef);
             if (!orderSnap.exists) {
@@ -150,6 +150,8 @@ async function grantPaidOrder(db, orderId, paymentId) {
                 updatedAt: now,
             });
             if (order.type === "course") {
+                const buyerSnap = await tx.get(db.doc(`users/${order.buyerId}`));
+                const buyer = buyerSnap.exists ? buyerSnap.data() : undefined;
                 tx.set(db.doc(`enrollments/${order.buyerId}_${order.courseId}`), {
                     id: `${order.buyerId}_${order.courseId}`,
                     userId: order.buyerId,
@@ -159,6 +161,10 @@ async function grantPaidOrder(db, orderId, paymentId) {
                     orderId,
                     requestedAt: (_a = order.createdAt) !== null && _a !== void 0 ? _a : now,
                     enrolledAt: now,
+                    // Denormalized buyer info so the institute can display students
+                    // without reading other users' profiles (blocked by rules).
+                    studentName: (_b = buyer === null || buyer === void 0 ? void 0 : buyer.displayName) !== null && _b !== void 0 ? _b : "",
+                    studentEmail: (_c = buyer === null || buyer === void 0 ? void 0 : buyer.email) !== null && _c !== void 0 ? _c : "",
                 }, { merge: true });
             }
             else if (order.type === "plan" && order.instituteId) {
@@ -173,14 +179,14 @@ async function grantPaidOrder(db, orderId, paymentId) {
                 const base = (instData === null || instData === void 0 ? void 0 : instData.planExpiresAt) ? new Date(instData.planExpiresAt.toMillis()) : new Date();
                 if (base.getTime() <= Date.now())
                     base.setTime(Date.now());
-                base.setMonth(base.getMonth() + ((_b = order.planPeriodMonths) !== null && _b !== void 0 ? _b : 1));
+                base.setMonth(base.getMonth() + ((_d = order.planPeriodMonths) !== null && _d !== void 0 ? _d : 1));
                 tx.update(db.doc(`institutes/${order.instituteId}`), {
                     subscriptionStatus: "active",
                     planId: order.planId,
                     planExpiresAt: firestore_2.Timestamp.fromDate(base),
                     activeOrderId: orderId,
-                    limits: (_c = plan === null || plan === void 0 ? void 0 : plan.limits) !== null && _c !== void 0 ? _c : {},
-                    commissionPct: Number((_d = plan === null || plan === void 0 ? void 0 : plan.commissionPct) !== null && _d !== void 0 ? _d : 0),
+                    limits: (_e = plan === null || plan === void 0 ? void 0 : plan.limits) !== null && _e !== void 0 ? _e : {},
+                    commissionPct: Number((_f = plan === null || plan === void 0 ? void 0 : plan.commissionPct) !== null && _f !== void 0 ? _f : 0),
                     updatedAt: now,
                 });
                 tx.set(db.doc(`users/${order.buyerId}`), { role: "institute", instituteId: order.instituteId, updatedAt: now }, { merge: true });
@@ -209,7 +215,7 @@ async function grantPaidOrder(db, orderId, paymentId) {
     return granted;
 }
 async function createCourseCheckout(db, uid, courseId) {
-    var _a, _b;
+    var _a, _b, _c, _d;
     const courseSnap = await db.doc(`courses/${courseId}`).get();
     if (!courseSnap.exists) {
         throw new https_1.HttpsError("not-found", "Course not found");
@@ -268,10 +274,14 @@ async function createCourseCheckout(db, uid, courseId) {
     const split = computeSplit(amountPaise, commissionPct);
     const orderRef = db.collection("orders").doc();
     const orderDocId = orderRef.id;
+    const buyerSnap = await db.doc(`users/${uid}`).get();
+    const buyer = buyerSnap.exists ? buyerSnap.data() : undefined;
     await orderRef.set({
         id: orderDocId,
         type: "course",
         buyerId: uid,
+        buyerName: (_c = buyer === null || buyer === void 0 ? void 0 : buyer.displayName) !== null && _c !== void 0 ? _c : "",
+        buyerEmail: (_d = buyer === null || buyer === void 0 ? void 0 : buyer.email) !== null && _d !== void 0 ? _d : "",
         instituteId: instituteId !== null && instituteId !== void 0 ? instituteId : undefined,
         courseId,
         amount: amountPaise,
