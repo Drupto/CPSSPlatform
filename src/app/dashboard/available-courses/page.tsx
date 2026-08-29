@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getAllCourses, getEnrollmentsForUser, requestEnrollment } from "@/lib/course";
+import { getAllCourses, getEnrollmentsForUser } from "@/lib/course";
 import { isProfileComplete } from "@/lib/profile-check";
+import { formatINR } from "@/lib/currency";
 import type { Course, Enrollment, EnrollmentStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
@@ -18,7 +19,6 @@ export default function AvailableCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [enrolling, setEnrolling] = useState<Record<string, boolean>>({});
 
   const getEnrollmentStatus = (courseId: string): EnrollmentStatus | null => {
     const enrollment = enrollments.find((e) => e.courseId === courseId);
@@ -63,35 +63,6 @@ export default function AvailableCoursesPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleRequest = async (courseId: string) => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    setEnrolling(prev => ({ ...prev, [courseId]: true }));
-
-    try {
-      await requestEnrollment(user.uid, courseId);
-
-      // Refresh enrollments
-      const updatedEnrollments = await getEnrollmentsForUser(user.uid);
-      setEnrollments(updatedEnrollments);
-
-      toast({
-        title: "Request Sent",
-        description: "Your enrollment request is awaiting admin approval.",
-      });
-    } catch (error) {
-      console.error("Error requesting enrollment:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send enrollment request. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setEnrolling(prev => ({ ...prev, [courseId]: false }));
-    }
-  };
-
   return (
     <main className="relative min-h-screen bg-slate-50">
       <Navbar />
@@ -124,7 +95,7 @@ export default function AvailableCoursesPage() {
                        </div>
                      <p className="text-slate-600 line-clamp-2">{course.description}</p>
                       <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200">
-                        <span className="text-sm text-slate-500">₹{course.price}</span>
+                        <span className="text-sm text-slate-500">{course.price > 0 ? formatINR(course.price) : "Free"}</span>
                         {getEnrollmentStatus(course.id) === "approved" ? (
                           <Link
                             href={`/courses/${course.slug}/learn`}
@@ -136,22 +107,15 @@ export default function AvailableCoursesPage() {
                           <Button disabled className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white">
                             Pending Approval
                           </Button>
-                        ) : getEnrollmentStatus(course.id) === "rejected" ? (
-                          <Button
-                            onClick={() => handleRequest(course.id)}
-                            disabled={enrolling[course.id]}
-                            className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
-                          >
-                            {enrolling[course.id] ? "Sending..." : "Request Again"}
-                          </Button>
                         ) : (
-                          <Button 
-                            onClick={() => handleRequest(course.id)}
-                            disabled={enrolling[course.id]}
+                          <Link
+                            href={`/courses/${course.slug}`}
                             className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
                           >
-                            {enrolling[course.id] ? "Sending..." : "Request Access"}
-                          </Button>
+                            {getEnrollmentStatus(course.id) === "rejected" || getEnrollmentStatus(course.id) === "revoked"
+                              ? "View Course"
+                              : "View & Buy"}
+                          </Link>
                         )}
                       </div>
                    </div>

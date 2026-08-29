@@ -21,6 +21,16 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+  /** Safe redirect target — only app-internal paths (no open redirect). */
+  const redirectTarget = (): string => {
+    if (typeof window === "undefined") return "/dashboard";
+    const raw = new URLSearchParams(window.location.search).get("redirect") ?? "/dashboard";
+    if (raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/\\")) {
+      return raw;
+    }
+    return "/dashboard";
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -62,7 +72,7 @@ export default function AuthPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       if (userCredential.user.emailVerified) {
         await setSessionCookie();
-        router.push("/dashboard");
+        router.push(redirectTarget());
       } else {
         await sendEmailVerification(userCredential.user);
         setMessage(

@@ -402,6 +402,7 @@ export default function CourseLearnPage() {
   if (!authorized) {
     const isPending = enrollmentStatus === "pending";
     const isRejected = enrollmentStatus === "rejected";
+    const isRevoked = enrollmentStatus === "revoked";
     return (
       <main className="relative min-h-screen bg-slate-50">
         <Navbar />
@@ -409,15 +410,17 @@ export default function CourseLearnPage() {
           <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
             <h1 className="text-3xl font-bold text-slate-900">{course.title}</h1>
             <div className={`mt-6 rounded-2xl border px-4 py-3 text-sm ${
-              isRejected
+              isRejected || isRevoked
                 ? "bg-red-100 border-red-200 text-red-700"
                 : "bg-amber-100 border-amber-200 text-amber-700"
             }`}>
-              {isRejected
-                ? "Your enrollment request for this course was declined by an admin."
-                : isPending
-                  ? "Your enrollment request is awaiting admin approval. You'll get access once it's approved."
-                  : "You don't have access to this course yet. Request access to get started."}
+              {isRevoked
+                ? "Your access to this course has been revoked (typically after a refund). If you believe this is a mistake, contact the institute or platform support."
+                : isRejected
+                  ? "Your enrollment request for this course was declined by an admin."
+                  : isPending
+                    ? "Your enrollment request is awaiting admin approval. You'll get access once it's approved."
+                    : "You don't have access to this course yet. You can purchase it from the course page."}
             </div>
             <div className="mt-8 flex justify-center gap-3">
               <Button variant="outline" onClick={() => router.push(`/courses/${course.slug}`)}>
