@@ -1,6 +1,6 @@
 import type { User } from "firebase/auth";
-import type { Course, CourseContentItem, CourseProgress, Enrollment, EnrollmentStatus, UserProfile, Quiz, QuizAttempt } from "./types";
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import type { Course, CourseContentItem, CourseProgress, Enrollment, EnrollmentStatus, Flashcard, UserProfile, Quiz, QuizAttempt } from "./types";
+import { addDoc, collection, deleteDoc, deleteField, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 
@@ -31,6 +31,14 @@ function slugify(value: string) {
 
 export type CourseCreateData = Omit<Course, "id" | "createdAt" | "updatedAt">;
 export type CourseContentCreateData = Omit<CourseContentItem, "id" | "courseId">;
+
+/**
+ * Payload accepted when creating/updating a course resource. Flashcard-only
+ * fields are optional so callers only supply them for `type: "flashcard"`
+ * resources; the data layer guarantees they are persisted for flashcards.
+ */
+export type CourseResourceCreateData = CourseContentCreateData &
+  Partial<Pick<Flashcard, "front" | "back">>;
 
 export async function createUserProfile(user: User) {
   const profileRef = doc(db, "users", user.uid);
@@ -337,27 +345,74 @@ export async function getCourseResources(courseId: string): Promise<CourseConten
 }
 
 /**
+ * Builds a whitelisted Firestore payload for a resource document. Explicit
+ * fields (instead of spreading caller data) keep the document shape stable,
+ * guarantee flashcard documents carry `front`/`back`, and never write
+ * flashcard-only fields for non-flashcard resources.
+ */
+function buildResourcePayload(data: CourseResourceCreateData): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
+    type: data.type,
+    title: data.title,
+    body: data.body ?? "",
+    url: data.url ?? "",
+    order: data.order,
+  };
+  if (data.type === "flashcard") {
+    payload.front = data.front ?? "";
+    payload.back = data.back ?? "";
+  }
+  return payload;
+}
+
+/**
  * Adds a resource to a course
  */
-export async function addCourseResource(courseId: string, resourceData: CourseContentCreateData): Promise<string> {
+export async function addCourseResource(courseId: string, resourceData: CourseResourceCreateData): Promise<string> {
   const resourceRef = await addDoc(collection(db, "courses", courseId, "resources"), {
-    type: resourceData.type,
-    title: resourceData.title,
-    body: resourceData.body ?? "",
-    url: resourceData.url ?? "",
-    order: resourceData.order,
+    ...buildResourcePayload(resourceData),
     createdAt: serverTimestamp(),
   });
   return resourceRef.id;
 }
 
 /**
- * Updates a resource in a course
+ * Updates a resource in a course.
+ *
+ * Only whitelisted fields are written (merged into the existing document),
+ * `updatedAt` is stamped, and when the type changes away from "flashcard" the
+ * stale `front`/`back` fields are removed from the document instead of
+ * lingering. When the type changes TO "flashcard", `front`/`back` are always
+ * ensured (defaulting to empty strings) so flashcard documents are complete.
  */
-export async function updateCourseResource(courseId: string, resourceId: string, updates: Partial<CourseContentCreateData>): Promise<void> {
+export async function updateCourseResource(courseId: string, resourceId: string, updates: Partial<CourseResourceCreateData>): Promise<void> {
   const resourceRef = doc(db, "courses", courseId, "resources", resourceId);
+
+  const { type, title, body, url, order, front, back } = updates;
+  const payload: Record<string, unknown> = {};
+  if (title !== undefined) payload.title = title;
+  if (body !== undefined) payload.body = body;
+  if (url !== undefined) payload.url = url;
+  if (order !== undefined) payload.order = order;
+
+  if (type === "flashcard") {
+    payload.front = front ?? "";
+    payload.back = back ?? "";
+  } else if (type !== undefined) {
+    payload.front = deleteField();
+    payload.back = deleteField();
+  } else {
+    // Type unchanged (or not part of this update): write whichever flashcard
+    // fields were supplied.
+    if (front !== undefined) payload.front = front;
+    if (back !== undefined) payload.back = back;
+  }
+
+  if (type !== undefined) payload.type = type;
+
   await setDoc(resourceRef, {
-    ...updates,
+    ...payload,
+    updatedAt: serverTimestamp(),
   }, { merge: true });
 }
 

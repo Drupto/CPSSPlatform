@@ -6,7 +6,10 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getUserProfile, isAdminProfile, getAllCourses, getCourseResources, addCourseResource, updateCourseResource, deleteCourseResource } from "@/lib/course";
-import type { Course, CourseContentItem } from "@/lib/types";
+import type { CourseResourceCreateData } from "@/lib/course";
+import { isFlashcard } from "@/lib/types";
+import type { Course, CourseContentItem, CourseContentType } from "@/lib/types";
+import { toast } from "@/hooks/use-toast";
 import { Navbar } from "@/components/navbar";
 import { BackToAdminButton } from "@/components/admin/BackToAdminButton";
 import { Button } from "@/components/ui/button";
@@ -41,8 +44,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
-// import type { CourseContentType } from "@/lib/types"; // Not directly used in component
-import { 
+import {
   Download, 
   Plus, 
   Edit, 
@@ -76,6 +78,8 @@ export default function AdminResourcesPage() {
     front: '',
     back: ''
   });
+  const [formErrors, setFormErrors] = useState<{ title?: string; front?: string; back?: string }>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser: User | null) => {
@@ -135,28 +139,48 @@ export default function AdminResourcesPage() {
     }));
   };
 
+  const validateForm = (): boolean => {
+    const errors: { title?: string; front?: string; back?: string } = {};
+    if (!formData.title.trim()) errors.title = "Title is required.";
+    if (formData.type === "flashcard") {
+      if (!formData.front.trim()) errors.front = "Front content is required.";
+      if (!formData.back.trim()) errors.back = "Back content is required.";
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSaveResource = async () => {
     if (!selectedCourse) return;
     
+    if (!validateForm()) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in the highlighted fields before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
     try {
-      const resourceData: any = {
-        title: formData.title,
-        type: formData.type as "document" | "video" | "link" | "flashcard",
-        body: formData.body,
-        url: formData.url,
-        order: formData.order
+      const isFlashcardType = formData.type === "flashcard";
+      const resourceData: CourseResourceCreateData = {
+        title: formData.title.trim(),
+        type: formData.type as CourseContentType,
+        body: isFlashcardType ? "" : formData.body,
+        url: isFlashcardType ? "" : formData.url,
+        order: formData.order,
+        ...(isFlashcardType ? { front: formData.front.trim(), back: formData.back.trim() } : {}),
       };
-      
-      if (formData.type === 'flashcard') {
-        resourceData.front = formData.front;
-        resourceData.back = formData.back;
-      }
       
       if (editingResource) {
         await updateCourseResource(selectedCourse.id, editingResource.id, resourceData);
         setEditingResource(null);
+        toast({ title: "Resource updated", description: `"${resourceData.title}" has been saved.` });
       } else {
         await addCourseResource(selectedCourse.id, resourceData);
+        toast({ title: "Resource created", description: `"${resourceData.title}" has been added to ${selectedCourse.title}.` });
       }
       
       await loadResources(selectedCourse.id);
@@ -170,8 +194,16 @@ export default function AdminResourcesPage() {
         front: '',
         back: ''
       });
+      setFormErrors({});
     } catch (error) {
       console.error("Error saving resource:", error);
+      toast({
+        title: "Could not save resource",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -183,9 +215,10 @@ export default function AdminResourcesPage() {
       body: resource.body || '',
       url: resource.url || '',
       order: resource.order,
-      front: (resource as any).front || '',
-      back: (resource as any).back || ''
+      front: isFlashcard(resource) ? resource.front : '',
+      back: isFlashcard(resource) ? resource.back : ''
     });
+    setFormErrors({});
     setShowForm(true);
   };
 
@@ -199,6 +232,11 @@ export default function AdminResourcesPage() {
       setDeleteResourceId(null);
     } catch (error) {
       console.error("Error deleting resource:", error);
+      toast({
+        title: "Could not delete resource",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -289,16 +327,17 @@ export default function AdminResourcesPage() {
                 <CardContent>
                   <Dialog open={showForm} onOpenChange={setShowForm}>
                     <DialogTrigger asChild>
-                      <Button 
-                        className="w-full mb-2" 
+                      <Button
+                        className="w-full mb-2"
                         onClick={() => {
                           setEditingResource(null);
+                          setFormErrors({});
                           setFormData({
                             title: '',
                             type: 'document',
                             body: '',
                             url: '',
-                            order: 0,
+                            order: resources.length + 1,
                             front: '',
                             back: ''
                           });
@@ -324,11 +363,14 @@ export default function AdminResourcesPage() {
                             onChange={handleInputChange}
                             placeholder="Resource title"
                           />
+                          {formErrors.title && (
+                            <p className="mt-1 text-sm text-red-600">{formErrors.title}</p>
+                          )}
                         </div>
                         
                         <div>
                           <label className="text-sm font-medium text-slate-700">Type</label>
-                          <Select name="type" value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
+                          <Select name="type" value={formData.type} onValueChange={(value) => { setFormData({ ...formData, type: value }); setFormErrors({}); }}>
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
@@ -351,6 +393,9 @@ export default function AdminResourcesPage() {
                                 onChange={handleInputChange}
                                 placeholder="Front of flashcard"
                               />
+                              {formErrors.front && (
+                                <p className="mt-1 text-sm text-red-600">{formErrors.front}</p>
+                              )}
                             </div>
                             <div>
                               <label className="text-sm font-medium text-slate-700">Back</label>
@@ -361,10 +406,15 @@ export default function AdminResourcesPage() {
                                 placeholder="Back of flashcard"
                                 rows={3}
                               />
+                              {formErrors.back && (
+                                <p className="mt-1 text-sm text-red-600">{formErrors.back}</p>
+                              )}
                             </div>
                           </>
                         )}
                         
+                        {formData.type !== 'flashcard' && (
+                          <>
                         <div>
                           <label className="text-sm font-medium text-slate-700">Description</label>
                           <Textarea
@@ -385,6 +435,8 @@ export default function AdminResourcesPage() {
                             placeholder="https://example.com/resource"
                           />
                         </div>
+                          </>
+                        )}
                         
                         <div>
                           <label className="text-sm font-medium text-slate-700">Order</label>
@@ -402,9 +454,9 @@ export default function AdminResourcesPage() {
                         <Button variant="outline" onClick={() => setShowForm(false)}>
                           Cancel
                         </Button>
-                        <Button onClick={handleSaveResource}>
+                        <Button onClick={handleSaveResource} disabled={saving}>
                           <Save className="h-4 w-4 mr-2" />
-                          {editingResource ? "Update" : "Save"} Resource
+                          {saving ? "Saving..." : editingResource ? "Update" : "Save"} Resource
                         </Button>
                       </div>
                     </DialogContent>
@@ -446,7 +498,7 @@ export default function AdminResourcesPage() {
                                 <div>
                                   <div className="font-medium">{resource.title}</div>
                                   <div className="text-sm text-slate-500 mt-1 line-clamp-2">
-                                    {resource.type === 'flashcard' ? (resource as any).front : resource.body}
+                                    {isFlashcard(resource) ? resource.front : resource.body}
                                   </div>
                                 </div>
                               </div>

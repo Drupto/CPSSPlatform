@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getEnrollmentsForUser, getCourseById, getCourseResources } from "@/lib/course";
+import { isFlashcard } from "@/lib/types";
 import type { Course, CourseContentItem, Enrollment } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
@@ -47,12 +48,17 @@ export default function ResourcesPage() {
   const openStudyMode = (courseId: string, courseTitle: string, flashcards: CourseContentItem[]) => {
     const cards = flashcards
       .filter(r => r.type === "flashcard")
-      .map(r => ({
-        resourceId: r.id,
-        front: (r as any).front || "",
-        back: (r as any).back || "",
-        title: r.title,
-      }));
+      .map(r => {
+        // Legacy flashcards may be missing front/back (backfilled by
+        // scripts/backfill-flashcards.mjs); degrade gracefully in the UI.
+        const content = isFlashcard(r) ? r : null;
+        return {
+          resourceId: r.id,
+          front: content?.front.trim() || "(empty card — content missing)",
+          back: content?.back.trim() || "(empty card — content missing)",
+          title: r.title,
+        };
+      });
     if (cards.length === 0) return;
     setStudyState({
       courseId,
@@ -63,31 +69,31 @@ export default function ResourcesPage() {
     });
   };
 
-  const closeStudyMode = () => setStudyState(null);
+  const closeStudyMode = useCallback(() => setStudyState(null), []);
 
-  const flipCard = () => {
+  const flipCard = useCallback(() => {
     setStudyState(prev => (prev ? { ...prev, isFlipped: !prev.isFlipped } : null));
-  };
+  }, []);
 
-  const goNext = () => {
+  const goNext = useCallback(() => {
     setStudyState(prev => {
       if (!prev) return null;
       const next = prev.currentIndex < prev.cards.length - 1 ? prev.currentIndex + 1 : 0;
       return { ...prev, currentIndex: next, isFlipped: false };
     });
-  };
+  }, []);
 
-  const goPrev = () => {
+  const goPrev = useCallback(() => {
     setStudyState(prev => {
       if (!prev) return null;
       const prevIndex = prev.currentIndex > 0 ? prev.currentIndex - 1 : prev.cards.length - 1;
       return { ...prev, currentIndex: prevIndex, isFlipped: false };
     });
-  };
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!studyState) return;
+      if (!studyState || e.repeat) return;
       if (e.key === " " || e.code === "Space") {
         e.preventDefault();
         flipCard();
@@ -272,7 +278,23 @@ export default function ResourcesPage() {
                         {resources.map((resource) => (
                           <div
                             key={resource.id}
-                            className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors"
+                            role={resource.type === "flashcard" ? "button" : undefined}
+                            tabIndex={resource.type === "flashcard" ? 0 : undefined}
+                            aria-label={resource.type === "flashcard" ? `Study flashcards for ${course.title}` : undefined}
+                            onClick={resource.type === "flashcard" ? () => openStudyMode(course.id, course.title, resources) : undefined}
+                            onKeyDown={(e) => {
+                              // Guard: while the study overlay is open this row may
+                              // still hold focus — Space/Enter must not re-open
+                              // (and reset) the session.
+                              if (studyState) return;
+                              if (resource.type === "flashcard" && (e.key === "Enter" || e.key === " ")) {
+                                e.preventDefault();
+                                openStudyMode(course.id, course.title, resources);
+                              }
+                            }}
+                            className={`border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors ${
+                              resource.type === "flashcard" ? "cursor-pointer" : ""
+                            }`}
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex items-start gap-3">
@@ -281,7 +303,7 @@ export default function ResourcesPage() {
                                   <h3 className="font-medium text-slate-900">{resource.title}</h3>
                                   {resource.type === "flashcard" ? (
                                     <p className="text-sm text-slate-500 mt-1">
-                                      {(resource as any).front}
+                                      {isFlashcard(resource) ? resource.front : ""}
                                     </p>
                                   ) : (
                                     <p className="text-sm text-slate-500 mt-1">{resource.body}</p>
@@ -356,10 +378,20 @@ export default function ResourcesPage() {
               <div className="mt-6 rounded-[24px] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-3 shadow-inner sm:p-4">
                 <div className="perspective-1000">
                   <div
-                    className={`relative h-[320px] w-full cursor-pointer select-none rounded-[20px] shadow-lg transition-transform duration-700 sm:h-[380px] ${
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={studyState.isFlipped}
+                    aria-label={`Flashcard ${studyState.currentIndex + 1} of ${studyState.cards.length}: ${currentCard?.title ?? ""}`}
+                    className={`flip-card-3d relative h-[320px] w-full cursor-pointer select-none rounded-[20px] shadow-lg transition-transform duration-700 sm:h-[380px] ${
                       studyState.isFlipped ? "rotate-y-180" : ""
                     }`}
                     onClick={flipCard}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        flipCard();
+                      }
+                    }}
                   >
                     <div className="card-face rounded-[20px] border border-slate-200 bg-gradient-to-br from-white to-slate-100 p-6 sm:p-8">
                       <div className="text-center">
@@ -420,23 +452,6 @@ export default function ResourcesPage() {
         </div>
       )}
 
-      <style jsx global>{`
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-        .card-face {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          backface-visibility: hidden;
-          transform-style: preserve-3d;
-        }
-        .rotate-y-180 {
-          transform: rotateY(180deg);
-        }
-      `}</style>
     </main>
   );
 }

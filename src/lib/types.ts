@@ -76,6 +76,21 @@ export interface Flashcard extends Omit<CourseContentItem, "body"> {
   back: string;
 }
 
+/**
+ * Type guard for flashcard content items.
+ *
+ * `front`/`back` live outside `CourseContentItem`, and legacy documents may be
+ * missing them, so this checks both the discriminant and the field types.
+ * Use it instead of `as any` casts whenever flashcard fields are needed.
+ */
+export function isFlashcard(item: CourseContentItem): item is Flashcard {
+  return (
+    item.type === "flashcard" &&
+    typeof (item as Partial<Flashcard>).front === "string" &&
+    typeof (item as Partial<Flashcard>).back === "string"
+  );
+}
+
 export type EnrollmentStatus = "pending" | "approved" | "rejected";
 
 export interface Enrollment {

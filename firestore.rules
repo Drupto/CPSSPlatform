@@ -70,6 +70,16 @@ service cloud.firestore {
         allow update: if request.auth != null && isAdmin() && isValidQuizData(request.resource.data);
         allow delete: if request.auth != null && isAdmin();
       }
+
+      // Resources (study materials incl. flashcards) are managed by admins;
+      // authenticated learners can read them for published courses.
+      match /resources/{resourceId} {
+        allow read: if request.auth != null && (
+          isAdmin()
+          || get(/databases/$(database)/documents/courses/$(courseId)).data.published == true
+        );
+        allow create, update, delete: if request.auth != null && isAdmin();
+      }
     }
 
     // Allow authenticated users to read their own enrollments or if admin
