@@ -25,4 +25,25 @@
 
 ---
 
-### ✅ All items are complete. No outstanding features remain.
+## 🟠 Production Readiness (2026-08-31)
+
+Feature work above is complete. Outstanding items are tracked in
+[`docs/PRODUCTION_READINESS.md`](./PRODUCTION_READINESS.md) and
+[`SECURITY_AUDIT.md`](../SECURITY_AUDIT.md):
+
+- [x] Production URL set to `https://learnkinetika.com` — `NEXT_PUBLIC_SITE_URL`, `seo.ts` fallback, `cors.json` (2026-08-31)
+- [x] **H1** — `getYouTubeEmbedUrl` sanitized; render-time fallback added (2026-08-31)
+- [x] **H7 (partial)** — input caps + injection delimiters applied; auth gate deferred to App Check (2026-08-31)
+- [x] **M1** — credential patterns + `*:Zone.Identifier` in `.gitignore`; stray artifacts deleted (2026-08-31)
+- [x] **M2** — `createUserProfile` role hardcoded to `student` (2026-08-31)
+- [x] **M3** — enrollment `id` field validated against doc ID in rules (2026-08-31)
+- [x] **M5** — `courses/` prefix check before storage deletes (2026-08-31)
+- [x] **M6** — signup password policy (8+ chars, upper/lower/digit) + UI hint (2026-08-31)
+- [x] `npm audit fix` — criticals eliminated; root prod advisories 89 → 62 (2026-08-31)
+- [x] TS build gate re-enabled (`ignoreBuildErrors: false`); build re-verified green (2026-08-31)
+- [x] **C3** — Edge middleware (`src/middleware.ts`) gates `/admin/**` server-side via `__session` ID token + `admin` custom claim; fail-closed (runtime-verified 2026-08-31). ⚠ Requires `node scripts/sync-admin-claims.mjs` before go-live
+- [ ] **H3** — enrollment-scoped Storage reads: consciously deferred (documented in audit)
+- [ ] Deploy updated `cors.json` (adds `https://learnkinetika.com` + `www`) via `gsutil cors set cors.json gs://cscs-prep-2c063.firebasestorage.app`
+- [ ] Optional: CI pipeline + App Check
+
+### ✅ All feature items are complete. Remaining work is production hardening — see the readiness report.

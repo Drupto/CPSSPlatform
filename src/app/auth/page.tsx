@@ -12,6 +12,27 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVe
 import { auth } from "@/lib/firebase";
 import { createUserProfile } from "@/lib/course";
 
+/**
+ * Client-side password policy enforced at signup (Firebase's own default is
+ * only 6 characters). Server-side enforcement would additionally require
+ * Firebase Identity Platform password policy config — tracked as follow-up.
+ */
+function validatePassword(password: string): string | null {
+  if (password.length < 8) {
+    return "Password must be at least 8 characters long.";
+  }
+  if (!/[a-z]/.test(password)) {
+    return "Password must include at least one lowercase letter.";
+  }
+  if (!/[A-Z]/.test(password)) {
+    return "Password must include at least one uppercase letter.";
+  }
+  if (!/[0-9]/.test(password)) {
+    return "Password must include at least one number.";
+  }
+  return null;
+}
+
 export default function AuthPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +48,12 @@ export default function AuthPage() {
     setIsLoading(true);
     
     try {
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        setError(passwordError);
+        return;
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       if (userCredential.user) {
         try {
@@ -131,7 +158,11 @@ export default function AuthPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={8}
                 />
+                <p className="text-xs text-slate-500">
+                  At least 8 characters, with an uppercase letter, a lowercase letter, and a number.
+                </p>
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating Account..." : "Create Account"}

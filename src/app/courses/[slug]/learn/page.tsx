@@ -700,13 +700,19 @@ const QuizModal = ({
 
               {currentItem.type === "video" && currentItem.url && (
                 <div className="mt-4">
-                  <iframe
-                    src={getYouTubeEmbedUrl(currentItem.url)}
-                    title={currentItem.title}
-                    className="h-80 w-full rounded-3xl border border-slate-200"
-                    allowFullScreen
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  />
+                  {getYouTubeEmbedUrl(currentItem.url) ? (
+                    <iframe
+                      src={getYouTubeEmbedUrl(currentItem.url)}
+                      title={currentItem.title}
+                      className="h-80 w-full rounded-3xl border border-slate-200"
+                      allowFullScreen
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    />
+                  ) : (
+                    <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-700">
+                      This video cannot be embedded. Please open it directly or contact the course administrator.
+                    </div>
+                  )}
                 </div>
               )}
 

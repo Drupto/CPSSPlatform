@@ -100,7 +100,7 @@ Added `firebasestorage.googleapis.com` and `lh3.googleusercontent.com` to `image
 
 | Variable | Purpose |
 |----------|---------|
-| `NEXT_PUBLIC_SITE_URL` | Production site URL (e.g. `https://kinetika.fit`) |
+| `NEXT_PUBLIC_SITE_URL` | Production site URL (`https://learnkinetika.com`) |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON (local dev) |
 | `GOOGLE_APPLICATION_CREDENTIALS_JSON` | Inline service account JSON (CI/CD) |
 
@@ -108,7 +108,7 @@ Added `firebasestorage.googleapis.com` and `lh3.googleusercontent.com` to `image
 
 1. **Set `NEXT_PUBLIC_SITE_URL`** in your hosting environment to your production domain
 2. **Google Search Console**: Register your site, get the verification token, and replace `GOOGLE_SITE_VERIFICATION_TOKEN` in `src/app/layout.tsx`
-3. **Submit sitemap**: Submit `https://yourdomain.com/sitemap.xml` in Google Search Console
+3. **Submit sitemap**: Submit `https://learnkinetika.com/sitemap.xml` in Google Search Console
 4. **Firebase Admin credentials**: Ensure the runtime service account has Firestore read access (automatic on App Hosting/Cloud Run)
 5. **Add real icon assets**: Replace placeholder `public/icon.svg` with branded PNG icons (`apple-icon.png`, `icon-192.png`, `icon-512.png`)
 6. **Social profiles**: Update `sameAs` URLs in `src/lib/seo.ts` with your actual social media profiles

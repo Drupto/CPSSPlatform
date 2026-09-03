@@ -1,6 +1,8 @@
 import type {Metadata, Viewport} from 'next';
+import type {ReactNode} from 'react';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+import { AuthCookieSync } from "@/components/auth-cookie-sync";
 import { siteConfig, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/json-ld";
 
@@ -87,7 +89,7 @@ export const viewport: Viewport = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
@@ -97,6 +99,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased bg-slate-50 text-slate-900">
+        <AuthCookieSync />
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
         {children}
         <Toaster />

@@ -22,7 +22,7 @@ export const siteConfig = {
   /** Production origin — no trailing slash. */
   url:
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-    "https://kinetika.fit",
+    "https://learnkinetika.com",
   description:
     "Master the science of fitness with KINÉTIKA's comprehensive, evidence-based courses. Prepare for the CSCS exam with 30+ hours of video, 150+ practice questions, and self-paced learning.",
   tagline: "Redefining Fitness Education for Every Body.",
@@ -38,7 +38,7 @@ export const siteConfig = {
     "CSCS study guide",
     "KINÉTIKA",
   ],
-  authors: [{ name: "KINÉTIKA", url: "https://kinetika.fit" }],
+  authors: [{ name: "KINÉTIKA", url: "https://learnkinetika.com" }],
   creator: "KINÉTIKA",
   publisher: "KINÉTIKA",
   locale: "en_US",
@@ -56,7 +56,7 @@ export type SiteConfig = typeof siteConfig;
 /*  Helpers                                                                   */
 /* -------------------------------------------------------------------------- */
 
-/** Build an absolute URL from a path (e.g. `/courses` → `https://kinetika.fit/courses`). */
+/** Build an absolute URL from a path (e.g. `/courses` → `https://learnkinetika.com/courses`). */
 export function absoluteUrl(path = "/"): string {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   return `${siteConfig.url}${cleanPath}`;

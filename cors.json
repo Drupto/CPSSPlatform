@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["http://localhost:9002", "http://localhost:3000", "https://kinetika.netlify.app", "https://cscs-prep-2c063.firebasestorage.app"],
+    "origin": ["http://localhost:9002", "http://localhost:3000", "https://learnkinetika.com", "https://www.learnkinetika.com", "https://kinetika.netlify.app", "https://cscs-prep-2c063.firebasestorage.app"],
     "method": ["GET", "PUT", "POST", "DELETE"],
     "maxAgeSeconds": 3600
   }

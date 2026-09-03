@@ -4,16 +4,20 @@ import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, se
 import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 
+/**
+ * Returns a strictly-validated YouTube embed URL for the given video URL, or
+ * an empty string if the URL is not a recognizable YouTube link.
+ *
+ * Security: the result is rendered inside an <iframe src>. We therefore never
+ * echo the input back — only a canonical `https://www.youtube.com/embed/<id>`
+ * URL built from an extracted 11-character video ID is ever returned, so an
+ * attacker-controlled URL can never be injected into the iframe.
+ */
 export function getYouTubeEmbedUrl(url: string): string {
-  if (!url) return url;
-  if (url.includes("youtube.com/embed/")) return url;
-
+  if (!url) return "";
   const youtubeRegex = /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/;
   const match = url.match(youtubeRegex);
-  if (match && match[1]) {
-    return `https://www.youtube.com/embed/${match[1]}`;
-  }
-  return url;
+  return match && match[1] ? `https://www.youtube.com/embed/${match[1]}` : "";
 }
 
 function slugify(value: string) {
@@ -28,13 +32,16 @@ function slugify(value: string) {
 export type CourseCreateData = Omit<Course, "id" | "createdAt" | "updatedAt">;
 export type CourseContentCreateData = Omit<CourseContentItem, "id" | "courseId">;
 
-export async function createUserProfile(user: User, role: "student" | "admin" = "student") {
+export async function createUserProfile(user: User) {
   const profileRef = doc(db, "users", user.uid);
   await setDoc(profileRef, {
     uid: user.uid,
     email: user.email ?? "",
     displayName: user.displayName ?? "",
-    role,
+    // Role is intentionally hardcoded to "student". Admin privileges are only
+    // granted out-of-band (Firebase console / admin script) — never through
+    // this client-side code path.
+    role: "student",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }, { merge: true });
@@ -260,6 +267,11 @@ export async function deleteStorageFileByUrl(downloadUrl: string): Promise<void>
     if (!pathSegment) return;
 
     const decodedPath = decodeURIComponent(pathSegment);
+    // Defense-in-depth: the URL may originate from admin-entered content data,
+    // so only ever delete objects under the course-assets prefix.
+    if (!decodedPath.startsWith("courses/")) {
+      return;
+    }
     const storageRef = ref(storage, decodedPath);
     await deleteObject(storageRef);
   } catch {

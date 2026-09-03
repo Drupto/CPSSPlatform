@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { addCourseContentItem, createCourse, getYouTubeEmbedUrl, getUserProfile, uploadCourseAsset, isAdminProfile } from "@/lib/course";
+import { addCourseContentItem, createCourse, getUserProfile, uploadCourseAsset, isAdminProfile } from "@/lib/course";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -153,7 +153,9 @@ export default function NewCoursePage() {
           type: block.type,
           title: block.title.trim() || "Untitled section",
           body: block.body.trim(),
-          url: (block.type === "video" ? getYouTubeEmbedUrl(contentUrl) : contentUrl).trim(),
+          // Store the raw URL — the learn page sanitizes video URLs at render
+          // time via getYouTubeEmbedUrl, so nothing unsafe is ever embedded.
+          url: contentUrl.trim(),
           order: block.order,
         });
       }

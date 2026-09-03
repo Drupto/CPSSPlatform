@@ -45,3 +45,16 @@ firebase-debug.log
 firestore-debug.log
 # Firebase Functions
 functions/node_modules
+
+# credential files (never commit)
+serviceAccount*.json
+service-account*.json
+*-credentials.json
+credentials.json
+google-services.json
+GoogleService-Info.plist
+*.p12
+*.key
+
+# Windows/WSL metadata artifacts
+*:Zone.Identifier

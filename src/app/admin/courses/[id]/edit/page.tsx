@@ -17,7 +17,6 @@ import {
   isAdminProfile,
   getCourseQuizzes,
   createQuiz,
-  getYouTubeEmbedUrl,
 } from "@/lib/course";
 import type { Course, CourseContentItem, Quiz } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -222,7 +221,9 @@ if ((block.type === "document" || block.type === "video") && block.file) {
             type: block.type,
             title: block.title.trim() || "Untitled section",
             body: block.body.trim(),
-            url: (block.type === "video" ? getYouTubeEmbedUrl(contentUrl) : contentUrl).trim(),
+            // Store the raw URL — the learn page sanitizes video URLs at render
+            // time via getYouTubeEmbedUrl, so nothing unsafe is ever embedded.
+            url: contentUrl.trim(),
             order: block.order,
           });
         } else {
@@ -230,7 +231,9 @@ if ((block.type === "document" || block.type === "video") && block.file) {
             type: block.type,
             title: block.title.trim() || "Untitled section",
             body: block.body.trim(),
-            url: (block.type === "video" ? getYouTubeEmbedUrl(contentUrl) : contentUrl).trim(),
+            // Store the raw URL — the learn page sanitizes video URLs at render
+            // time via getYouTubeEmbedUrl, so nothing unsafe is ever embedded.
+            url: contentUrl.trim(),
             order: block.order,
           });
         }

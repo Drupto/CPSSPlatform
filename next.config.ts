@@ -1,13 +1,13 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  /* Type errors now fail the build (quality gate re-enabled 2026-08-31).
+     Fix any surfaced error rather than suppressing it. */
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // ESLint is not installed in this project; Next.js skips linting
+  // automatically, so the previous ignore flag was removed.
   images: {
     remotePatterns: [
       {
