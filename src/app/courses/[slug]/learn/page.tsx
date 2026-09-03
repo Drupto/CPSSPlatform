@@ -37,6 +37,9 @@ export default function CourseLearnPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
+  // True once onAuthStateChanged has resolved access for this visitor —
+  // prevents flashing the "no access" UI before the enrollment check completes.
+  const [authChecked, setAuthChecked] = useState(false);
   const [enrollmentStatus, setEnrollmentStatus] = useState<string | null>(null);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [user, setUser] = useState<User | null>(null);
@@ -88,11 +91,17 @@ export default function CourseLearnPage() {
     if (!slug) return;
 
     const loadCourse = async () => {
-      const courseData = await getCourseBySlug(slug as string);
-      setCourse(courseData);
-      if (courseData) {
-        const contentData = await getCourseContent(courseData.id);
-        setContent(contentData);
+      try {
+        const courseData = await getCourseBySlug(slug as string);
+        setCourse(courseData);
+        if (courseData) {
+          const contentData = await getCourseContent(courseData.id);
+          setContent(contentData);
+        }
+      } catch {
+        // Content reads are authentication-gated by Firestore rules; anonymous
+        // visitors (and unauthenticated tabs) are denied here and will see the
+        // enrollment/unauthorized UI below once auth state resolves.
       }
     };
 
@@ -114,12 +123,14 @@ export default function CourseLearnPage() {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (!authUser || !course) {
         setAuthorized(false);
+        setAuthChecked(true);
         return;
       }
       setUser(authUser);
       const enrollment = await getEnrollment(authUser.uid, course.id);
       const isAuthorized = enrollment?.status === "approved";
       setAuthorized(isAuthorized);
+      setAuthChecked(true);
       setEnrollmentStatus(enrollment ? enrollment.status : null);
       
       // Check if user has completed their profile
@@ -385,21 +396,10 @@ export default function CourseLearnPage() {
     );
   }
 
-  if (content.length === 0) {
-    return (
-      <main className="relative min-h-screen bg-slate-50">
-        <Navbar />
-        <div className="max-w-6xl mx-auto px-6 py-28">
-          <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
-            <h1 className="text-4xl font-bold text-slate-900">{course.title}</h1>
-            <p className="mt-4 text-slate-600">This course has no content sections yet.</p>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (!authorized) {
+  // Access gate comes BEFORE the "no content" screen: with rules-gated content
+  // reads, anonymous/unauthorized visitors get an empty content list — they
+  // must see the enrollment screen, not "no content sections yet".
+  if (authChecked && !authorized) {
     const isPending = enrollmentStatus === "pending";
     const isRejected = enrollmentStatus === "rejected";
     return (
@@ -427,6 +427,20 @@ export default function CourseLearnPage() {
                 Browse Courses
               </Button>
             </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (content.length === 0) {
+    return (
+      <main className="relative min-h-screen bg-slate-50">
+        <Navbar />
+        <div className="max-w-6xl mx-auto px-6 py-28">
+          <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+            <h1 className="text-4xl font-bold text-slate-900">{course.title}</h1>
+            <p className="mt-4 text-slate-600">This course has no content sections yet.</p>
           </div>
         </div>
       </main>

@@ -1,20 +1,52 @@
 rules_version = '2';
 
 // Firebase Storage Rules
+//
+// Data model (src/lib/course.ts -> uploadCourseAsset):
+//   courses/{courseId}/{timestamp}-{filename} — admin-uploaded course assets:
+//   video lessons (mp4/webm/ogg/mov), documents (pdf/doc/docx), and course
+//   cover images. This is the only path the client ever writes.
+//
+// Access model (documented in SECURITY_AUDIT.md, finding H3):
+//   - Reads: any signed-in user. Public catalog pages render cover images via
+//     unguessable getDownloadURL token links, which bypass rules entirely, so
+//     anonymous visitors keep working without granting public bucket access.
+//   - Writes/deletes: admins only, validated against the Firestore user
+//     profile (users/{uid}.role == 'admin').
+//   - Uploads are constrained: known content types only, 500 MB hard cap.
+//   - Cloud Functions use the Admin SDK and bypass these rules entirely.
 service firebase.storage {
   match /b/{bucket}/o {
-    // Course assets: admins can read, write, and delete; authenticated users can read
-    match /courses/{courseId}/{asset} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && 
-        firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
-        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      allow delete: if request.auth != null && 
-        firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
-        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+
+    function isAdmin() {
+      return request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Default deny
+    // Accepted uploads: course cover images, video lessons, and documents.
+    // request.resource.contentType is client-set; unknown/missing types fail
+    // closed (matches() on a missing field errors -> denied).
+    function isValidCourseAsset() {
+      return request.resource.size > 0
+        && request.resource.size <= 500 * 1024 * 1024
+        && (
+          request.resource.contentType.matches('image/(jpeg|png|webp|gif)')
+          || request.resource.contentType.matches('video/(mp4|webm|ogg|quicktime)')
+          || request.resource.contentType == 'application/pdf'
+          || request.resource.contentType == 'application/msword'
+          || request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        );
+    }
+
+    // Course assets: admins manage (with upload validation); authenticated
+    // users can read/download.
+    match /courses/{courseId}/{asset} {
+      allow read: if request.auth != null;
+      allow create, update: if isAdmin() && isValidCourseAsset();
+      allow delete: if isAdmin();
+    }
+
+    // Default deny everything else.
     match /{allPaths=**} {
       allow read, write: if false;
     }
