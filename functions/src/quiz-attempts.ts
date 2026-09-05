@@ -18,11 +18,24 @@ export interface SubmitQuizAttemptRequest {
   answers: number[];
 }
 
+export interface SubmitQuizAttemptReviewItem {
+  selectedIndex: number;
+  correctIndex: number;
+  isCorrect: boolean;
+  explanation?: string;
+}
+
 export interface SubmitQuizAttemptResponse {
   attemptId: string;
   score: number;
   passed: boolean;
   attemptsUsed: number;
+  /**
+   * Per-question results (correct answer + explanation) revealed only after a
+   * successful submission — the pre-submission quiz payload never carries the
+   * answer key (see getQuizForStudent in quizzes.ts).
+   */
+  review: SubmitQuizAttemptReviewItem[];
 }
 
 const QUIZ_SUBMISSION_GRACE_MS = 5000;
@@ -61,6 +74,12 @@ function getQuizTimeLimitSeconds(quiz: Record<string, unknown>): number | null {
 
 function getQuizScore(quiz: Record<string, unknown>, answers: number[]): number {
   const questions = (quiz.questions as Record<string, unknown>[]) ?? [];
+  if (questions.length === 0) {
+    // Rules require >= 1 question for new quizzes; this guards legacy docs so
+    // we never write NaN (Firestore rejects NaN) or divide by zero.
+    return 0;
+  }
+
   let correctCount = 0;
 
   questions.forEach((question, index) => {
@@ -301,7 +320,10 @@ export const submitQuizAttempt = onCall<SubmitQuizAttemptRequest, Promise<Submit
       validateAnswers(quiz, answers);
 
       const score = getQuizScore(quiz, answers);
-      const passed = score >= (quiz.passPercentage as number);
+      // Coerce defensively: rules guarantee a numeric passPercentage on new
+      // quizzes, but a legacy/malformed doc must not produce `passed: NaN`.
+      const passPercentage = Number(quiz.passPercentage ?? 0);
+      const passed = score >= passPercentage;
 
       const attemptRef = db.collection("quizAttempts").doc();
       const completedAt = FieldValue.serverTimestamp();
@@ -332,11 +354,26 @@ export const submitQuizAttempt = onCall<SubmitQuizAttemptRequest, Promise<Submit
         { merge: true }
       );
 
+      const questions = (quiz.questions as Record<string, unknown>[]) ?? [];
+      const review: SubmitQuizAttemptReviewItem[] = questions.map((question, index) => {
+        const correctIndex = Number(question.correctAnswerIndex);
+        const selectedIndex = answers[index];
+        return {
+          selectedIndex,
+          correctIndex,
+          isCorrect: selectedIndex === correctIndex,
+          ...(typeof question.explanation === "string" && question.explanation.length > 0
+            ? { explanation: question.explanation }
+            : {}),
+        };
+      });
+
       return {
         attemptId: attemptRef.id,
         score,
         passed,
         attemptsUsed: attemptsForQuiz + 1,
+        review,
       };
     });
   }

@@ -92,12 +92,14 @@ service cloud.firestore {
         allow delete: if request.auth != null && isAdmin();
       }
 
-      // Admins manage quizzes; published quizzes are readable by authenticated learners
+      // Quizzes contain the answer key (correctAnswerIndex/explanation) —
+      // reads are admin-only. Students fetch sanitized quizzes (answer key
+      // stripped) via the getQuizForStudent callable, which enforces
+      // authentication, publication, and approved enrollment server-side.
+      // ⚠️ Deploy the functions BEFORE deploying this rule (the learn page
+      // needs the callable to load quizzes).
       match /quizzes/{quizId} {
-        allow read: if request.auth != null && (
-          isAdmin()
-          || get(/databases/$(database)/documents/courses/$(courseId)).data.published == true
-        );
+        allow read: if request.auth != null && isAdmin();
         allow create: if request.auth != null && isAdmin() && isValidQuizData(request.resource.data);
         allow update: if request.auth != null && isAdmin() && isValidQuizData(request.resource.data);
         allow delete: if request.auth != null && isAdmin();

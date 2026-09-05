@@ -35,6 +35,11 @@ function getQuizTimeLimitSeconds(quiz) {
 function getQuizScore(quiz, answers) {
     var _a;
     const questions = (_a = quiz.questions) !== null && _a !== void 0 ? _a : [];
+    if (questions.length === 0) {
+        // Rules require >= 1 question for new quizzes; this guards legacy docs so
+        // we never write NaN (Firestore rejects NaN) or divide by zero.
+        return 0;
+    }
     let correctCount = 0;
     questions.forEach((question, index) => {
         if (answers[index] === question.correctAnswerIndex) {
@@ -160,7 +165,7 @@ exports.submitQuizAttempt = (0, https_1.onCall)(async (request) => {
     }
     const db = admin.firestore();
     return db.runTransaction(async (transaction) => {
-        var _a, _b, _c, _d, _e, _f;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         const sessionRef = db.doc(`quizSessions/${sessionId}`);
         const sessionSnap = await transaction.get(sessionRef);
         if (!sessionSnap.exists) {
@@ -204,7 +209,10 @@ exports.submitQuizAttempt = (0, https_1.onCall)(async (request) => {
         }
         validateAnswers(quiz, answers);
         const score = getQuizScore(quiz, answers);
-        const passed = score >= quiz.passPercentage;
+        // Coerce defensively: rules guarantee a numeric passPercentage on new
+        // quizzes, but a legacy/malformed doc must not produce `passed: NaN`.
+        const passPercentage = Number((_g = quiz.passPercentage) !== null && _g !== void 0 ? _g : 0);
+        const passed = score >= passPercentage;
         const attemptRef = db.collection("quizAttempts").doc();
         const completedAt = firestore_1.FieldValue.serverTimestamp();
         transaction.set(attemptRef, {
@@ -227,11 +235,21 @@ exports.submitQuizAttempt = (0, https_1.onCall)(async (request) => {
             answers,
             completedAt,
         }, { merge: true });
+        const questions = (_h = quiz.questions) !== null && _h !== void 0 ? _h : [];
+        const review = questions.map((question, index) => {
+            const correctIndex = Number(question.correctAnswerIndex);
+            const selectedIndex = answers[index];
+            return Object.assign({ selectedIndex,
+                correctIndex, isCorrect: selectedIndex === correctIndex }, (typeof question.explanation === "string" && question.explanation.length > 0
+                ? { explanation: question.explanation }
+                : {}));
+        });
         return {
             attemptId: attemptRef.id,
             score,
             passed,
             attemptsUsed: attemptsForQuiz + 1,
+            review,
         };
     });
 });

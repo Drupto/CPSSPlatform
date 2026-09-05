@@ -8,21 +8,32 @@ The `onCourseDelete` function is triggered whenever a course document is deleted
 
 ### What it does:
 1. **Deletes all quizzes** from the `courses/{courseId}/quizzes` subcollection
-2. **Deletes all content items** from the `courses/{courseId}/content` subcollection  
+2. **Deletes all content items** from the `courses/{courseId}/content` subcollection
 3. **Deletes all resources** from the `courses/{courseId}/resources` subcollection
-4. **Logs cleanup operations** for monitoring and debugging
+4. **Deletes orphaned quiz attempts** (`quizAttempts` where `courseId` matches)
+5. **Deletes orphaned quiz sessions** (`quizSessions` where `courseId` matches)
+6. **Deletes all storage files** under `courses/{courseId}/`
 
 ### Safety Features:
-- Uses Firestore batches for efficient and atomic operations
-- Includes comprehensive error handling
-- Logs all operations for monitoring
-- Does not throw errors that would prevent the original course deletion
-- Checks if course still exists before attempting cleanup
+- Uses Firestore **BulkWriter** — transparently chunks past the 500-operation
+  batch limit, throttles, and retries transient errors with backoff
+- Event-level retries enabled (`retry: true`); every operation is **idempotent**
+  (deleting an already-deleted doc/file is a no-op; storage deletes use
+  `ignoreNotFound`)
+- Configured with `timeoutSeconds: 540` / `memory: 512MiB` for large courses
+- Bounded-parallelism (50 at a time) storage deletes
+- All operations logged for monitoring
 
-### Cost Considerations:
-- Batch operations minimize Firestore read/write operations
-- Designed to be efficient and avoid unnecessary operations
-- Logging helps monitor usage patterns
+### Deployment note (first deploy only)
+The CLI requires acknowledging the retry/failure policy the first time a
+retry-enabled function is deployed. Non-interactive deploys need:
+
+```bash
+firebase deploy --only functions --force
+```
+
+Subsequent deploys do not need `--force`. The `--force` is safe here because
+the function is fully idempotent.
 
 ## Deployment
 
@@ -33,6 +44,9 @@ cd functions
 npm install
 firebase deploy --only functions
 ```
+
+`firebase.json` includes a `predeploy` hook that compiles TypeScript, and
+`deploy.sh` also builds explicitly — stale `lib/` output is never shipped.
 
 ## Development
 

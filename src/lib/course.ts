@@ -508,7 +508,11 @@ export async function createQuiz(courseId: string, quizData: Partial<Quiz>): Pro
 }
 
 /**
- * Gets all quizzes for a course
+ * Gets all quizzes for a course — ⚠️ ADMIN-ONLY at runtime.
+ *
+ * Firestore rules restrict quiz reads to admins (quizzes contain the answer
+ * key). Student-facing code must use the `getQuizForStudent` callable
+ * (functions/src/quizzes.ts), which strips correctAnswerIndex/explanation.
  */
 export async function getCourseQuizzes(courseId: string): Promise<Quiz[]> {
   const quizzesRef = collection(db, "courses", courseId, "quizzes");

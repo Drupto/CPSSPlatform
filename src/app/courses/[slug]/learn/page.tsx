@@ -6,10 +6,10 @@ import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, functions } from "@/lib/firebase";
 import { httpsCallable, type HttpsCallable } from "firebase/functions";
-import { getCourseBySlug, getCourseContent, getEnrollment, getCourseProgress, markContentCompleted, markContentIncomplete, getCourseQuizzes, getCourseQuizAttempts, getYouTubeEmbedUrl } from "@/lib/course";
+import { getCourseBySlug, getCourseContent, getEnrollment, getCourseProgress, markContentCompleted, markContentIncomplete, getCourseQuizAttempts, getYouTubeEmbedUrl } from "@/lib/course";
 import { isProfileComplete } from "@/lib/profile-check";
 import type { CourseContentItem, Course } from "@/lib/types";
-import type { StartQuizAttemptResponse, SubmitQuizAttemptResponse } from "@/lib/types/quiz-functions";
+import type { GetQuizForStudentResponse, QuizAttemptReviewItem, StartQuizAttemptResponse, SubmitQuizAttemptResponse } from "@/lib/types/quiz-functions";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -52,6 +52,7 @@ export default function CourseLearnPage() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState<number | null>(null);
   const [quizPassed, setQuizPassed] = useState<boolean | null>(null);
+  const [quizReview, setQuizReview] = useState<QuizAttemptReviewItem[] | null>(null);
   const [quizTimeRemaining, setQuizTimeRemaining] = useState<number | null>(null);
   const [quizDeadline, setQuizDeadline] = useState<number | null>(null);
   const [currentQuizAttemptsUsed, setCurrentQuizAttemptsUsed] = useState(0);
@@ -62,8 +63,9 @@ export default function CourseLearnPage() {
 
   const startQuizAttemptFnRef = useRef<HttpsCallable | null>(null);
   const submitQuizAttemptFnRef = useRef<HttpsCallable | null>(null);
+  const getQuizForStudentFnRef = useRef<HttpsCallable | null>(null);
 
-  const getCallable = useCallback((name: "startQuizAttempt" | "submitQuizAttempt") => {
+  const getCallable = useCallback((name: "startQuizAttempt" | "submitQuizAttempt" | "getQuizForStudent") => {
     if (!functions) {
       return null;
     }
@@ -75,10 +77,17 @@ export default function CourseLearnPage() {
       return startQuizAttemptFnRef.current;
     }
 
-    if (!submitQuizAttemptFnRef.current) {
-      submitQuizAttemptFnRef.current = httpsCallable(functions, name);
+    if (name === "submitQuizAttempt") {
+      if (!submitQuizAttemptFnRef.current) {
+        submitQuizAttemptFnRef.current = httpsCallable(functions, name);
+      }
+      return submitQuizAttemptFnRef.current;
     }
-    return submitQuizAttemptFnRef.current;
+
+    if (!getQuizForStudentFnRef.current) {
+      getQuizForStudentFnRef.current = httpsCallable(functions, name);
+    }
+    return getQuizForStudentFnRef.current;
   }, []);
 
   useEffect(() => {
@@ -160,9 +169,19 @@ export default function CourseLearnPage() {
     const loadQuizzesAndAttempts = async () => {
       if (course && user) {
         try {
-          const loadedQuizzes = await getCourseQuizzes(course.id);
-          setQuizzes(loadedQuizzes);
-          
+          const quizCallable = getCallable("getQuizForStudent");
+          if (!quizCallable) {
+            console.error("Quiz service is not ready; quizzes not loaded.");
+            return;
+          }
+
+          // Quizzes are served by the getQuizForStudent callable — Firestore
+          // rules block direct client reads because quiz docs contain the
+          // answer key. The callable strips correctAnswerIndex/explanation.
+          const result = await quizCallable({ courseId: course.id });
+          const data = result.data as GetQuizForStudentResponse;
+          setQuizzes(data.quizzes);
+
           const loadedAttempts = await getCourseQuizAttempts(user.uid, course.id);
           setQuizAttempts(loadedAttempts);
         } catch (error) {
@@ -238,6 +257,7 @@ export default function CourseLearnPage() {
       setQuizSubmitted(false);
       setQuizScore(null);
       setQuizPassed(null);
+      setQuizReview(null);
       setQuizTimeRemaining(timeLimitSeconds);
       setQuizDeadline(timeLimitSeconds === null ? null : Date.now() + timeLimitSeconds * 1000);
       setCurrentQuizAttemptsUsed(session.attemptsUsed);
@@ -276,6 +296,7 @@ export default function CourseLearnPage() {
 
       setQuizScore(response.score);
       setQuizPassed(response.passed);
+      setQuizReview(response.review ?? null);
       setQuizSubmitted(true);
       setCurrentQuizAttemptsUsed(response.attemptsUsed);
       setIsSubmittingQuiz(false);
@@ -328,6 +349,7 @@ export default function CourseLearnPage() {
       setQuizSubmitted(false);
       setQuizScore(null);
       setQuizPassed(null);
+      setQuizReview(null);
       setQuizTimeRemaining(timeLimitSeconds);
       setQuizDeadline(timeLimitSeconds === null ? null : Date.now() + timeLimitSeconds * 1000);
       setCurrentQuizAttemptsUsed(session.attemptsUsed);
@@ -458,6 +480,7 @@ const QuizModal = ({
   submitted, 
   score, 
   passed,
+  review,
   canRetake,
   timeRemaining,
   isSubmitting
@@ -471,6 +494,7 @@ const QuizModal = ({
   submitted: boolean; 
   score: number | null; 
   passed: boolean | null;
+  review: QuizAttemptReviewItem[] | null;
   canRetake: boolean;
   timeRemaining: number | null;
   isSubmitting: boolean;
@@ -524,7 +548,8 @@ const QuizModal = ({
                     <h3 className="font-semibold text-slate-900 mb-2">{question.question}</h3>
                     <div className="space-y-2">
                        {question.options.map((option: string, oIndex: number) => {
-                        const isCorrect = oIndex === question.correctAnswerIndex;
+                        const reviewItem = review?.[qIndex];
+                        const isCorrect = oIndex === reviewItem?.correctIndex;
                         const isSelected = answers[qIndex] === oIndex;
                         const isSkipped = answers[qIndex] === -1;
                         const isWrong = isSelected && !isCorrect;
@@ -551,9 +576,9 @@ const QuizModal = ({
                                 <span className="ml-auto text-xs font-medium text-amber-700">Skipped</span>
                               )}
                             </div>
-                            {question.explanation && isCorrect && (
+                            {reviewItem?.explanation && isCorrect && (
                               <p className="text-sm text-slate-600 mt-2 italic">
-                                Explanation: {question.explanation}
+                                Explanation: {reviewItem.explanation}
                               </p>
                             )}
                           </div>
@@ -907,6 +932,7 @@ const QuizModal = ({
           submitted={quizSubmitted}
           score={quizScore}
           passed={quizPassed}
+          review={quizReview}
           canRetake={currentQuiz ? currentQuizAttemptsUsed < (currentQuiz.maxAttempts ?? 1) : false}
           timeRemaining={quizTimeRemaining}
           isSubmitting={isSubmittingQuiz}
