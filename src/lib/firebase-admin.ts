@@ -25,7 +25,17 @@ if (!getApps().length) {
       app = initializeApp({
         credential: cert(JSON.parse(serviceAccountJson)),
       });
-    } catch {
+    } catch (parseError) {
+      // Do not swallow this silently: a misconfigured value would otherwise
+      // degrade to ADC and surface later as "Could not load the default
+      // credentials" at query time, hiding the real cause.
+      console.warn(
+        "[firebase-admin] GOOGLE_APPLICATION_CREDENTIALS_JSON is set but could not be parsed " +
+          "as inline JSON, falling back to ADC. The variable must contain the service-account " +
+          "JSON itself — not a file path (for a file path use GOOGLE_APPLICATION_CREDENTIALS). " +
+          "Cause:",
+        parseError instanceof Error ? parseError.message : parseError
+      );
       app = initializeApp();
     }
   } else {

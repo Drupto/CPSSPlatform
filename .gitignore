@@ -58,3 +58,10 @@ GoogleService-Info.plist
 
 # Windows/WSL metadata artifacts
 *:Zone.Identifier
+
+# Firebase Admin SDK service-account keys (any naming pattern)
+*firebase-adminsdk*.json
+*adminsdk*.json
+
+# Exception: the committed environment template contains no secrets
+!.env.example
