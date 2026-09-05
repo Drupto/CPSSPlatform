@@ -341,7 +341,11 @@ export async function getCourseResources(courseId: string): Promise<CourseConten
   const resourcesRef = collection(db, "courses", courseId, "resources");
   const resourcesQuery = query(resourcesRef, orderBy("order", "asc"));
   const snapshot = await getDocs(resourcesQuery);
-  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, courseId, ...docSnap.data() } as CourseContentItem));
+  const resources = snapshot.docs.map((docSnap) => ({ id: docSnap.id, courseId, ...docSnap.data() } as CourseContentItem));
+  // Firestore gives no guaranteed order for documents sharing the same
+  // `order` value; re-sort client-side (order asc, then doc id) so the listing
+  // order is deterministic without needing a composite index.
+  return resources.sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 }
 
 /**

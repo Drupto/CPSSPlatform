@@ -9,6 +9,9 @@
  *     and admins can fill in the content.
  *  2. Non-flashcard resources carrying stale `front`/`back` fields (left
  *     behind when a resource's type was switched) — removes them.
+ *  3. Resource documents missing a numeric `order` field — Firestore silently
+ *     excludes them from `orderBy("order")` queries, so they never appear in
+ *     the UI. Sets `order` to 0.
  *
  * DRY-RUN BY DEFAULT: pass --apply to write changes.
  *
@@ -64,6 +67,7 @@ try {
   let scanned = 0;
   let cardsFixed = 0;
   let staleCleaned = 0;
+  let orderFixed = 0;
 
   for (const document of snapshot.docs) {
     scanned++;
@@ -87,6 +91,12 @@ try {
       staleCleaned++;
     }
 
+    if (typeof data.order !== "number") {
+      updates.order = 0;
+      console.log(`• Missing numeric \`order\` field: ${location} ("${data.title ?? "untitled"}")`);
+      orderFixed++;
+    }
+
     if (APPLY && Object.keys(updates).length > 0) {
       try {
         await document.ref.set(updates, { merge: true });
@@ -100,6 +110,7 @@ try {
   console.log(`\nScanned ${scanned} resource document(s).`);
   console.log(`  Flashcards missing content: ${cardsFixed}`);
   console.log(`  Non-flashcards with stale fields: ${staleCleaned}`);
+  console.log(`  Resources missing order: ${orderFixed}`);
   if (!APPLY) {
     console.log("\nDRY RUN — no changes written. Re-run with --apply to write updates.");
   } else {

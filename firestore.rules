@@ -6,6 +6,23 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    // True when the caller has granted access to the given course. Enrollment
+    // documents are deterministically keyed `${uid}_${courseId}` by
+    // requestEnrollment() in src/lib/course.ts — rules cannot run queries, so
+    // access checks rely on that stable doc id. A missing `status` field
+    // counts as approved: those are legacy docs created before the approval
+    // system and represent already-granted access (mirrors
+    // normalizeEnrollment()); client-created docs must have status ==
+    // 'pending' (enforced by the /enrollments create rule), so a status-less
+    // doc can only be legacy or admin-written. exists() guards the get() so
+    // non-enrolled callers get a clean `false` instead of a missing-document
+    // error. Callers must ensure request.auth != null (short-circuited).
+    function hasEnrollmentFor(courseId) {
+      return exists(/databases/$(database)/documents/enrollments/$(request.auth.uid + '_' + courseId))
+        && (!('status' in get(/databases/$(database)/documents/enrollments/$(request.auth.uid + '_' + courseId)).data)
+            || get(/databases/$(database)/documents/enrollments/$(request.auth.uid + '_' + courseId)).data.status == 'approved');
+    }
+
     function isValidQuizData(data) {
       return data is map
         && data.title is string
@@ -37,6 +54,9 @@ service cloud.firestore {
     // this keeps legacy documents editable. `front`/`back` are required
     // non-empty strings for flashcards, mirroring the admin form validation.
     // Caps: title 200, body 50k, url 2048, front/back 5k — generous but bounded.
+    // A non-empty `url` must be an https:// link: the student UI opens it in a
+    // new tab, and scheme enforcement rules out javascript:/data: payloads.
+    // (Empty string stays allowed — the data layer writes url: "" when absent.)
     function isValidContentData(data) {
       return data is map
         && data.type is string
@@ -45,7 +65,9 @@ service cloud.firestore {
         && data.title.size() > 0
         && data.title.size() <= 200
         && (!('body' in data) || (data.body is string && data.body.size() <= 50000))
-        && (!('url' in data) || (data.url is string && data.url.size() <= 2048))
+        && (!('url' in data) || (data.url is string
+            && data.url.size() <= 2048
+            && (data.url.size() == 0 || data.url.matches('^https://.+'))))
         && data.order is int
         && data.order >= 0
         && (data.type != 'flashcard'
@@ -105,14 +127,20 @@ service cloud.firestore {
         allow delete: if request.auth != null && isAdmin();
       }
 
-      // Resources (study materials incl. flashcards) are managed by admins;
-      // authenticated learners can read them for published courses. Writes are
-      // shape-validated (see isValidContentData) — flashcard documents must
-      // carry non-empty front/back content.
+      // Resources (study materials incl. flashcards) are managed by admins and
+      // are paid course material: reads require an approved enrollment in a
+      // published course (or admin role). See hasEnrollmentFor() — rules
+      // cannot run queries, so it relies on the deterministic
+      // `${uid}_${courseId}` enrollment doc id. Writes are shape-validated
+      // (see isValidContentData) — flashcard documents must carry non-empty
+      // front/back content.
       match /resources/{resourceId} {
         allow read: if request.auth != null && (
           isAdmin()
-          || get(/databases/$(database)/documents/courses/$(courseId)).data.published == true
+          || (
+            get(/databases/$(database)/documents/courses/$(courseId)).data.published == true
+            && hasEnrollmentFor(courseId)
+          )
         );
         allow create, update: if request.auth != null && isAdmin() && isValidContentData(request.resource.data);
         allow delete: if request.auth != null && isAdmin();

@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -12,6 +12,7 @@ import type { Course, CourseContentItem, CourseContentType } from "@/lib/types";
 import { toast } from "@/hooks/use-toast";
 import { Navbar } from "@/components/navbar";
 import { BackToAdminButton } from "@/components/admin/BackToAdminButton";
+import { getResourceIcon, getResourceTypeBadge } from "@/components/resources/resource-display";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,17 +46,10 @@ import {
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import {
-  Download, 
   Plus, 
   Edit, 
   Trash2, 
-  FileText, 
-  Video, 
-  Link as LinkIcon, 
-  ExternalLink,
-  Save,
-  X,
-  CreditCard
+  Save
 } from "lucide-react";
 
 export default function AdminResourcesPage() {
@@ -65,6 +59,7 @@ export default function AdminResourcesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [resources, setResources] = useState<CourseContentItem[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingResource, setEditingResource] = useState<CourseContentItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -78,8 +73,11 @@ export default function AdminResourcesPage() {
     front: '',
     back: ''
   });
-  const [formErrors, setFormErrors] = useState<{ title?: string; front?: string; back?: string }>({});
+  const [formErrors, setFormErrors] = useState<{ title?: string; front?: string; back?: string; url?: string; order?: string }>({});
   const [saving, setSaving] = useState(false);
+  // Monotonic counter guarding against out-of-order resource loads when the
+  // selected course changes quickly — only the latest request may update state.
+  const loadSequenceRef = useRef(0);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser: User | null) => {
@@ -106,6 +104,11 @@ export default function AdminResourcesPage() {
         }
       } catch (error) {
         console.error("Error loading data:", error);
+        toast({
+          title: "Could not load courses",
+          description: "Please refresh the page to try again.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -115,11 +118,20 @@ export default function AdminResourcesPage() {
   }, [router]);
 
   const loadResources = async (courseId: string) => {
+    // Only the most recent request may update state — switching courses
+    // quickly must never show one course's resources under another.
+    const requestId = ++loadSequenceRef.current;
+    setLoadError(null);
     try {
       const courseResources = await getCourseResources(courseId);
-      setResources(courseResources);
+      if (requestId === loadSequenceRef.current) {
+        setResources(courseResources);
+      }
     } catch (error) {
       console.error("Error loading resources:", error);
+      if (requestId === loadSequenceRef.current) {
+        setLoadError("Failed to load resources. Please try again.");
+      }
     }
   };
 
@@ -140,11 +152,18 @@ export default function AdminResourcesPage() {
   };
 
   const validateForm = (): boolean => {
-    const errors: { title?: string; front?: string; back?: string } = {};
+    const errors: { title?: string; front?: string; back?: string; url?: string; order?: string } = {};
     if (!formData.title.trim()) errors.title = "Title is required.";
     if (formData.type === "flashcard") {
       if (!formData.front.trim()) errors.front = "Front content is required.";
       if (!formData.back.trim()) errors.back = "Back content is required.";
+    }
+    const trimmedUrl = formData.url.trim();
+    if (trimmedUrl && !/^https:\/\/\S+$/.test(trimmedUrl)) {
+      errors.url = "URL must be a secure link starting with https://";
+    }
+    if (formData.order < 0) {
+      errors.order = "Order must be 0 or greater.";
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -225,9 +244,14 @@ export default function AdminResourcesPage() {
   const handleDeleteResource = async () => {
     if (!selectedCourse || !deleteResourceId) return;
     
+    const resourceTitle = resources.find((r) => r.id === deleteResourceId)?.title ?? "Resource";
     try {
       await deleteCourseResource(selectedCourse.id, deleteResourceId);
       await loadResources(selectedCourse.id);
+      toast({
+        title: "Resource deleted",
+        description: `"${resourceTitle}" has been removed from ${selectedCourse.title}.`,
+      });
       setIsDeleting(false);
       setDeleteResourceId(null);
     } catch (error) {
@@ -237,36 +261,6 @@ export default function AdminResourcesPage() {
         description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       });
-    }
-  };
-
-  const getResourceIcon = (type: string) => {
-    switch (type) {
-      case "document":
-        return <FileText className="h-5 w-5" />;
-      case "video":
-        return <Video className="h-5 w-5" />;
-      case "link":
-        return <ExternalLink className="h-5 w-5" />;
-      case "flashcard":
-        return <CreditCard className="h-5 w-5" />;
-      default:
-        return <FileText className="h-5 w-5" />;
-    }
-  };
-
-  const getResourceTypeBadge = (type: string) => {
-    switch (type) {
-      case "document":
-        return <Badge variant="secondary">Document</Badge>;
-      case "video":
-        return <Badge variant="secondary">Video</Badge>;
-      case "link":
-        return <Badge variant="secondary">Link</Badge>;
-      case "flashcard":
-        return <Badge variant="secondary">Flashcard</Badge>;
-      default:
-        return <Badge variant="secondary">Resource</Badge>;
     }
   };
 
@@ -434,6 +428,9 @@ export default function AdminResourcesPage() {
                             onChange={handleInputChange}
                             placeholder="https://example.com/resource"
                           />
+                          {formErrors.url && (
+                            <p className="mt-1 text-sm text-red-600">{formErrors.url}</p>
+                          )}
                         </div>
                           </>
                         )}
@@ -443,10 +440,14 @@ export default function AdminResourcesPage() {
                           <Input
                             name="order"
                             type="number"
+                            min={0}
                             value={formData.order}
                             onChange={handleInputChange}
                             placeholder="1"
                           />
+                          {formErrors.order && (
+                            <p className="mt-1 text-sm text-red-600">{formErrors.order}</p>
+                          )}
                         </div>
                       </div>
                       
@@ -475,7 +476,18 @@ export default function AdminResourcesPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {resources.length === 0 ? (
+                  {loadError ? (
+                    <div className="text-center py-8">
+                      <p className="text-red-600">{loadError}</p>
+                      <Button
+                        className="mt-3"
+                        variant="outline"
+                        onClick={() => selectedCourse && loadResources(selectedCourse.id)}
+                      >
+                        Retry
+                      </Button>
+                    </div>
+                  ) : resources.length === 0 ? (
                     <div className="text-center py-8 text-slate-500">
                       No resources found for this course. Add a new resource to get started.
                     </div>
@@ -536,7 +548,7 @@ export default function AdminResourcesPage() {
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogCancel onClick={() => setDeleteResourceId(null)}>Cancel</AlertDialogCancel>
                                       <AlertDialogAction onClick={handleDeleteResource}>
                                         Delete
                                       </AlertDialogAction>

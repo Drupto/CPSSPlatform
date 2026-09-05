@@ -14,10 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
   Download,
-  FileText,
-  Video,
-  ExternalLink,
-  CreditCard,
   ChevronLeft,
   ChevronRight,
   X,
@@ -27,6 +23,7 @@ import {
   RotateCcw,
   Brain,
 } from "lucide-react";
+import { getResourceIcon, getResourceTypeBadge } from "@/components/resources/resource-display";
 
 interface FlashcardStudyState {
   courseId: string;
@@ -124,7 +121,14 @@ export default function ResourcesPage() {
         const userEnrollments = await getEnrollmentsForUser(currentUser.uid);
         setEnrollments(userEnrollments);
 
-        const coursePromises = userEnrollments.map(async (enrollment) => {
+        // Only approved enrollments grant access to course resources —
+        // pending/rejected requests must not surface course materials
+        // (mirrors the gating on the my-courses page).
+        const approvedEnrollments = userEnrollments.filter(
+          (enrollment) => enrollment.status === "approved"
+        );
+
+        const coursePromises = approvedEnrollments.map(async (enrollment) => {
           const course = await getCourseById(enrollment.courseId);
           if (course) {
             const resources = await getCourseResources(enrollment.courseId);
@@ -153,42 +157,14 @@ export default function ResourcesPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const getResourceIcon = (type: string) => {
-    switch (type) {
-      case "document":
-        return <FileText className="h-5 w-5" />;
-      case "video":
-        return <Video className="h-5 w-5" />;
-      case "link":
-        return <ExternalLink className="h-5 w-5" />;
-      case "flashcard":
-        return <CreditCard className="h-5 w-5" />;
-      default:
-        return <FileText className="h-5 w-5" />;
-    }
-  };
-
-  const getResourceTypeBadge = (type: string) => {
-    switch (type) {
-      case "document":
-        return <Badge variant="secondary">Document</Badge>;
-      case "video":
-        return <Badge variant="secondary">Video</Badge>;
-      case "link":
-        return <Badge variant="secondary">Link</Badge>;
-      case "flashcard":
-        return <Badge variant="secondary">Flashcard</Badge>;
-      default:
-        return <Badge variant="secondary">Resource</Badge>;
-    }
-  };
-
   const getFlashcardCount = (resources: CourseContentItem[]) =>
     resources.filter(r => r.type === "flashcard").length;
 
   const handleResourceClick = (url?: string) => {
     if (url) {
-      window.open(url, "_blank");
+      // "noopener,noreferrer" blocks reverse tabnabbing — resource URLs are
+      // admin-provided but may point anywhere.
+      window.open(url, "_blank", "noopener,noreferrer");
     }
   };
 
