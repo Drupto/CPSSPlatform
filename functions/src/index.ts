@@ -53,6 +53,10 @@ export const onCourseDelete = onDocumentDeleted(
   {
     document: "courses/{courseId}",
     retry: true,
+    // Colocate with the Firestore database (asia-south2) — Firestore triggers
+    // are created in the database's region, and a mismatched function region
+    // causes cross-region hops and deploy warnings.
+    region: "asia-south2",
     // Large courses can have thousands of files/docs; the default 60s/256MiB
     // is too tight for the cleanup pass.
     timeoutSeconds: 540,
