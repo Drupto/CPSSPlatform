@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getAllCourses, getEnrollmentsForUser, requestEnrollment } from "@/lib/course";
+import { getPublishedCourses, getEnrollmentsForUser } from "@/lib/course";
+import { formatCoursePrice } from "@/lib/currency";
 import { isProfileComplete } from "@/lib/profile-check";
 import type { Course, Enrollment, EnrollmentStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,6 @@ export default function AvailableCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [enrolling, setEnrolling] = useState<Record<string, boolean>>({});
 
   const getEnrollmentStatus = (courseId: string): EnrollmentStatus | null => {
     const enrollment = enrollments.find((e) => e.courseId === courseId);
@@ -40,8 +40,10 @@ export default function AvailableCoursesPage() {
       }
 
       try {
-        // Fetch all courses
-        const allCourses = await getAllCourses();
+        // Published courses only — a rules-v2-compliant query for non-admins
+        // (an unconstrained getAllCourses() query is rejected with
+        // permission-denied for students).
+        const allCourses = await getPublishedCourses();
         
         // Fetch user's enrollments
         const userEnrollments = await getEnrollmentsForUser(user.uid);
@@ -63,33 +65,10 @@ export default function AvailableCoursesPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const handleRequest = async (courseId: string) => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    setEnrolling(prev => ({ ...prev, [courseId]: true }));
-
-    try {
-      await requestEnrollment(user.uid, courseId);
-
-      // Refresh enrollments
-      const updatedEnrollments = await getEnrollmentsForUser(user.uid);
-      setEnrollments(updatedEnrollments);
-
-      toast({
-        title: "Request Sent",
-        description: "Your enrollment request is awaiting admin approval.",
-      });
-    } catch (error) {
-      console.error("Error requesting enrollment:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send enrollment request. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setEnrolling(prev => ({ ...prev, [courseId]: false }));
-    }
+  // All enrollment requests go through the payment page: the student scans
+  // the UPI/PayPal QR and submits the transaction reference there.
+  const handleRequest = (course: Course) => {
+    router.push(`/courses/${course.slug}/pay`);
   };
 
   return (
@@ -124,7 +103,7 @@ export default function AvailableCoursesPage() {
                        </div>
                      <p className="text-slate-600 line-clamp-2">{course.description}</p>
                       <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200">
-                        <span className="text-sm text-slate-500">₹{course.price}</span>
+                        <span className="text-sm text-slate-500">{formatCoursePrice(course)}</span>
                         {getEnrollmentStatus(course.id) === "approved" ? (
                           <Link
                             href={`/courses/${course.slug}/learn`}
@@ -138,19 +117,17 @@ export default function AvailableCoursesPage() {
                           </Button>
                         ) : getEnrollmentStatus(course.id) === "rejected" ? (
                           <Button
-                            onClick={() => handleRequest(course.id)}
-                            disabled={enrolling[course.id]}
+                            onClick={() => handleRequest(course)}
                             className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
                           >
-                            {enrolling[course.id] ? "Sending..." : "Request Again"}
+                            Request Again
                           </Button>
                         ) : (
-                          <Button 
-                            onClick={() => handleRequest(course.id)}
-                            disabled={enrolling[course.id]}
+                          <Button
+                            onClick={() => handleRequest(course)}
                             className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
                           >
-                            {enrolling[course.id] ? "Sending..." : "Request Access"}
+                            Request Access
                           </Button>
                         )}
                       </div>

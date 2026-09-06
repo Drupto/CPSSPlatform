@@ -46,6 +46,7 @@ export default function EditCoursePage() {
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("0");
+  const [priceUsd, setPriceUsd] = useState("");
   const [published, setPublished] = useState(false);
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [contentBlocks, setContentBlocks] = useState<ContentBlockForm[]>([]);
@@ -88,6 +89,7 @@ export default function EditCoursePage() {
       setSlug(courseData.slug);
       setDescription(courseData.description);
       setPrice(courseData.price.toString());
+      setPriceUsd(courseData.priceUsd != null ? courseData.priceUsd.toString() : "");
       setPublished(courseData.published);
       setCoverImageUrl(courseData.coverImageUrl);
 
@@ -191,6 +193,8 @@ export default function EditCoursePage() {
         slug: slug.trim() || title.trim(),
         description: description.trim(),
         price: Number(price) || 0,
+        // Blank USD input → null (clears the USD price), never undefined.
+        priceUsd: priceUsd.trim() === "" ? null : Number(priceUsd),
         published,
         coverImageUrl: coverImageUrl.trim(),
       });
@@ -318,9 +322,9 @@ if ((block.type === "document" || block.type === "video") && block.file) {
               />
             </div>
 
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-2">
-                <Label htmlFor="course-price">Price</Label>
+                <Label htmlFor="course-price">Price (₹ INR) — paid via UPI</Label>
                 <Input
                   id="course-price"
                   type="number"
@@ -330,7 +334,19 @@ if ((block.type === "document" || block.type === "video") && block.file) {
                   required
                 />
               </div>
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2">
+                <Label htmlFor="course-price-usd">Price ($ USD) — paid via PayPal</Label>
+                <Input
+                  id="course-price-usd"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={priceUsd}
+                  onChange={(event) => setPriceUsd(event.target.value)}
+                  placeholder="Optional — required for PayPal payments"
+                />
+              </div>
+              <div className="space-y-2 lg:col-span-2">
                 <Label htmlFor="course-cover">Cover Image URL</Label>
                 <Input
                   id="course-cover"

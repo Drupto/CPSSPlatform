@@ -1,5 +1,5 @@
 import type { User } from "firebase/auth";
-import type { Course, CourseContentItem, CourseProgress, Enrollment, EnrollmentStatus, Flashcard, UserProfile, Quiz, QuizAttempt } from "./types";
+import type { Course, CourseContentItem, CourseProgress, Enrollment, EnrollmentStatus, Flashcard, PaymentMethod, UserProfile, Quiz, QuizAttempt } from "./types";
 import { isFlashcard } from "./types";
 import { addDoc, collection, deleteDoc, deleteField, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
@@ -87,6 +87,31 @@ export async function getCourseBySlug(slug: string): Promise<Course | null> {
   return { id: first.id, ...first.data() } as Course;
 }
 
+/**
+ * Fetches a PUBLISHED course by slug using a rules-compliant query.
+ *
+ * Both `where` filters are required: with rules_version = '2', a list query
+ * must be provably restricted to documents the caller can read (non-admins
+ * may only read courses with published == true), otherwise Firestore rejects
+ * the entire query with permission-denied. Use this instead of
+ * getCourseBySlug() for any client-side fetch performed by non-admin users.
+ */
+export async function getPublishedCourseBySlug(slug: string): Promise<Course | null> {
+  const coursesRef = collection(db, "courses");
+  const courseQuery = query(
+    coursesRef,
+    where("slug", "==", slug),
+    where("published", "==", true),
+    orderBy("createdAt", "desc")
+  );
+  const snapshot = await getDocs(courseQuery);
+  if (snapshot.empty) {
+    return null;
+  }
+  const first = snapshot.docs[0];
+  return { id: first.id, ...first.data() } as Course;
+}
+
 export async function getCourseById(courseId: string): Promise<Course | null> {
   const courseRef = doc(db, "courses", courseId);
   const snapshot = await getDoc(courseRef);
@@ -100,6 +125,9 @@ export async function createCourse(courseData: Partial<CourseCreateData>): Promi
     slug: normalizedSlug,
     description: courseData.description ?? "",
     price: courseData.price ?? 0,
+    // Explicit null (never undefined — Firestore rejects undefined field
+    // values in setDoc). null = USD price not configured yet.
+    priceUsd: courseData.priceUsd ?? null,
     published: courseData.published ?? false,
     coverImageUrl: courseData.coverImageUrl ?? "",
     createdAt: serverTimestamp(),
@@ -155,19 +183,57 @@ export async function uploadCourseAsset(file: File, courseId: string): Promise<s
   }
 }
 
+export interface PaymentSubmissionData {
+  method: PaymentMethod;
+  reference: string;
+}
+
 /**
- * Submits an enrollment request for a course. The request starts in "pending"
- * status and only grants course access once an admin approves it.
+ * Creates (or updates) the student's pending enrollment together with the
+ * payment details submitted on the payment page. The record always lands in
+ * "pending" — an admin must manually verify the payment reference before
+ * access is granted. Firestore rules enforce the same constraints
+ * (see the /enrollments block in firestore.rules).
+ *
+ * - No existing enrollment → creates it with the payment fields.
+ * - Pending enrollment (e.g. created before payments existed) → fills in
+ *   the payment fields.
+ * - Rejected enrollment ("Request Again") → resets to pending with the new
+ *   payment details.
+ * - Approved enrollments are never modified here: the learn page redirects
+ *   approved users before this function is reachable, and the rules deny
+ *   student writes on approved docs anyway.
  */
-export async function requestEnrollment(userId: string, courseId: string): Promise<void> {
-  const enrollmentRef = doc(db, "enrollments", `${userId}_${courseId}`);
-  await setDoc(enrollmentRef, {
-    id: `${userId}_${courseId}`,
-    userId,
-    courseId,
-    status: "pending",
-    requestedAt: serverTimestamp(),
-  });
+export async function submitPaymentRequest(
+  userId: string,
+  courseId: string,
+  payment: PaymentSubmissionData
+): Promise<void> {
+  const enrollmentId = `${userId}_${courseId}`;
+  const enrollmentRef = doc(db, "enrollments", enrollmentId);
+  const paymentFields = {
+    paymentMethod: payment.method,
+    paymentReference: payment.reference.trim(),
+    paymentSubmittedAt: serverTimestamp(),
+  };
+
+  const existing = await getDoc(enrollmentRef);
+  if (existing.exists()) {
+    await setDoc(enrollmentRef, {
+      status: "pending",
+      requestedAt: serverTimestamp(),
+      ...paymentFields,
+    }, { merge: true });
+  } else {
+    await setDoc(enrollmentRef, {
+      id: enrollmentId,
+      userId,
+      courseId,
+      status: "pending",
+      requestedAt: serverTimestamp(),
+      ...paymentFields,
+    });
+  }
 }
 
 /**

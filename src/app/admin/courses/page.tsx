@@ -7,6 +7,7 @@ import Link from "next/link";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getAllCourses, getUserProfile, isAdminProfile, deleteCourse, getCourseQuizzes } from "@/lib/course";
+import { formatCoursePrice } from "@/lib/currency";
 import type { Course, Quiz } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { BackToAdminButton } from "@/components/admin/BackToAdminButton";
@@ -99,7 +100,7 @@ export default function AdminCoursesPage() {
                         <span className={course.published ? "rounded-full bg-emerald-100 px-3 py-1 text-emerald-700" : "rounded-full bg-slate-100 px-3 py-1 text-slate-600"}>
                           {course.published ? "Published" : "Draft"}
                         </span>
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">₹{course.price}</span>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">{formatCoursePrice(course)}</span>
                       </div>
                     </div>
                     <div className="mt-4 flex items-center gap-3">

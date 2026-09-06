@@ -147,20 +147,63 @@ service cloud.firestore {
       }
     }
 
-    // Allow authenticated users to read their own enrollments or if admin
-    // Students may only create a PENDING enrollment for themselves; approval is admin-only
+    // Allow authenticated users to read their own enrollments or if admin.
+    // Students create a PENDING enrollment for themselves WITH their payment
+    // details (submitted on the payment page); review/approval is admin-only.
     match /enrollments/{enrollmentId} {
       allow read: if request.auth != null && (
         request.auth.uid == get(/databases/$(database)/documents/enrollments/$(enrollmentId)).data.userId
         || isAdmin()
       );
+
+      // Student submission from the payment page: one atomic write of the
+      // pending enrollment + payment details. Field whitelist and type checks
+      // mirror submitPaymentRequest() in src/lib/course.ts. The reference is
+      // unverified user input — length-capped and display-only (the admin
+      // matches it manually against their UPI/PayPal app).
       allow create: if request.auth != null
         && request.auth.uid == request.resource.data.userId
         && request.resource.data.status == 'pending'
         && request.resource.data.id == enrollmentId
-        && request.resource.data.keys().hasOnly(['id', 'userId', 'courseId', 'status', 'requestedAt']);
-      allow update: if request.auth != null && isAdmin()
-        && request.resource.data.keys().hasOnly(['status', 'reviewedAt', 'reviewedBy', 'enrolledAt']);
+        && request.resource.data.keys().hasOnly(['id', 'userId', 'courseId', 'status', 'requestedAt', 'paymentMethod', 'paymentReference', 'paymentSubmittedAt'])
+        && request.resource.data.paymentMethod in ['upi', 'paypal']
+        && request.resource.data.paymentReference is string
+        && request.resource.data.paymentReference.size() > 0
+        && request.resource.data.paymentReference.size() <= 100
+        && request.resource.data.paymentSubmittedAt is timestamp;
+
+      // Exactly two legal update shapes:
+      //
+      // 1. ADMIN REVIEW — approve / reject / revoke stamps. Uses
+      //    diff().affectedKeys() (NOT request.resource.data.keys()): a merge
+      //    update carries the pre-existing fields (id, userId, courseId,
+      //    requestedAt) in request.resource.data, so a keys().hasOnly(...)
+      //    whitelist would deny every approval. `status` is constrained so
+      //    admins can only ever move to approved/rejected.
+      //
+      // 2. STUDENT PAYMENT (RE)SUBMISSION — only on their own doc, only from
+      //    pending/rejected, only ever producing pending, only touching the
+      //    payment fields (+ requestedAt refresh). Approved docs are
+      //    untouchable by students, so a revoke is irreversible from the
+      //    student side. Missing payment fields fail closed (error → deny).
+      allow update: if request.auth != null && (
+        (
+          isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'reviewedAt', 'reviewedBy', 'enrolledAt'])
+          && request.resource.data.status in ['approved', 'rejected']
+        )
+        || (
+          request.auth.uid == resource.data.userId
+          && resource.data.status in ['pending', 'rejected']
+          && request.resource.data.status == 'pending'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'requestedAt', 'paymentMethod', 'paymentReference', 'paymentSubmittedAt'])
+          && request.resource.data.paymentMethod in ['upi', 'paypal']
+          && request.resource.data.paymentReference is string
+          && request.resource.data.paymentReference.size() > 0
+          && request.resource.data.paymentReference.size() <= 100
+          && request.resource.data.paymentSubmittedAt is timestamp
+        )
+      );
       allow delete: if request.auth != null && isAdmin();
     }
 

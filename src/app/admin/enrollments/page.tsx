@@ -15,8 +15,10 @@ import {
   rejectEnrollment,
 } from "@/lib/course";
 import type { Enrollment, EnrollmentStatus, Course, UserProfile } from "@/lib/types";
+import { formatCoursePrice } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar";
+import { Check, Copy } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 type Tab = "pending" | "approved" | "rejected";
@@ -25,6 +27,37 @@ interface RequestRow {
   enrollment: Enrollment;
   course: Course | null;
   user: UserProfile | null;
+}
+
+/**
+ * Copies the payment reference so the admin can paste it into their UPI /
+ * PayPal app to search for the matching transaction.
+ */
+function CopyReferenceButton({ reference }: { reference: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(reference);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API unavailable (e.g. insecure context) — the reference is
+      // also selectable as plain text, so copying stays possible manually.
+    }
+  };
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="h-7 gap-1 px-2 text-xs"
+      onClick={handleCopy}
+    >
+      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+      {copied ? "Copied" : "Copy"}
+    </Button>
+  );
 }
 
 const dateFormat = (timestamp: any): string => {
@@ -200,15 +233,53 @@ export default function AdminEnrollmentsPage() {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="space-y-1">
-                      <h2 className="text-lg font-semibold text-slate-900">
-                        {row.course ? row.course.title : "Unknown Course"}
-                      </h2>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-lg font-semibold text-slate-900">
+                          {row.course ? row.course.title : "Unknown Course"}
+                        </h2>
+                        {/* Expected amount in both currencies — INR (UPI) and
+                            USD (PayPal), admin-set at course creation/edit —
+                            so the admin knows what to look for when verifying
+                            the payment on either rail. */}
+                        {row.course && (
+                          <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                            {formatCoursePrice(row.course)}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-slate-600">
                         Student: {row.user?.displayName || row.user?.email || row.enrollment.userId}
                       </p>
                       <p className="text-xs text-slate-500">
                         Requested: {dateFormat(row.enrollment.requestedAt)}
                       </p>
+
+                      {/* Manual payment verification: the admin matches the
+                          reference against their UPI/PayPal app receipt. */}
+                      {row.enrollment.paymentReference ? (
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                              row.enrollment.paymentMethod === "paypal"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-emerald-100 text-emerald-700"
+                            }`}
+                          >
+                            {row.enrollment.paymentMethod === "paypal" ? "PayPal" : "UPI"}
+                          </span>
+                          <code className="rounded bg-white px-2 py-0.5 font-mono text-sm text-slate-800">
+                            {row.enrollment.paymentReference}
+                          </code>
+                          <CopyReferenceButton reference={row.enrollment.paymentReference} />
+                          <span className="text-xs text-slate-500">
+                            Submitted: {dateFormat(row.enrollment.paymentSubmittedAt)}
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="pt-1 text-xs text-slate-400">
+                          Payment details not provided (legacy request)
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3">

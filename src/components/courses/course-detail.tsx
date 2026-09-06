@@ -5,7 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getCourseBySlug, requestEnrollment, getEnrollment } from "@/lib/course";
+import { getPublishedCourseBySlug, getEnrollment } from "@/lib/course";
+import { formatInr, formatUsd } from "@/lib/currency";
 import { isProfileComplete } from "@/lib/profile-check";
 import type { Course, EnrollmentStatus } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
@@ -22,15 +23,15 @@ export function CourseDetail() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [enrollmentStatus, setEnrollmentStatus] = useState<EnrollmentStatus | null>(null);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
 
-    getCourseBySlug(slug as string)
+    // Rules-compliant for non-admins: getCourseBySlug's query (no published
+    // filter) is rejected under rules v2 for students/anonymous visitors.
+    getPublishedCourseBySlug(slug as string)
       .then(setCourse)
+      .catch(() => setCourse(null))
       .finally(() => setLoading(false));
   }, [slug]);
 
@@ -51,29 +52,15 @@ export function CourseDetail() {
     return () => unsubscribe();
   }, [course, router]);
 
-  const handleRequest = async () => {
-    setError("");
-    setMessage("");
-
+  // All enrollment requests go through the payment page: the student scans
+  // the UPI/PayPal QR and submits the transaction reference there.
+  const handleRequest = () => {
     if (!currentUser) {
       router.push("/auth");
       return;
     }
-    if (!course) {
-      setError("Course not found.");
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      await requestEnrollment(currentUser.uid, course.id);
-      setEnrollmentStatus("pending");
-      setMessage("Enrollment request sent. You'll get access once an admin approves it.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to send request at this time.");
-    } finally {
-      setIsProcessing(false);
-    }
+    if (!course) return;
+    router.push(`/courses/${course.slug}/pay`);
   };
 
   if (loading) {
@@ -112,8 +99,13 @@ export function CourseDetail() {
               </div>
              <div className="space-y-4">
                <div className="rounded-3xl bg-slate-50 p-6">
-                 <p className="text-sm text-slate-500">Price</p>
-                 <p className="mt-2 text-3xl font-semibold text-slate-900">₹{course.price}</p>
+                 <p className="text-sm text-slate-500">Price (INR — paid via UPI)</p>
+                 <p className="mt-2 text-3xl font-semibold text-slate-900">{formatInr(course.price)}</p>
+                 {course.priceUsd != null && (
+                   <p className="mt-1 text-lg font-semibold text-slate-700">
+                     {formatUsd(course.priceUsd)} <span className="text-xs font-normal text-slate-500">(USD — paid via PayPal)</span>
+                   </p>
+                 )}
                </div>
                <div className="rounded-3xl bg-slate-50 p-6">
                  <p className="text-sm text-slate-500">Status</p>
@@ -123,9 +115,6 @@ export function CourseDetail() {
            </div>
 
           <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            {error && <div className="mb-4 rounded-2xl bg-red-100 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
-            {message && <div className="mb-4 rounded-2xl bg-emerald-100 border border-emerald-200 px-4 py-3 text-sm text-emerald-700">{message}</div>}
-
               {enrollmentStatus === "approved" ? (
                 <Button className="w-full" onClick={() => router.push(`/courses/${course.slug}/learn`)}>
                   Go to Course
@@ -135,12 +124,12 @@ export function CourseDetail() {
                   Request Pending Approval
                 </Button>
               ) : enrollmentStatus === "rejected" ? (
-                <Button className="w-full" onClick={handleRequest} disabled={isProcessing}>
-                  {isProcessing ? "Sending..." : "Request Again"}
+                <Button className="w-full" onClick={handleRequest}>
+                  Request Again
                 </Button>
               ) : (
-                <Button className="w-full" onClick={handleRequest} disabled={isProcessing}>
-                  {isProcessing ? "Sending..." : "Request Access"}
+                <Button className="w-full" onClick={handleRequest}>
+                  Request Access
                 </Button>
               )}
 
@@ -148,7 +137,9 @@ export function CourseDetail() {
               {currentUser
                 ? (enrollmentStatus === "approved"
                   ? "You have access to this course."
-                  : "Submit a request and an admin will approve your access.")
+                  : enrollmentStatus === "pending"
+                    ? "Your payment details are awaiting admin verification."
+                    : "You'll be taken to the payment page to complete your enrollment.")
                 : "Sign in or sign up to request access."}
             </div>
           </div>

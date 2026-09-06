@@ -86,7 +86,7 @@ export default function MyCoursesPage() {
                        ? "bg-amber-100 text-amber-700"
                        : "bg-red-100 text-red-700";
                  const statusLabel =
-                   status === "approved" ? "Approved" : status === "pending" ? "Pending" : "Declined";
+                   status === "approved" ? "Approved" : status === "pending" ? "Payment under review" : "Declined";
 
                   return (
                     <article key={enrollment.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">

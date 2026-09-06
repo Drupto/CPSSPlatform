@@ -16,7 +16,16 @@ export interface Course {
   title: string;
   slug: string;
   description: string;
+  /** Course price in Indian Rupees (INR) — the amount paid via the UPI QR. */
   price: number;
+  /**
+   * Course price in US Dollars (USD) — the amount paid via the PayPal QR.
+   * Admin-set per course (no automatic FX conversion, so manual payment
+   * verification always has an exact expected amount per rail). Optional:
+   * legacy courses may not have it — null/undefined means "USD not
+   * configured" and the UI shows INR-only with a PayPal warning.
+   */
+  priceUsd?: number | null;
   published: boolean;
   coverImageUrl: string;
   createdAt: Timestamp | null;
@@ -93,6 +102,8 @@ export function isFlashcard(item: CourseContentItem): item is Flashcard {
 
 export type EnrollmentStatus = "pending" | "approved" | "rejected";
 
+export type PaymentMethod = "upi" | "paypal";
+
 export interface Enrollment {
   id: string;
   userId: string;
@@ -102,6 +113,14 @@ export interface Enrollment {
   reviewedAt?: Timestamp | null;
   reviewedBy?: string;
   enrolledAt?: Timestamp | null;
+  /**
+   * Manual payment verification details, submitted by the student on the
+   * payment page and checked by an admin before approval. Optional because
+   * legacy enrollments (created before payments) don't carry them.
+   */
+  paymentMethod?: PaymentMethod;
+  paymentReference?: string;
+  paymentSubmittedAt?: Timestamp | null;
 }
 
 export interface CourseProgress {

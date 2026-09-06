@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { getPublishedCourses } from "@/lib/course";
+import { formatCoursePrice } from "@/lib/currency";
 import { describeFirestoreError } from "@/lib/firebase";
 import type { Course } from "@/lib/types";
 import { Input } from "@/components/ui/input";
@@ -100,7 +101,7 @@ export function CoursesCatalog() {
                      </div>
                     <p className="text-slate-600 min-h-[3rem]">{course.description}</p>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-xl font-semibold text-slate-900">₹{course.price}</span>
+                      <span className="text-xl font-semibold text-slate-900">{formatCoursePrice(course)}</span>
                       <Link href={`/courses/${course.slug}`} className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-primary/90">
                         View Course
                       </Link>

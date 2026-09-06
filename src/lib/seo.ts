@@ -211,6 +211,7 @@ export function courseJsonLd(course: {
   description: string;
   slug: string;
   price: number;
+  priceUsd?: number | null;
   coverImageUrl?: string;
 }) {
   return {
@@ -224,13 +225,31 @@ export function courseJsonLd(course: {
       name: siteConfig.name,
       url: siteConfig.url,
     },
-    offers: {
-      "@type": "Offer",
-      price: course.price,
-      priceCurrency: "INR",
-      availability: "https://schema.org/InStock",
-      url: absoluteUrl(`/courses/${course.slug}`),
-    },
+    // Two offers when a USD (PayPal) price is configured, else INR-only.
+    offers: course.priceUsd != null
+      ? [
+          {
+            "@type": "Offer",
+            price: course.price,
+            priceCurrency: "INR",
+            availability: "https://schema.org/InStock",
+            url: absoluteUrl(`/courses/${course.slug}`),
+          },
+          {
+            "@type": "Offer",
+            price: course.priceUsd,
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock",
+            url: absoluteUrl(`/courses/${course.slug}`),
+          },
+        ]
+      : {
+          "@type": "Offer",
+          price: course.price,
+          priceCurrency: "INR",
+          availability: "https://schema.org/InStock",
+          url: absoluteUrl(`/courses/${course.slug}`),
+        },
     ...(course.coverImageUrl && {
       image: course.coverImageUrl,
     }),
@@ -239,7 +258,7 @@ export function courseJsonLd(course: {
 
 /** ItemList schema for the course catalog page. */
 export function itemListJsonLd(
-  items: { title: string; slug: string; description: string; price: number }[]
+  items: { title: string; slug: string; description: string; price: number; priceUsd?: number | null }[]
 ) {
   return {
     "@context": "https://schema.org",
@@ -257,12 +276,28 @@ export function itemListJsonLd(
           name: siteConfig.name,
           url: siteConfig.url,
         },
-        offers: {
-          "@type": "Offer",
-          price: item.price,
-          priceCurrency: "INR",
-          url: absoluteUrl(`/courses/${item.slug}`),
-        },
+        // Two offers when a USD (PayPal) price is configured, else INR-only.
+        offers: item.priceUsd != null
+          ? [
+              {
+                "@type": "Offer",
+                price: item.price,
+                priceCurrency: "INR",
+                url: absoluteUrl(`/courses/${item.slug}`),
+              },
+              {
+                "@type": "Offer",
+                price: item.priceUsd,
+                priceCurrency: "USD",
+                url: absoluteUrl(`/courses/${item.slug}`),
+              },
+            ]
+          : {
+              "@type": "Offer",
+              price: item.price,
+              priceCurrency: "INR",
+              url: absoluteUrl(`/courses/${item.slug}`),
+            },
       },
     })),
   };
