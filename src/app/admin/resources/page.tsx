@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getUserProfile, isAdminProfile, getAllCourses, getCourseResources, addCourseResource, updateCourseResource, deleteCourseResource } from "@/lib/course";
+import { getUserProfile, isAdminProfile, getAllCourses, getCourseResources, addCourseResource, updateCourseResource, deleteCourseResource, duplicateCourseResource } from "@/lib/course";
 import type { CourseResourceCreateData } from "@/lib/course";
 import { isFlashcard } from "@/lib/types";
 import type { Course, CourseContentItem, CourseContentType } from "@/lib/types";
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
@@ -30,6 +31,8 @@ import {
 import { 
   Dialog, 
   DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
   DialogHeader, 
   DialogTitle, 
   DialogTrigger 
@@ -49,7 +52,8 @@ import {
   Plus, 
   Edit, 
   Trash2, 
-  Save
+  Save,
+  Copy
 } from "lucide-react";
 
 export default function AdminResourcesPage() {
@@ -75,6 +79,10 @@ export default function AdminResourcesPage() {
   });
   const [formErrors, setFormErrors] = useState<{ title?: string; front?: string; back?: string; url?: string; order?: string }>({});
   const [saving, setSaving] = useState(false);
+  // "Copy to courses" dialog state — copyResource !== null keeps it open.
+  const [copyResource, setCopyResource] = useState<CourseContentItem | null>(null);
+  const [copyTargetIds, setCopyTargetIds] = useState<string[]>([]);
+  const [copying, setCopying] = useState(false);
   // Monotonic counter guarding against out-of-order resource loads when the
   // selected course changes quickly — only the latest request may update state.
   const loadSequenceRef = useRef(0);
@@ -263,6 +271,57 @@ export default function AdminResourcesPage() {
       });
     }
   };
+
+  const toggleCopyTarget = (courseId: string) => {
+    setCopyTargetIds(prev =>
+      prev.includes(courseId) ? prev.filter(id => id !== courseId) : [...prev, courseId]
+    );
+  };
+
+  const handleCopyResource = async () => {
+    if (!selectedCourse || !copyResource || copyTargetIds.length === 0) return;
+
+    const sourceTitle = copyResource.title;
+    const targets = courses.filter(c => copyTargetIds.includes(c.id));
+    setCopying(true);
+    try {
+      const results = await Promise.allSettled(
+        targets.map(course => duplicateCourseResource(selectedCourse.id, copyResource.id, course.id))
+      );
+
+      const failures: { course: Course; reason: unknown }[] = [];
+      results.forEach((result, index) => {
+        if (result.status === "rejected") {
+          failures.push({ course: targets[index], reason: result.reason });
+        }
+      });
+      failures.forEach(({ reason }) => console.error("Error copying resource:", reason));
+
+      if (failures.length === 0) {
+        toast({
+          title: "Resource copied",
+          description: `"${sourceTitle}" has been copied to ${targets.length === 1 ? targets[0].title : `${targets.length} courses`}.`,
+        });
+        setCopyResource(null);
+        setCopyTargetIds([]);
+      } else {
+        const failedNames = failures.map(({ course }) => course.title).join(", ");
+        toast({
+          title: failures.length === targets.length ? "Could not copy resource" : "Resource partially copied",
+          description: failures.length === targets.length
+            ? "Something went wrong. Please try again."
+            : `Copied to some courses, but failed for: ${failedNames}.`,
+          variant: "destructive",
+        });
+        // Keep only the failed targets selected so a retry is one click away.
+        setCopyTargetIds(failures.map(({ course }) => course.id));
+      }
+    } finally {
+      setCopying(false);
+    }
+  };
+
+  const otherCourses = courses.filter(c => c.id !== selectedCourse?.id);
 
   if (loading) {
     return (
@@ -530,6 +589,14 @@ export default function AdminResourcesPage() {
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  title="Copy to another course"
+                                  onClick={() => { setCopyResource(resource); setCopyTargetIds([]); }}
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
                                 <AlertDialog open={isDeleting && deleteResourceId === resource.id} onOpenChange={setIsDeleting}>
                                   <AlertDialogTrigger asChild>
                                     <Button 
@@ -562,6 +629,62 @@ export default function AdminResourcesPage() {
                       </TableBody>
                     </Table>
                   )}
+
+                  {/* Copy-to-courses dialog (controlled by copyResource) */}
+                  <Dialog open={!!copyResource} onOpenChange={(open) => { if (!open) { setCopyResource(null); setCopyTargetIds([]); } }}>
+                    <DialogContent className="max-w-lg">
+                      <DialogHeader>
+                        <DialogTitle>Copy resource to other courses</DialogTitle>
+                        <DialogDescription>
+                          Each copy is an independent resource — editing a copy later will not change this one.
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      <div className="mt-2 space-y-3">
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                          <p className="font-medium text-slate-900">{copyResource?.title}</p>
+                          <p className="text-xs text-slate-500 mt-1">Copying from: {selectedCourse?.title}</p>
+                        </div>
+
+                        <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                          {otherCourses.length === 0 ? (
+                            <p className="text-sm text-slate-500 py-4 text-center">
+                              There are no other courses yet. Create another course first.
+                            </p>
+                          ) : (
+                            otherCourses.map(course => (
+                              <label
+                                key={course.id}
+                                htmlFor={`copy-target-${course.id}`}
+                                className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer hover:border-primary transition"
+                              >
+                                <Checkbox
+                                  id={`copy-target-${course.id}`}
+                                  checked={copyTargetIds.includes(course.id)}
+                                  onCheckedChange={() => toggleCopyTarget(course.id)}
+                                />
+                                <span className="text-sm font-medium text-slate-700">{course.title}</span>
+                              </label>
+                            ))
+                          )}
+                        </div>
+
+                        <p className="text-xs text-slate-400">
+                          The copy is appended at the end of the target course&apos;s resources.
+                        </p>
+                      </div>
+
+                      <DialogFooter className="pt-4">
+                        <Button variant="outline" onClick={() => { setCopyResource(null); setCopyTargetIds([]); }}>
+                          Cancel
+                        </Button>
+                        <Button onClick={handleCopyResource} disabled={copying || copyTargetIds.length === 0}>
+                          <Copy className="h-4 w-4 mr-2" />
+                          {copying ? "Copying..." : `Copy to ${copyTargetIds.length} ${copyTargetIds.length === 1 ? "course" : "courses"}`}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </CardContent>
               </Card>
             </div>

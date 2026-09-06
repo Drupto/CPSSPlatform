@@ -1,5 +1,6 @@
 import type { User } from "firebase/auth";
 import type { Course, CourseContentItem, CourseProgress, Enrollment, EnrollmentStatus, Flashcard, UserProfile, Quiz, QuizAttempt } from "./types";
+import { isFlashcard } from "./types";
 import { addDoc, collection, deleteDoc, deleteField, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
@@ -426,6 +427,51 @@ export async function updateCourseResource(courseId: string, resourceId: string,
 export async function deleteCourseResource(courseId: string, resourceId: string): Promise<void> {
   const resourceRef = doc(db, "courses", courseId, "resources", resourceId);
   await deleteDoc(resourceRef);
+}
+
+/**
+ * Copies an existing resource from one course into another as a new,
+ * independent document ("copy-paste" semantics — later edits to either copy
+ * do not affect the other).
+ *
+ * The copy is built through addCourseResource, so it goes through the same
+ * whitelisted payload construction and validation as any other create.
+ * It is appended after the target course's last ordered resource
+ * (max order + 1). Legacy flashcard sources missing `front`/`back` are
+ * copied with empty card faces, which the admin can fill in afterwards.
+ *
+ * Throws when both course IDs are identical — the admin UI prevents
+ * selecting the source course as a target.
+ */
+export async function duplicateCourseResource(
+  sourceCourseId: string,
+  sourceResourceId: string,
+  targetCourseId: string
+): Promise<string> {
+  if (sourceCourseId === targetCourseId) {
+    throw new Error("Source and target course must be different.");
+  }
+
+  const sourceRef = doc(db, "courses", sourceCourseId, "resources", sourceResourceId);
+  const sourceSnapshot = await getDoc(sourceRef);
+  if (!sourceSnapshot.exists()) {
+    throw new Error("The source resource no longer exists.");
+  }
+
+  const source = { id: sourceSnapshot.id, courseId: sourceCourseId, ...sourceSnapshot.data() } as CourseContentItem;
+  const targetResources = await getCourseResources(targetCourseId);
+  const nextOrder = targetResources.reduce((max, resource) => Math.max(max, resource.order), 0) + 1;
+
+  return addCourseResource(targetCourseId, {
+    title: source.title,
+    type: source.type,
+    body: source.body ?? "",
+    url: source.url ?? "",
+    order: nextOrder,
+    ...(source.type === "flashcard"
+      ? { front: isFlashcard(source) ? source.front : "", back: isFlashcard(source) ? source.back : "" }
+      : {}),
+  });
 }
 
 export async function markContentCompleted(userId: string, courseId: string, contentId: string): Promise<void> {
