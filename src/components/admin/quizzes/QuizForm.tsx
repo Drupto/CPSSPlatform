@@ -46,8 +46,17 @@ export function QuizForm({ mode, courseId, quizId, initialQuiz, onSave, isSaving
     if (!quiz.title?.trim()) {
       return "Quiz title is required";
     }
+    if (quiz.title.length > 200) {
+      return "Quiz title must be 200 characters or fewer";
+    }
+    if ((quiz.description ?? "").length > 2000) {
+      return "Quiz description must be 2,000 characters or fewer";
+    }
     if (!quiz.questions || quiz.questions.length === 0) {
       return "At least one question is required";
+    }
+    if (quiz.questions.length > 100) {
+      return "A quiz can have at most 100 questions";
     }
     for (let i = 0; i < quiz.questions!.length; i++) {
       const q = quiz.questions![i];
@@ -71,6 +80,9 @@ export function QuizForm({ mode, courseId, quizId, initialQuiz, onSave, isSaving
     }
     if (quiz.maxAttempts! < 1) {
       return "Maximum attempts must be at least 1";
+    }
+    if (quiz.maxAttempts! > 100) {
+      return "Maximum attempts cannot exceed 100";
     }
     if (quiz.timeLimit !== undefined && quiz.timeLimit! < 0) {
       return "Time limit must be at least 0 if provided";

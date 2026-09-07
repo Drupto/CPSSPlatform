@@ -72,7 +72,8 @@ async function deleteAllDocs(query) {
  * Cloud Function triggered when a course document is deleted (Gen 2).
  * This function handles cascading deletion of all related data:
  * - Quizzes, content items, and resources (course subcollections)
- * - Orphaned quiz attempts and quiz sessions (top-level collections)
+ * - Orphaned quiz attempts, quiz sessions, enrollments, and progress docs
+ *   (top-level collections)
  * - Associated storage files under courses/{courseId}/
  *
  * Retries are enabled so transient failures don't leave orphaned data behind.
@@ -110,6 +111,16 @@ exports.onCourseDelete = (0, firestore_1.onDocumentDeleted)({
     console.log(`Deleted ${attemptsDeleted} quiz attempts for course: ${courseId}`);
     const sessionsDeleted = await deleteAllDocs(db.collection("quizSessions").where("courseId", "==", courseId));
     console.log(`Deleted ${sessionsDeleted} quiz sessions for course: ${courseId}`);
+    // Orphaned enrollments would keep counting toward admin stats (e.g.
+    // getTotalEnrollments) forever and leave students holding an approved
+    // enrollment for a course that no longer exists. Docs are deterministically
+    // keyed `${uid}_${courseId}` and carry a courseId field.
+    const enrollmentsDeleted = await deleteAllDocs(db.collection("enrollments").where("courseId", "==", courseId));
+    console.log(`Deleted ${enrollmentsDeleted} enrollments for course: ${courseId}`);
+    // Stale progress docs keep completed-content references to a course that
+    // no longer exists; clean them up alongside the enrollments.
+    const progressDeleted = await deleteAllDocs(db.collection("progress").where("courseId", "==", courseId));
+    console.log(`Deleted ${progressDeleted} progress docs for course: ${courseId}`);
     // 3. Associated storage files (auto-paginates; deletes are idempotent)
     console.log(`Deleting storage files for course: ${courseId}`);
     const bucket = admin.storage().bucket();

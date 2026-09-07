@@ -23,9 +23,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Navbar } from "@/components/navbar";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminCoursesPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [courseQuizzes, setCourseQuizzes] = useState<Record<string, Quiz[]>>({});
   const [loading, setLoading] = useState(true);
@@ -86,7 +88,7 @@ export default function AdminCoursesPage() {
           ) : (
             <div className="grid gap-4">
               {courses.map((course) => {
-                const hasQuizzes = courseQuizzes[course.id]?.length > 0;
+                const quizCount = courseQuizzes[course.id]?.length ?? 0;
                 const firstQuizId = courseQuizzes[course.id]?.[0]?.id || '';
                 return (
                   <div key={course.id} className="rounded-3xl border border-slate-200 bg-white p-6">
@@ -109,14 +111,28 @@ export default function AdminCoursesPage() {
                       <Link href={`/admin/courses/${course.id}/quizzes`} className="text-slate-600 hover:text-slate-900 text-sm">Quiz Analytics</Link>
                       <Link href={`/admin/courses/${course.id}/analytics`} className="text-slate-600 hover:text-slate-900 text-sm">Course Analytics</Link>
                       <Link href={`/admin/courses/${course.id}/quizzes/new`} className="text-slate-600 hover:text-slate-900 text-sm">Add Quiz</Link>
-                      <Link 
-                        href={hasQuizzes ? `/admin/courses/${course.id}/quizzes/${firstQuizId}/edit` : `/admin/courses/${course.id}/quizzes/new`} 
-                        className={`text-sm ${hasQuizzes ? "text-slate-600 hover:text-slate-900" : "text-slate-400 pointer-events-none"}`}
-                        aria-disabled={!hasQuizzes}
-                        tabIndex={hasQuizzes ? 0 : -1}
-                      >
-                        Edit Quiz
-                      </Link>
+                      {quizCount > 0 ? (
+                        <>
+                          <Link
+                            href={`/admin/courses/${course.id}/quizzes/${firstQuizId}/edit`}
+                            className="text-slate-600 hover:text-slate-900 text-sm"
+                            title="Opens the most recent quiz — switch between quizzes from the list on that page"
+                          >
+                            Edit Quiz
+                          </Link>
+                          <span className="text-xs text-slate-400">
+                            {quizCount} {quizCount === 1 ? "quiz" : "quizzes"}
+                          </span>
+                        </>
+                      ) : (
+                        <span
+                          className="text-sm text-slate-300 cursor-not-allowed"
+                          aria-disabled="true"
+                          title="No quizzes yet — use Add Quiz to create one"
+                        >
+                          Edit Quiz
+                        </span>
+                      )}
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <button
@@ -142,8 +158,17 @@ export default function AdminCoursesPage() {
                                 try {
                                   await deleteCourse(course.id);
                                   setCourses((prev) => prev.filter((c) => c.id !== course.id));
+                                  toast({
+                                    title: "Course deleted",
+                                    description: `"${course.title}" was removed along with its quizzes, content, and files.`,
+                                  });
                                 } catch (err) {
                                   console.error("Failed to delete course:", err);
+                                  toast({
+                                    variant: "destructive",
+                                    title: "Failed to delete course",
+                                    description: err instanceof Error ? err.message : "Please try again in a moment.",
+                                  });
                                 } finally {
                                   setDeleting(false);
                                   setCourseToDelete(null);

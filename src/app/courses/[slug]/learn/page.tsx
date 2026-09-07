@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, functions } from "@/lib/firebase";
 import { httpsCallable, type HttpsCallable } from "firebase/functions";
-import { getCourseBySlug, getCourseContent, getEnrollment, getCourseProgress, markContentCompleted, markContentIncomplete, getCourseQuizAttempts, getYouTubeEmbedUrl } from "@/lib/course";
+import { getCourseBySlug, getPublishedCourseBySlug, getCourseContent, getEnrollment, getUserProfile, isAdminProfile, getCourseProgress, markContentCompleted, markContentIncomplete, getCourseQuizAttempts, getYouTubeEmbedUrl } from "@/lib/course";
 import { isProfileComplete } from "@/lib/profile-check";
 import type { CourseContentItem, Course } from "@/lib/types";
 import type { GetQuizForStudentResponse, QuizAttemptReviewItem, StartQuizAttemptResponse, SubmitQuizAttemptResponse } from "@/lib/types/quiz-functions";
@@ -101,7 +101,15 @@ export default function CourseLearnPage() {
 
     const loadCourse = async () => {
       try {
-        const courseData = await getCourseBySlug(slug as string);
+        // The unrestricted slug query is the only variant that can return
+        // DRAFT courses (admin preview via "View Course"), but Firestore rules
+        // reject it wholesale for students/anonymous visitors (a slug filter
+        // cannot prove publishedness under rules v2) — fall back to the
+        // published-only query, whose constraints satisfy the course read
+        // rule for everyone.
+        let courseData = await getCourseBySlug(slug as string).catch(async () => {
+          return await getPublishedCourseBySlug(slug as string);
+        });
         setCourse(courseData);
         if (courseData) {
           const contentData = await getCourseContent(courseData.id);
@@ -137,15 +145,21 @@ export default function CourseLearnPage() {
       }
       setUser(authUser);
       const enrollment = await getEnrollment(authUser.uid, course.id);
-      const isAuthorized = enrollment?.status === "approved";
+      // Admins preview courses without enrolling — grant access and skip the
+      // student-only profile-completion gate (mirrors course-detail.tsx).
+      const profile = await getUserProfile(authUser.uid);
+      const isAdmin = isAdminProfile(profile);
+      const isAuthorized = enrollment?.status === "approved" || isAdmin;
       setAuthorized(isAuthorized);
       setAuthChecked(true);
       setEnrollmentStatus(enrollment ? enrollment.status : null);
       
-      // Check if user has completed their profile
-      const isComplete = await isProfileComplete(authUser);
-      if (!isComplete && !window.location.pathname.startsWith('/dashboard/profile')) {
-        router.push('/dashboard/profile');
+      // Check if user has completed their profile (students only)
+      if (!isAdmin) {
+        const isComplete = await isProfileComplete(authUser);
+        if (!isComplete && !window.location.pathname.startsWith('/dashboard/profile')) {
+          router.push('/dashboard/profile');
+        }
       }
       
       if (isAuthorized) {

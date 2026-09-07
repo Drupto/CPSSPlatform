@@ -207,6 +207,8 @@ interface ExistingQuizzesSectionProps {
 }
 
 function ExistingQuizzesSection({ quizzes, currentQuizId, courseId }: ExistingQuizzesSectionProps) {
+  const router = useRouter();
+
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -234,21 +236,21 @@ function ExistingQuizzesSection({ quizzes, currentQuizId, courseId }: ExistingQu
                 <Button
                   variant={existingQuiz.id === currentQuizId ? "default" : "outline"}
                   size="sm"
-                  onClick={() => window.location.href = `/admin/courses/${courseId}/quizzes/${existingQuiz.id}/edit`}
+                  onClick={() => router.push(`/admin/courses/${courseId}/quizzes/${existingQuiz.id}/edit`)}
                   className="flex items-center gap-2"
                 >
                   <Edit2 className="h-4 w-4" />
                   Edit
                 </Button>
-<Button
-                   variant="outline"
-                   size="sm"
-                   onClick={() => window.location.href = `/admin/courses/${courseId}/quizzes/${existingQuiz.id}`}
-                   className="flex items-center gap-2"
-                 >
-                   <BarChart3 className="h-4 w-4" />
-                   Analytics
-                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/admin/courses/${courseId}/quizzes/${existingQuiz.id}`)}
+                  className="flex items-center gap-2"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  Analytics
+                </Button>
               </div>
             </div>
           ))}

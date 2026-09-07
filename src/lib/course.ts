@@ -30,6 +30,21 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+/**
+ * Throws when another course already owns the given slug. The slug is the
+ * public URL key (getCourseBySlug returns the newest match, silently
+ * shadowing duplicates), so duplicates are blocked at the data layer.
+ * Callers are admin-only pages: the slug list query is rules-compliant only
+ * for admins (it carries no published filter).
+ */
+async function assertSlugAvailable(slug: string, excludeCourseId?: string): Promise<void> {
+  const snapshot = await getDocs(query(collection(db, "courses"), where("slug", "==", slug)));
+  const owner = snapshot.docs.find((docSnap) => docSnap.id !== excludeCourseId);
+  if (owner) {
+    throw new Error(`Slug "${slug}" is already used by another course. Choose a different slug.`);
+  }
+}
+
 export type CourseCreateData = Omit<Course, "id" | "createdAt" | "updatedAt">;
 export type CourseContentCreateData = Omit<CourseContentItem, "id" | "courseId">;
 
@@ -119,7 +134,8 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
 }
 
 export async function createCourse(courseData: Partial<CourseCreateData>): Promise<string> {
-  const normalizedSlug = courseData.slug ? slugify(courseData.slug) : slugify(courseData.title ?? "");
+  const normalizedSlug = slugify(courseData.slug || courseData.title || "");
+  await assertSlugAvailable(normalizedSlug);
   const courseRef = await addDoc(collection(db, "courses"), {
     title: courseData.title ?? "Untitled Course",
     slug: normalizedSlug,
@@ -377,6 +393,16 @@ export async function deleteCourseContentItemWithFile(courseId: string, contentI
 
 export async function updateCourse(courseId: string, updates: Partial<CourseCreateData>): Promise<void> {
   const courseRef = doc(db, "courses", courseId);
+  // Normalize the slug on every write (mirrors createCourse) so a raw value
+  // like "My Course!" can never produce a URL with spaces/special characters,
+  // and block duplicates — getCourseBySlug silently shadows older courses
+  // sharing a slug. Falls back to the course id if normalization empties the
+  // value, keeping every course reachable by URL.
+  if (updates.slug !== undefined) {
+    const normalizedSlug = slugify(updates.slug || updates.title || "") || courseId;
+    await assertSlugAvailable(normalizedSlug, courseId);
+    updates = { ...updates, slug: normalizedSlug };
+  }
   await setDoc(courseRef, {
     ...updates,
     updatedAt: serverTimestamp(),
@@ -392,6 +418,8 @@ export async function updateCourseContentItem(courseId: string, contentId: strin
   const contentRef = doc(db, "courses", courseId, "content", contentId);
   await setDoc(contentRef, {
     ...updates,
+    // Audit-trail consistency with the course/quiz/resource update helpers.
+    updatedAt: serverTimestamp(),
   }, { merge: true });
 }
 

@@ -5,7 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getPublishedCourseBySlug, getEnrollment } from "@/lib/course";
+import {
+  getPublishedCourseBySlug,
+  getCourseBySlug,
+  getEnrollment,
+  getUserProfile,
+  isAdminProfile,
+} from "@/lib/course";
 import { formatInr, formatUsd } from "@/lib/currency";
 import { isProfileComplete } from "@/lib/profile-check";
 import type { Course, EnrollmentStatus } from "@/lib/types";
@@ -22,30 +28,68 @@ export function CourseDetail() {
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authResolved, setAuthResolved] = useState(false);
   const [enrollmentStatus, setEnrollmentStatus] = useState<EnrollmentStatus | null>(null);
 
   useEffect(() => {
-    if (!slug) return;
+    if (!slug || !authResolved) return;
+    const slugStr = slug as string;
 
-    // Rules-compliant for non-admins: getCourseBySlug's query (no published
-    // filter) is rejected under rules v2 for students/anonymous visitors.
-    getPublishedCourseBySlug(slug as string)
-      .then(setCourse)
-      .catch(() => setCourse(null))
-      .finally(() => setLoading(false));
-  }, [slug]);
+    const loadCourse = async () => {
+      try {
+        // Rules-compliant for non-admins: getCourseBySlug's query (no published
+        // filter) is rejected under rules v2 for students/anonymous visitors.
+        const published = await getPublishedCourseBySlug(slugStr);
+        if (published) {
+          setCourse(published);
+          return;
+        }
+
+        // The course is not published (or was removed). Admins may still
+        // preview DRAFT courses here — "View Course" from the admin course
+        // list must not dead-end on "Course not found" for unpublished
+        // drafts. The unrestricted slug query is only safe for admins.
+        if (currentUser) {
+          const profile = await getUserProfile(currentUser.uid);
+          if (isAdminProfile(profile)) {
+            const draftCourse = await getCourseBySlug(slugStr).catch(() => null);
+            setCourse(draftCourse);
+            return;
+          }
+        }
+
+        setCourse(null);
+      } catch {
+        setCourse(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCourse();
+  }, [slug, authResolved, currentUser]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
-      if (user && course) {
-        const enrollment = await getEnrollment(user.uid, course.id);
-        setEnrollmentStatus(enrollment ? enrollment.status : null);
+      setAuthResolved(true);
+      if (!user || !course) return;
 
-        const isComplete = await isProfileComplete(user);
-        if (!isComplete && !window.location.pathname.startsWith('/dashboard/profile')) {
-          router.push('/dashboard/profile');
-        }
+      // Admins review courses without enrolling — skip the student gates
+      // (enrollment lookup and the profile-completion redirect) so the
+      // preview flow is never hijacked to /dashboard/profile.
+      const profile = await getUserProfile(user.uid);
+      if (isAdminProfile(profile)) {
+        setEnrollmentStatus(null);
+        return;
+      }
+
+      const enrollment = await getEnrollment(user.uid, course.id);
+      setEnrollmentStatus(enrollment ? enrollment.status : null);
+
+      const isComplete = await isProfileComplete(user);
+      if (!isComplete && !window.location.pathname.startsWith('/dashboard/profile')) {
+        router.push('/dashboard/profile');
       }
     });
 
