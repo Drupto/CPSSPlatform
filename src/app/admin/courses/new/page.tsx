@@ -29,7 +29,9 @@ export default function NewCoursePage() {
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("0");
-  const [priceUsd, setPriceUsd] = useState("");
+  // priceUsd hidden from the form (INR/UPI-only) but kept so the doc write
+  // below still sends priceUsd: null (Firestore rejects undefined).
+  const [priceUsd] = useState("");
   const [published, setPublished] = useState(false);
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([
@@ -234,7 +236,7 @@ export default function NewCoursePage() {
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-2">
-                <Label htmlFor="course-price">Price (₹ INR) — paid via UPI</Label>
+                <Label htmlFor="course-price">Price (₹ INR) — paid via UPI (KOTAK)</Label>
                 <Input
                   id="course-price"
                   type="number"
@@ -244,19 +246,10 @@ export default function NewCoursePage() {
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="course-price-usd">Price ($ USD) — paid via PayPal</Label>
-                <Input
-                  id="course-price-usd"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={priceUsd}
-                  onChange={(event) => setPriceUsd(event.target.value)}
-                  placeholder="Optional — required for PayPal payments"
-                />
-              </div>
-              <div className="space-y-2 lg:col-span-2">
+              {/* USD/PayPal price hidden for now (INR + UPI/KOTAK only).
+                  priceUsd state is kept so the data layer still writes
+                  null (never undefined) with no migration needed. */}
+              <div className="space-y-2 lg:col-span-3">
                 <Label htmlFor="course-cover">Cover Image URL</Label>
                 <Input
                   id="course-cover"

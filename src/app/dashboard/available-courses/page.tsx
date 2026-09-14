@@ -66,7 +66,7 @@ export default function AvailableCoursesPage() {
   }, [router]);
 
   // All enrollment requests go through the payment page: the student scans
-  // the UPI/PayPal QR and submits the transaction reference there.
+  // the UPI (KOTAK) QR and submits the UPI transaction reference there.
   const handleRequest = (course: Course) => {
     router.push(`/courses/${course.slug}/pay`);
   };

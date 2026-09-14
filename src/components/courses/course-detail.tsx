@@ -12,7 +12,7 @@ import {
   getUserProfile,
   isAdminProfile,
 } from "@/lib/course";
-import { formatInr, formatUsd } from "@/lib/currency";
+import { formatInr } from "@/lib/currency";
 import { isProfileComplete } from "@/lib/profile-check";
 import type { Course, EnrollmentStatus } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
@@ -97,7 +97,7 @@ export function CourseDetail() {
   }, [course, router]);
 
   // All enrollment requests go through the payment page: the student scans
-  // the UPI/PayPal QR and submits the transaction reference there.
+  // the UPI (KOTAK) QR and submits the UPI transaction reference there.
   const handleRequest = () => {
     if (!currentUser) {
       router.push("/auth");
@@ -143,13 +143,8 @@ export function CourseDetail() {
               </div>
              <div className="space-y-4">
                <div className="rounded-3xl bg-slate-50 p-6">
-                 <p className="text-sm text-slate-500">Price (INR — paid via UPI)</p>
+                 <p className="text-sm text-slate-500">Price (INR — paid via UPI / KOTAK)</p>
                  <p className="mt-2 text-3xl font-semibold text-slate-900">{formatInr(course.price)}</p>
-                 {course.priceUsd != null && (
-                   <p className="mt-1 text-lg font-semibold text-slate-700">
-                     {formatUsd(course.priceUsd)} <span className="text-xs font-normal text-slate-500">(USD — paid via PayPal)</span>
-                   </p>
-                 )}
                </div>
                <div className="rounded-3xl bg-slate-50 p-6">
                  <p className="text-sm text-slate-500">Status</p>

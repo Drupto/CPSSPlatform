@@ -16,14 +16,12 @@ export interface Course {
   title: string;
   slug: string;
   description: string;
-  /** Course price in Indian Rupees (INR) — the amount paid via the UPI QR. */
+  /** Course price in Indian Rupees (INR) — the amount paid via the UPI (KOTAK) QR. */
   price: number;
   /**
-   * Course price in US Dollars (USD) — the amount paid via the PayPal QR.
-   * Admin-set per course (no automatic FX conversion, so manual payment
-   * verification always has an exact expected amount per rail). Optional:
-   * legacy courses may not have it — null/undefined means "USD not
-   * configured" and the UI shows INR-only with a PayPal warning.
+   * Legacy USD price (hidden while PayPal is disabled — see PAYPAL_ENABLED
+   * in src/lib/payments.ts). Kept so old courses still load and PayPal can
+   * be re-enabled later with no migration. Null/undefined = not configured.
    */
   priceUsd?: number | null;
   published: boolean;

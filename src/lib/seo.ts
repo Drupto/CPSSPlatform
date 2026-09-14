@@ -225,31 +225,14 @@ export function courseJsonLd(course: {
       name: siteConfig.name,
       url: siteConfig.url,
     },
-    // Two offers when a USD (PayPal) price is configured, else INR-only.
-    offers: course.priceUsd != null
-      ? [
-          {
-            "@type": "Offer",
-            price: course.price,
-            priceCurrency: "INR",
-            availability: "https://schema.org/InStock",
-            url: absoluteUrl(`/courses/${course.slug}`),
-          },
-          {
-            "@type": "Offer",
-            price: course.priceUsd,
-            priceCurrency: "USD",
-            availability: "https://schema.org/InStock",
-            url: absoluteUrl(`/courses/${course.slug}`),
-          },
-        ]
-      : {
-          "@type": "Offer",
-          price: course.price,
-          priceCurrency: "INR",
-          availability: "https://schema.org/InStock",
-          url: absoluteUrl(`/courses/${course.slug}`),
-        },
+    // INR-only while PayPal is hidden (PAYPAL_ENABLED=false in src/lib/payments.ts).
+    offers: {
+      "@type": "Offer",
+      price: course.price,
+      priceCurrency: "INR",
+      availability: "https://schema.org/InStock",
+      url: absoluteUrl(`/courses/${course.slug}`),
+    },
     ...(course.coverImageUrl && {
       image: course.coverImageUrl,
     }),
@@ -276,28 +259,13 @@ export function itemListJsonLd(
           name: siteConfig.name,
           url: siteConfig.url,
         },
-        // Two offers when a USD (PayPal) price is configured, else INR-only.
-        offers: item.priceUsd != null
-          ? [
-              {
-                "@type": "Offer",
-                price: item.price,
-                priceCurrency: "INR",
-                url: absoluteUrl(`/courses/${item.slug}`),
-              },
-              {
-                "@type": "Offer",
-                price: item.priceUsd,
-                priceCurrency: "USD",
-                url: absoluteUrl(`/courses/${item.slug}`),
-              },
-            ]
-          : {
-              "@type": "Offer",
-              price: item.price,
-              priceCurrency: "INR",
-              url: absoluteUrl(`/courses/${item.slug}`),
-            },
+        // INR-only while PayPal is hidden (PAYPAL_ENABLED=false in src/lib/payments.ts).
+        offers: {
+          "@type": "Offer",
+          price: item.price,
+          priceCurrency: "INR",
+          url: absoluteUrl(`/courses/${item.slug}`),
+        },
       },
     })),
   };

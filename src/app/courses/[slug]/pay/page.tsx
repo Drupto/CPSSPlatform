@@ -7,9 +7,9 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getPublishedCourseBySlug, getEnrollment, submitPaymentRequest } from "@/lib/course";
 import { PAYMENT_METHODS } from "@/lib/payments";
-import { formatInr, formatUsd } from "@/lib/currency";
+import { formatInr } from "@/lib/currency";
 import { isProfileComplete } from "@/lib/profile-check";
-import type { Course, Enrollment, PaymentMethod } from "@/lib/types";
+import type { Course, Enrollment } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -20,10 +20,13 @@ const REFERENCE_MAX_LENGTH = 100;
 
 /**
  * Manual payment page — the required step between "Request Access" and admin
- * approval. Shows the course price (set at course creation), two QR spots
- * (UPI + PayPal), and collects the transaction reference. The submitted
- * details land on the enrollment document for the admin to verify manually
- * in /admin/enrollments.
+ * approval. Shows the course price (INR, set at course creation), the UPI
+ * (KOTAK) QR spot, and collects the UPI transaction reference (UTR). The
+ * submitted details land on the enrollment document for the admin to verify
+ * manually in /admin/enrollments.
+ *
+ * PayPal/USD is hidden for now (see PAYPAL_ENABLED in src/lib/payments.ts) —
+ * only INR via UPI (KOTAK) is offered.
  */
 export default function CoursePaymentPage() {
   const { slug } = useParams();
@@ -32,7 +35,6 @@ export default function CoursePaymentPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>("upi");
   const [reference, setReference] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -82,7 +84,6 @@ export default function CoursePaymentPage() {
   const isPendingWithoutPayment = Boolean(
     enrollment && enrollment.status === "pending" && !enrollment.paymentReference
   );
-  const selectedOption = PAYMENT_METHODS.find((o) => o.method === selectedMethod) ?? PAYMENT_METHODS[0];
 
   const handleSubmit = async () => {
     setFormError(null);
@@ -99,7 +100,7 @@ export default function CoursePaymentPage() {
     const trimmedReference = reference.trim();
     if (trimmedReference.length < REFERENCE_MIN_LENGTH) {
       setFormError(
-        `Please enter the transaction reference (at least ${REFERENCE_MIN_LENGTH} characters).`
+        `Please enter the UPI transaction reference (at least ${REFERENCE_MIN_LENGTH} characters).`
       );
       return;
     }
@@ -112,8 +113,9 @@ export default function CoursePaymentPage() {
 
     setSubmitting(true);
     try {
+      // INR/UPI-only mode — always submit as "upi".
       await submitPaymentRequest(user.uid, course.id, {
-        method: selectedMethod,
+        method: "upi",
         reference: trimmedReference,
       });
       toast({
@@ -161,32 +163,17 @@ export default function CoursePaymentPage() {
             <p className="text-slate-600">{course.description}</p>
           </div>
 
-          {/* Amounts to pay — INR (courses.price) for UPI and USD
-              (courses.priceUsd) for PayPal, both admin-set at course
-              creation/edit. The QRs are static images with no amount embedded,
-              so the student must enter the exact amount manually in their
-              payment app. The selected method's currency is the primary
-              amount. */}
+          {/* Amount to pay — INR (courses.price), admin-set at course
+              creation/edit. The UPI QR is a static image with no amount
+              embedded, so the student must enter the exact amount manually in
+              their UPI app. */}
           <div className="mt-8 rounded-3xl bg-slate-50 p-6 text-center">
             <p className="text-sm uppercase tracking-[0.3em] text-secondary">Amount to Pay</p>
-            {selectedMethod === "upi" || course.priceUsd == null ? (
-              <>
-                <p className="mt-2 text-4xl font-bold text-slate-900">{formatInr(course.price)}</p>
-                <p className="mt-2 text-sm text-slate-600">
-                  Pay exactly {formatInr(course.price)} via UPI
-                  {course.priceUsd != null && <> (or {formatUsd(course.priceUsd)} via PayPal)</>}, then
-                  submit the transaction reference to finish your enrollment.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="mt-2 text-4xl font-bold text-slate-900">{formatUsd(course.priceUsd)}</p>
-                <p className="mt-2 text-sm text-slate-600">
-                  Pay exactly {formatUsd(course.priceUsd)} via PayPal (or {formatInr(course.price)}{" "}
-                  via UPI), then submit the transaction reference to finish your enrollment.
-                </p>
-              </>
-            )}
+            <p className="mt-2 text-4xl font-bold text-slate-900">{formatInr(course.price)}</p>
+            <p className="mt-2 text-sm text-slate-600">
+              Pay exactly {formatInr(course.price)} via UPI (KOTAK), then
+              submit the UPI transaction reference (UTR) to finish your enrollment.
+            </p>
           </div>
 
           {isRejected && (
@@ -208,32 +195,22 @@ export default function CoursePaymentPage() {
             </div>
           )}
 
-          {/* Two QR spots: UPI + PayPal. A missing QR file falls back to a
-              "coming soon" panel so the spot is visible before the real QR
-              is dropped into /public. */}
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
+          {/* UPI (KOTAK) QR spot — PayPal is hidden (PAYPAL_ENABLED=false).
+              A missing QR file falls back to a "coming soon" panel. */}
+          <div className={`mt-8 grid gap-6 ${PAYMENT_METHODS.length > 1 ? "md:grid-cols-2" : "mx-auto max-w-md"}`}>
             {PAYMENT_METHODS.map((option) => {
-              const isSelected = selectedMethod === option.method;
               return (
-                <button
+                <div
                   key={option.method}
-                  type="button"
-                  onClick={() => setSelectedMethod(option.method)}
-                  className={`flex flex-col items-center gap-3 rounded-3xl border-2 p-6 text-center transition ${
-                    isSelected
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-slate-200 bg-white hover:border-slate-300"
-                  }`}
+                  className="flex flex-col items-center gap-3 rounded-3xl border-2 border-primary bg-primary/5 p-6 text-center shadow-sm"
                 >
                   <div className="flex w-full items-center justify-between">
                     <span className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-                      {option.label}
+                      {option.label} (KOTAK)
                     </span>
-                    {isSelected && (
-                      <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-white">
-                        Selected
-                      </span>
-                    )}
+                    <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-white">
+                      Selected
+                    </span>
                   </div>
                   {qrFailed[option.method] ? (
                     <div className="flex h-64 w-full items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 text-sm text-slate-500">
@@ -243,49 +220,36 @@ export default function CoursePaymentPage() {
                     <Image
                       src={option.qrSrc}
                       alt={`${option.label} payment QR code`}
-                      width={option.method === "upi" ? 590 : 600}
-                      height={option.method === "upi" ? 1280 : 600}
+                      width={590}
+                      height={1280}
                       className="h-64 w-auto rounded-2xl border border-slate-200 object-contain"
                       onError={() =>
                         setQrFailed((prev) => ({ ...prev, [option.method]: true }))
                       }
                     />
                   )}
-                  {option.method === "upi" ? (
-                    <p className="text-base font-bold text-slate-900">{formatInr(course.price)}</p>
-                  ) : course.priceUsd != null ? (
-                    <p className="text-base font-bold text-slate-900">{formatUsd(course.priceUsd)}</p>
-                  ) : (
-                    <p className="text-sm font-medium text-amber-600">
-                      USD price not configured for this course — please contact the admin.
-                    </p>
-                  )}
+                  <p className="text-base font-bold text-slate-900">{formatInr(course.price)}</p>
                   <p className="text-xs text-slate-500">{option.payToNote}</p>
-                </button>
+                </div>
               );
             })}
           </div>
 
           <div className="mt-8 space-y-2">
             <label htmlFor="payment-reference" className="text-sm font-medium text-slate-700">
-              Transaction reference{" "}
-              {selectedOption.method === "upi" ? "(UTR number)" : "(PayPal transaction ID)"}
+              UPI transaction reference (UTR number)
             </label>
             <input
               id="payment-reference"
               type="text"
               value={reference}
               onChange={(event) => setReference(event.target.value)}
-              placeholder={
-                selectedOption.method === "upi"
-                  ? "e.g. 123456789012"
-                  : "e.g. 8XX12345678901234567890"
-              }
+              placeholder="e.g. 123456789012"
               maxLength={REFERENCE_MAX_LENGTH}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
             <p className="text-xs text-slate-500">
-              Find this in your {selectedOption.label} app under the transaction receipt. An admin
+              Find this in your UPI app (GPay / PhonePe / Paytm / KOTAK) under the transaction receipt. An admin
               will manually match it against the received payment before granting access.
             </p>
           </div>

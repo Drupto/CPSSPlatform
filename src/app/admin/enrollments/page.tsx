@@ -30,8 +30,8 @@ interface RequestRow {
 }
 
 /**
- * Copies the payment reference so the admin can paste it into their UPI /
- * PayPal app to search for the matching transaction.
+ * Copies the payment reference so the admin can paste it into their UPI
+ * (KOTAK) app to search for the matching transaction.
  */
 function CopyReferenceButton({ reference }: { reference: string }) {
   const [copied, setCopied] = useState(false);
@@ -237,10 +237,9 @@ export default function AdminEnrollmentsPage() {
                         <h2 className="text-lg font-semibold text-slate-900">
                           {row.course ? row.course.title : "Unknown Course"}
                         </h2>
-                        {/* Expected amount in both currencies — INR (UPI) and
-                            USD (PayPal), admin-set at course creation/edit —
-                            so the admin knows what to look for when verifying
-                            the payment on either rail. */}
+                        {/* Expected INR amount (UPI / KOTAK), admin-set at course
+                            creation/edit — so the admin knows what to look
+                            for when verifying the payment. */}
                         {row.course && (
                           <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
                             {formatCoursePrice(row.course)}
@@ -255,7 +254,8 @@ export default function AdminEnrollmentsPage() {
                       </p>
 
                       {/* Manual payment verification: the admin matches the
-                          reference against their UPI/PayPal app receipt. */}
+                          UPI reference against their KOTAK UPI app receipt.
+                          Legacy "paypal" badges still render for old records. */}
                       {row.enrollment.paymentReference ? (
                         <div className="flex flex-wrap items-center gap-2 pt-1">
                           <span
