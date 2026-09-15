@@ -17,11 +17,36 @@
       ]
     },
     {
+      "collectionGroup": "courses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "slug", "order": "ASCENDING" },
+        { "fieldPath": "published", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "enrollments",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "requestedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "enrollments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "enrolledAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "enrollments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "courseId", "order": "ASCENDING" },
+        { "fieldPath": "enrolledAt", "order": "DESCENDING" }
       ]
     },
     {

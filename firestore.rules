@@ -82,15 +82,37 @@ service cloud.firestore {
     // Allow authenticated users to read/write their own user profile.
     // Admins can read any user profile (required for admin dashboards,
     // enrollment review, and analytics).
+    // Create is fully whitelisted to the exact shape createUserProfile() in
+    // src/lib/course.ts writes (uid/email/displayName/role/createdAt/updatedAt,
+    // role hardcoded to 'student' — admins are promoted out-of-band only).
+    // Update allows only displayName + updatedAt; type checks are written so
+    // legacy profiles (missing/null fields) still pass when a field is merely
+    // carried through a merge update unchanged.
     match /users/{uid} {
       allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
       allow create: if request.auth != null
         && request.auth.uid == uid
         && request.resource.data.uid == uid
-        && request.resource.data.role == 'student';
+        && request.resource.data.role == 'student'
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'displayName', 'role', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid is string
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 200
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 100
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
       allow update: if request.auth != null
         && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'updatedAt']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'updatedAt'])
+        && (!('displayName' in request.resource.data)
+            || (request.resource.data.displayName is string
+                && request.resource.data.displayName.size() <= 100)
+            || (('displayName' in resource.data)
+                && request.resource.data.displayName == resource.data.displayName))
+        && (!('updatedAt' in request.resource.data)
+            || request.resource.data.updatedAt is timestamp
+            || request.resource.data.updatedAt == resource.data.updatedAt);
     }
 
     // Allow anyone to read published courses; admins can create, update, and delete
@@ -160,12 +182,20 @@ service cloud.firestore {
       // pending enrollment + payment details. Field whitelist and type checks
       // mirror submitPaymentRequest() in src/lib/course.ts. The reference is
       // unverified user input — length-capped and display-only (the admin
-      // matches it manually against their UPI/PayPal app).
+      // matches it manually against their UPI/PayPal app). courseId and
+      // requestedAt are type-capped too: the client sends serverTimestamp() /
+      // plain strings, but a tampered client must not persist oversized maps
+      // or corrupt sort keys into a document admins review.
       allow create: if request.auth != null
         && request.auth.uid == request.resource.data.userId
         && request.resource.data.status == 'pending'
         && request.resource.data.id == enrollmentId
         && request.resource.data.keys().hasOnly(['id', 'userId', 'courseId', 'status', 'requestedAt', 'paymentMethod', 'paymentReference', 'paymentSubmittedAt'])
+        && request.resource.data.userId is string
+        && request.resource.data.courseId is string
+        && request.resource.data.courseId.size() > 0
+        && request.resource.data.courseId.size() <= 128
+        && request.resource.data.requestedAt is timestamp
         && request.resource.data.paymentMethod in ['upi', 'paypal']
         && request.resource.data.paymentReference is string
         && request.resource.data.paymentReference.size() > 0
@@ -202,6 +232,7 @@ service cloud.firestore {
           && request.resource.data.paymentReference.size() > 0
           && request.resource.data.paymentReference.size() <= 100
           && request.resource.data.paymentSubmittedAt is timestamp
+          && request.resource.data.requestedAt is timestamp
         )
       );
       allow delete: if request.auth != null && isAdmin();
