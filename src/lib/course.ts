@@ -762,3 +762,32 @@ export async function getAllProgressForCourse(courseId: string): Promise<CourseP
 export function isAdminProfile(profile: UserProfile | null) {
   return profile?.role === "admin";
 }
+
+/* -------------------------------------------------------------------------- */
+/*  Checklist lead-magnet enquiries                                           */
+/* -------------------------------------------------------------------------- */
+
+export interface ChecklistEnquiryInput {
+  name: string;
+  email: string;
+  phone: string;
+  challenge: string;
+}
+
+/**
+ * Persists a checklist enquiry submitted from the public /checklist page.
+ * Submissions are anonymous (no auth), so the `checklistEnquiries` Firestore
+ * rule validates field shapes and size caps instead of relying on
+ * authentication. Returns the created document id.
+ */
+export async function createChecklistEnquiry(input: ChecklistEnquiryInput): Promise<string> {
+  const enquiryRef = await addDoc(collection(db, "checklistEnquiries"), {
+    name: input.name.trim(),
+    email: input.email.trim().toLowerCase(),
+    phone: input.phone.trim(),
+    challenge: input.challenge.trim(),
+    source: "checklist-landing",
+    createdAt: serverTimestamp(),
+  });
+  return enquiryRef.id;
+}

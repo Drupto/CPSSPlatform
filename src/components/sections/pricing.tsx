@@ -1,23 +1,13 @@
+"use client";
 
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export function Pricing() {
+  const router = useRouter();
   const plans = [
-    {
-      name: "Practice Exam Pack",
-      price: "5,000",
-      features: [
-        "Domain-aligned practice questions",
-        "3 comprehensive case studies",
-        "Detailed answer explanations",
-        "PDF study outlines",
-        "One-time download access"
-      ],
-      cta: "Get Access",
-      popular: false,
-    },
     {
       name: "Full CSCS Prep Course",
       price: "10,000",
@@ -56,7 +46,7 @@ export function Pricing() {
           <p className="text-slate-600">Choose the package that best fits your preparation needs and goals.</p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 items-center">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-12 max-w-4xl mx-auto items-stretch">
           {plans.map((plan, index) => (
             <div
               key={index}
@@ -89,10 +79,11 @@ export function Pricing() {
                 ))}
               </ul>
 
-              <Button 
+              <Button
                 className={`w-full h-14 rounded-2xl text-lg font-bold ${
                   plan.popular ? "bg-primary hover:bg-primary/90" : "bg-slate-900 text-white hover:bg-slate-800"
                 }`}
+                onClick={() => router.push("/auth")}
               >
                 {plan.cta}
               </Button>

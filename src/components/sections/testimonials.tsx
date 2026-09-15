@@ -128,19 +128,6 @@ export function Testimonials() {
           </CarouselContent>
         </Carousel>
 
-        <div className="mt-16">
-          <div className="bg-gradient-to-br from-slate-100 to-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-300 p-16 text-center">
-            <svg className="w-20 h-20 mx-auto mb-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 className="text-2xl font-bold text-slate-700 mb-2">Video Testimonials Coming Soon</h3>
-            <p className="text-slate-600 max-w-xl mx-auto">
-              We're collecting video testimonials from our successful students. Check back soon to see real students share their experiences and success stories.
-            </p>
-          </div>
-        </div>
-
         <p className="text-center text-slate-500 text-sm mt-8 italic">
           *These are representative testimonials. We'll update with verified student feedback soon.*
         </p>

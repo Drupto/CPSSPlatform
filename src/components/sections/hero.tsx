@@ -1,7 +1,11 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, CheckCircle } from "lucide-react";
+import { ArrowRight, Download, CheckCircle } from "lucide-react";
 
 export function Hero() {
+  const router = useRouter();
   return (
     <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-slate-950 text-white">
       {/* Video Background */}
@@ -40,13 +44,13 @@ export function Hero() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-12">
-            <Button size="lg" className="h-14 px-8 text-lg font-bold rounded-full group">
+            <Button size="lg" className="h-14 px-8 text-lg font-bold rounded-full group" onClick={() => router.push("/auth")}>
               Start Studying Now
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button size="lg" variant="ghost" className="h-14 px-8 text-lg font-semibold rounded-full border border-white/10 hover:bg-white/5">
+            <Button size="lg" variant="ghost" className="h-14 px-8 text-lg font-semibold rounded-full border border-white/10 hover:bg-white/5" onClick={() => router.push("/checklist")}>
               Download Free Checklist
-              <Play className="ml-2 w-4 h-4" />
+              <Download className="ml-2 w-5 h-5" />
             </Button>
           </div>
 

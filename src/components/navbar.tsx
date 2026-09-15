@@ -96,7 +96,7 @@ export function Navbar() {
 
         {/* Desktop Buttons */}
         <div className="hidden md:flex items-center space-x-4">
-          <Button variant="ghost" className="text-sm font-medium">
+          <Button variant="ghost" className="text-sm font-medium" onClick={() => router.push("/checklist")}>
             Free Study Guide
           </Button>
            {!loading && (
@@ -172,7 +172,14 @@ export function Navbar() {
             </Button>
           )}
           <div className="pt-4 space-y-3 w-full max-w-xs flex flex-col">
-            <Button variant="outline" className="w-full">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                router.push("/checklist");
+              }}
+            >
               Free Study Guide
             </Button>
             {!loading && (
