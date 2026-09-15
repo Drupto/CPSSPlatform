@@ -212,13 +212,24 @@ export default function CourseLearnPage() {
 
   const toggleComplete = async (contentId: string) => {
     if (!user || !course) return;
-    
-    if (completedIds.includes(contentId)) {
-      await markContentIncomplete(user.uid, course.id, contentId);
-      setCompletedIds((prev) => prev.filter((id) => id !== contentId));
-    } else {
-      await markContentCompleted(user.uid, course.id, contentId);
-      setCompletedIds((prev) => [...prev, contentId]);
+
+    const isCompleted = completedIds.includes(contentId);
+    // Optimistic update with rollback: if the write fails (e.g. offline), the
+    // checkbox must not silently lie about what the server actually saved.
+    setCompletedIds((prev) =>
+      isCompleted ? prev.filter((id) => id !== contentId) : [...prev, contentId]
+    );
+    try {
+      if (isCompleted) {
+        await markContentIncomplete(user.uid, course.id, contentId);
+      } else {
+        await markContentCompleted(user.uid, course.id, contentId);
+      }
+    } catch (error) {
+      console.error("Failed to update course progress:", error);
+      setCompletedIds((prev) =>
+        isCompleted ? [...prev, contentId] : prev.filter((id) => id !== contentId)
+      );
     }
   };
 

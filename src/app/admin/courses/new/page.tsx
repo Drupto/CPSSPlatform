@@ -142,7 +142,6 @@ export default function NewCoursePage() {
           try {
             setUploadProgress(`Uploading ${block.type} for section ${i + 1}/${contentBlocks.length}...`);
             contentUrl = await uploadCourseAsset(block.file, courseId);
-            console.log(`✓ Successfully uploaded ${block.type}:`, contentUrl);
           } catch (uploadErr) {
             const errorMsg = uploadErr instanceof Error ? uploadErr.message : "Unknown error";
             console.error(`✗ Failed to upload ${block.type} for section ${i + 1}:`, errorMsg);

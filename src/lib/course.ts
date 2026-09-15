@@ -1,7 +1,7 @@
 import type { User } from "firebase/auth";
 import type { Course, CourseContentItem, CourseProgress, Enrollment, EnrollmentStatus, Flashcard, PaymentMethod, UserProfile, Quiz, QuizAttempt } from "./types";
 import { isFlashcard } from "./types";
-import { addDoc, collection, deleteDoc, deleteField, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, deleteField, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 
@@ -573,14 +573,12 @@ export async function markContentCompleted(userId: string, courseId: string, con
   const snapshot = await getDoc(progressRef);
   
   if (snapshot.exists()) {
-    const data = snapshot.data();
-    const completedIds = data.completedContentIds || [];
-    if (!completedIds.includes(contentId)) {
-      await setDoc(progressRef, {
-        completedContentIds: [...completedIds, contentId],
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
-    }
+    // Atomic array update — the previous read-then-write sequence lost a
+    // completion whenever the same user had the course open in two tabs.
+    await setDoc(progressRef, {
+      completedContentIds: arrayUnion(contentId),
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
   } else {
     await setDoc(progressRef, {
       id: `${userId}_${courseId}`,
@@ -597,10 +595,11 @@ export async function markContentIncomplete(userId: string, courseId: string, co
   const snapshot = await getDoc(progressRef);
   
   if (snapshot.exists()) {
-    const data = snapshot.data();
-    const completedIds = (data.completedContentIds || []).filter((id: string) => id !== contentId);
+    // Atomic removal (see markContentCompleted) — avoids the read-then-write
+    // race between tabs and keeps the update rules' affectedKeys whitelist
+    // (completedContentIds + updatedAt only) satisfied.
     await setDoc(progressRef, {
-      completedContentIds: completedIds,
+      completedContentIds: arrayRemove(contentId),
       updatedAt: serverTimestamp(),
     }, { merge: true });
   }

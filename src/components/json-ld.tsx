@@ -12,7 +12,9 @@ export function JsonLd({ data }: { data: object | object[] }) {
         <script
           key={index}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(item) }}
+          // Escape "<" so admin-entered text containing "</script>" cannot
+          // break out of this tag ("\u003c" is a valid JSON escape).
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(item).replace(/</g, "\\u003c") }}
         />
       ))}
     </>

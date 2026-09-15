@@ -35,35 +35,48 @@ export default function ProgressPage() {
         return;
       }
 
-      const userEnrollments = await getEnrollmentsForUser(user.uid);
-      setEnrollments(userEnrollments);
+      try {
+        const userEnrollments = await getEnrollmentsForUser(user.uid);
+        setEnrollments(userEnrollments);
 
-      const courseMap = new Map<string, Course>();
-      const progressMap = new Map<string, CourseProgress>();
-      const contentMap = new Map<string, CourseContentItem[]>();
-      
-      // Fetch course details and progress for each enrollment
-      for (const enrollment of userEnrollments) {
-        const course = await getCourseById(enrollment.courseId);
-        if (course) {
-          courseMap.set(course.id, course);
-          
-          // Get progress for this course
-          const courseProgress = await getCourseProgress(user.uid, course.id);
-          if (courseProgress) {
-            progressMap.set(course.id, courseProgress);
+        const courseMap = new Map<string, Course>();
+        const progressMap = new Map<string, CourseProgress>();
+        const contentMap = new Map<string, CourseContentItem[]>();
+
+        // Fetch course details and progress for each enrollment. Every read is
+        // error-guarded: a course unpublished (or deleted) after approval makes
+        // its reads fail with permission-denied, and one denied read must not
+        // leave the page stuck on the loader — skip that course and continue.
+        for (const enrollment of userEnrollments) {
+          try {
+            const course = await getCourseById(enrollment.courseId);
+            if (course) {
+              courseMap.set(course.id, course);
+
+              // Get progress for this course
+              const courseProgress = await getCourseProgress(user.uid, course.id);
+              if (courseProgress) {
+                progressMap.set(course.id, courseProgress);
+              }
+
+              // Get course content
+              const courseContent = await getCourseContent(course.id);
+              contentMap.set(course.id, courseContent);
+            }
+          } catch {
+            // Unpublished/removed course — skip it.
           }
-          
-          // Get course content
-          const courseContent = await getCourseContent(course.id);
-          contentMap.set(course.id, courseContent);
         }
+
+        setCourses(courseMap);
+        setProgress(progressMap);
+        setContent(contentMap);
+      } catch (error) {
+        console.error("Failed to load learning progress:", error);
+        // Render the (empty) page instead of hanging on the loader.
+      } finally {
+        setLoading(false);
       }
-      
-      setCourses(courseMap);
-      setProgress(progressMap);
-      setContent(contentMap);
-      setLoading(false);
     });
 
     return () => unsubscribe();

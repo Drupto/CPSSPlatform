@@ -32,18 +32,32 @@ export default function MyCoursesPage() {
         return;
       }
 
-      const userEnrollments = await getEnrollmentsForUser(user.uid);
-      setEnrollments(userEnrollments);
+      // All reads are error-guarded: a course that was unpublished (or deleted)
+      // after the enrollment was approved makes its direct doc read fail with
+      // permission-denied. One denied read must not leave the page stuck on
+      // the loader — skip that course and keep rendering.
+      try {
+        const userEnrollments = await getEnrollmentsForUser(user.uid);
+        setEnrollments(userEnrollments);
 
-      const courseMap = new Map<string, Course>();
-      for (const enrollment of userEnrollments) {
-        const course = await getCourseById(enrollment.courseId);
-        if (course) {
-          courseMap.set(course.id, course);
+        const courseMap = new Map<string, Course>();
+        for (const enrollment of userEnrollments) {
+          try {
+            const course = await getCourseById(enrollment.courseId);
+            if (course) {
+              courseMap.set(course.id, course);
+            }
+          } catch {
+            // Unpublished/removed course — leave it out of the map.
+          }
         }
+        setCourses(courseMap);
+      } catch (error) {
+        console.error("Failed to load my courses:", error);
+        // Render the (empty) page instead of hanging on the loader.
+      } finally {
+        setLoading(false);
       }
-      setCourses(courseMap);
-      setLoading(false);
     });
 
     return () => unsubscribe();

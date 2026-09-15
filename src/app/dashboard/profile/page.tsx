@@ -53,10 +53,26 @@ export default function ProfilePage() {
 
       if (user) {
         const profileRef = doc(db, "users", user.uid);
-        await setDoc(profileRef, {
-          displayName: displayName.trim(),
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
+        if (profile) {
+          await setDoc(profileRef, {
+            displayName: displayName.trim(),
+            updatedAt: serverTimestamp(),
+          }, { merge: true });
+        } else {
+          // No profile document yet (e.g. the signup-time profile write
+          // failed, or a legacy account). A bare displayName merge would be
+          // a CREATE, which the Firestore rules reject (they require the
+          // full createUserProfile shape) — write the complete shape here so
+          // the profile-completeness gate can never permanently trap a user.
+          await setDoc(profileRef, {
+            uid: user.uid,
+            email: user.email ?? "",
+            displayName: displayName.trim(),
+            role: "student",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          }, { merge: true });
+        }
       }
 
       setMessage("Profile updated successfully.");
