@@ -110,8 +110,18 @@ function truncate(text, max) {
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
 }
 
+/** The JSON stores time limits in SECONDS; the platform stores MINUTES. */
+function quizTimeLimitMinutes(seconds) {
+  const value = Number(seconds);
+  if (!Number.isFinite(value) || value <= 0) return undefined;
+  return Math.max(1, Math.round(value / 60));
+}
+
 function previewQuiz(quiz) {
-  const tl = quiz.timeLimit !== undefined ? `, timeLimit ${quiz.timeLimit}s` : ", no time limit";
+  const stored = quizTimeLimitMinutes(quiz.timeLimit);
+  const tl = stored !== undefined
+    ? `, time limit ${quiz.timeLimit}s → stored as ${stored} min`
+    : ", no time limit";
   return `    • "${quiz.title}" | ${quiz.questions.length} question(s) | pass ${quiz.passPercentage}% | ${quiz.maxAttempts} attempt(s)${tl}`;
 }
 
@@ -339,7 +349,11 @@ async function writePlanned(db, course) {
       description: quiz.description,
       passPercentage: quiz.passPercentage,
       maxAttempts: quiz.maxAttempts,
-      ...(quiz.timeLimit !== undefined ? { timeLimit: quiz.timeLimit } : {}),
+      // Convert the JSON's seconds to the platform's minutes unit (see
+      // quizTimeLimitMinutes) so the student-facing timer shows sane values.
+      ...(quizTimeLimitMinutes(quiz.timeLimit) !== undefined
+        ? { timeLimit: quizTimeLimitMinutes(quiz.timeLimit) }
+        : {}),
       randomizeQuestionOrder: quiz.randomizeQuestionOrder,
       randomizeAnswerOrder: quiz.randomizeAnswerOrder,
       questions: quiz.questions,

@@ -69,7 +69,13 @@ function getQuizTimeLimitSeconds(quiz: Record<string, unknown>): number | null {
   if (quiz.timeLimit === undefined || quiz.timeLimit === null) {
     return null;
   }
-  return Math.max(0, Number(quiz.timeLimit)) * 60;
+  const minutes = Number(quiz.timeLimit);
+  // A non-positive or non-numeric limit means "no limit" (0 previously produced
+  // an instantly-expiring session that could never be submitted).
+  if (!Number.isFinite(minutes) || minutes <= 0) {
+    return null;
+  }
+  return minutes * 60;
 }
 
 function getQuizScore(quiz: Record<string, unknown>, answers: number[]): number {
@@ -205,7 +211,19 @@ export const startQuizAttempt = onCall<StartQuizAttemptRequest, Promise<StartQui
         const existingExpiresAtMs = (existingSession.expiresAt as { toMillis: () => number } | undefined)?.toMillis?.() ?? null;
 
         if (existingExpiresAtMs === null || Date.now() <= existingExpiresAtMs + QUIZ_SUBMISSION_GRACE_MS) {
-          throw new HttpsError("already-exists", "Quiz attempt already in progress");
+          // Resume the student's in-progress attempt instead of blocking them.
+          // Previously this threw "already-exists", so a student who opened the
+          // quiz and then closed it (or refreshed) could not start again until
+          // the session expired — forever for quizzes without a time limit,
+          // whose sessions have expiresAt === null. Returning the same session
+          // lets the client resume with the correct remaining time, and
+          // submitting it still completes exactly one attempt (guarded by
+          // session.status in submitQuizAttempt).
+          return {
+            sessionId: sessionRef.id,
+            attemptsUsed: attemptsForQuiz,
+            expiresAtMs: existingExpiresAtMs,
+          };
         }
       }
 

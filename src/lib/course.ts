@@ -641,7 +641,13 @@ export async function createQuiz(courseId: string, quizData: Partial<Quiz>): Pro
     passPercentage: quizData.passPercentage ?? 70,
     questions: quizData.questions ?? [],
     maxAttempts: quizData.maxAttempts ?? 1,
-    timeLimit: quizData.timeLimit === null ? undefined : quizData.timeLimit,
+    // Omit the key entirely when there is no limit: the Firestore Web SDK
+    // rejects explicit `undefined` field values unless ignoreUndefinedProperties
+    // is enabled (it is not — see initializeFirestore in src/lib/firebase.ts),
+    // so the previous `undefined` payload made saving a limit-less quiz throw.
+    ...(quizData.timeLimit !== undefined && quizData.timeLimit !== null
+      ? { timeLimit: quizData.timeLimit }
+      : {}),
     randomizeQuestionOrder: quizData.randomizeQuestionOrder ?? false,
     randomizeAnswerOrder: quizData.randomizeAnswerOrder ?? false,
     createdAt: serverTimestamp(),
@@ -697,7 +703,12 @@ export async function updateQuiz(courseId: string, quizId: string, updates: Part
   const quizRef = doc(db, "courses", courseId, "quizzes", quizId);
   await setDoc(quizRef, {
     ...updates,
-    timeLimit: updates.timeLimit === null ? undefined : updates.timeLimit,
+    // An absent/null limit means "clear it": with {merge: true} the stored
+    // value must be removed via deleteField() — an explicit `undefined` both
+    // throws in the Web SDK and would leave the old limit in place.
+    timeLimit: updates.timeLimit !== undefined && updates.timeLimit !== null
+      ? updates.timeLimit
+      : deleteField(),
     updatedAt: serverTimestamp(),
   }, { merge: true });
 }

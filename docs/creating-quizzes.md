@@ -97,6 +97,7 @@ interface Quiz {
   passPercentage: number;
   questions: QuizQuestion[];
   maxAttempts?: number;
+  /** Stored in MINUTES. The import JSON uses seconds — scripts/import-quizzes.mjs converts on ingest. */
   timeLimit?: number;
   randomizeQuestionOrder?: boolean;
   randomizeAnswerOrder?: boolean;
