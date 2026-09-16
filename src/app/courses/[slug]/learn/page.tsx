@@ -14,6 +14,8 @@ import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FileText } from "lucide-react";
+import { PdfViewerDialog, isPdfUrl, type PdfViewerState } from "@/components/resources/pdf-viewer-dialog";
 
 const getQuizTimeLimitSeconds = (quiz: any) => {
   if (quiz.timeLimit === undefined || quiz.timeLimit === null) {
@@ -58,6 +60,9 @@ export default function CourseLearnPage() {
   const [currentQuizAttemptsUsed, setCurrentQuizAttemptsUsed] = useState(0);
   const [isSubmittingQuiz, setIsSubmittingQuiz] = useState(false);
   const [isQuizTimerActive, setIsQuizTimerActive] = useState(false);
+  // Custom PDF reader window — set when a PDF document section is opened.
+  const [pdfViewer, setPdfViewer] = useState<PdfViewerState | null>(null);
+
   const [quizError, setQuizError] = useState<string | null>(null);
   const autoSubmittedQuizRef = useRef(false);
 
@@ -783,14 +788,36 @@ const QuizModal = ({
               {currentItem.type === "document" && currentItem.url && (
                 <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-6">
                   <p className="text-slate-600 mb-4">This section contains a document for reference.</p>
-                  <a
-                    href={currentItem.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-primary/90"
-                  >
-                    Open Document ↗
-                  </a>
+                  {isPdfUrl(currentItem.url) ? (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button
+                        onClick={() =>
+                          setPdfViewer({ url: currentItem.url!, title: currentItem.title })
+                        }
+                        className="gap-2 rounded-full"
+                      >
+                        <FileText className="h-4 w-4" />
+                        Read Document
+                      </Button>
+                      <a
+                        href={currentItem.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-slate-500 underline underline-offset-4 hover:text-slate-700"
+                      >
+                        Open in new tab ↗
+                      </a>
+                    </div>
+                  ) : (
+                    <a
+                      href={currentItem.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-primary/90"
+                    >
+                      Open Document ↗
+                    </a>
+                  )}
                 </div>
               )}
             </section>
@@ -963,6 +990,9 @@ const QuizModal = ({
           isSubmitting={isSubmittingQuiz}
         />
       )}
+
+      {/* Custom PDF reader window */}
+      <PdfViewerDialog pdf={pdfViewer} onClose={() => setPdfViewer(null)} />
     </main>
   );
 }

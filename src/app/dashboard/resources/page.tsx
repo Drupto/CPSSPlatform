@@ -22,8 +22,10 @@ import {
   Sparkles,
   RotateCcw,
   Brain,
+  FileText,
 } from "lucide-react";
 import { getResourceIcon, getResourceTypeBadge } from "@/components/resources/resource-display";
+import { PdfViewerDialog, isPdfUrl, type PdfViewerState } from "@/components/resources/pdf-viewer-dialog";
 
 interface FlashcardStudyState {
   courseId: string;
@@ -160,10 +162,17 @@ export default function ResourcesPage() {
   const getFlashcardCount = (resources: CourseContentItem[]) =>
     resources.filter(r => r.type === "flashcard").length;
 
-  const handleResourceClick = (url?: string) => {
-    if (url) {
-      // "noopener,noreferrer" blocks reverse tabnabbing — resource URLs are
-      // admin-provided but may point anywhere.
+  // Custom PDF reader window — set when a PDF resource is clicked.
+  const [pdfViewer, setPdfViewer] = useState<PdfViewerState | null>(null);
+
+  const handleResourceClick = (url?: string, title?: string) => {
+    if (!url) return;
+    // PDFs open in the custom in-app reader window; everything else keeps
+    // opening in a new tab. "noopener,noreferrer" blocks reverse tabnabbing
+    // — resource URLs are admin-provided but may point anywhere.
+    if (isPdfUrl(url)) {
+      setPdfViewer({ url, title: title || "Document" });
+    } else {
       window.open(url, "_blank", "noopener,noreferrer");
     }
   };
@@ -293,11 +302,20 @@ export default function ResourcesPage() {
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleResourceClick(resource.url);
+                                    handleResourceClick(resource.url, resource.title);
                                   }}
                                 >
-                                  <Download className="h-4 w-4 mr-1" />
-                                  {resource.type === "document" ? "Download" : "Open"}
+                                  {isPdfUrl(resource.url) ? (
+                                    <>
+                                      <FileText className="h-4 w-4 mr-1" />
+                                      Read
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Download className="h-4 w-4 mr-1" />
+                                      {resource.type === "document" ? "Download" : "Open"}
+                                    </>
+                                  )}
                                 </Button>
                               )}
                             </div>
@@ -427,6 +445,9 @@ export default function ResourcesPage() {
           </div>
         </div>
       )}
+
+      {/* Custom PDF reader window */}
+      <PdfViewerDialog pdf={pdfViewer} onClose={() => setPdfViewer(null)} />
 
     </main>
   );
