@@ -50,8 +50,20 @@ npm start
    - **Node version**: 20
 
 6. Add environment variables in Netlify:
-   - Go to Site settings → Build & deploy → Environment
+   - Go to Site configuration → Environment variables
    - Add all `NEXT_PUBLIC_FIREBASE_*` variables from your `.env.local`
+   - Add the Firebase Admin SDK variables (used server-side for Firestore).
+     Recommended: a dedicated least-privilege service account (e.g.
+     `netlify-runtime@…` with only `roles/datastore.viewer` — the app only
+     reads the `courses` collection) instead of the Editor-role
+     `firebase-adminsdk-fbsvc@…` account:
+     - `FIREBASE_ADMIN_PROJECT_ID` — e.g. `cscs-prep-2c063`
+     - `FIREBASE_ADMIN_CLIENT_EMAIL` — e.g. `netlify-runtime@cscs-prep-2c063.iam.gserviceaccount.com`
+     - `FIREBASE_ADMIN_PRIVATE_KEY` — the `private_key` value from a
+       service-account JSON key (Google Cloud Console → IAM & Admin →
+       Service Accounts → Keys → Create new key → JSON). Add it as
+       **"A secret value"** so it is masked in logs/dashboard. A single
+       line with literal `\n` escapes works — the code normalizes it.
 
 7. Deploy!
 
