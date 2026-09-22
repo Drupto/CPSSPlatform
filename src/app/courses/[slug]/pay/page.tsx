@@ -65,11 +65,19 @@ export default function CoursePaymentPage() {
       }
 
       if (course) {
-        const existing = await getEnrollment(currentUser.uid, course.id);
-        setEnrollment(existing);
-        // Already-approved users don't belong on the payment page.
-        if (existing?.status === "approved") {
-          router.replace(`/courses/${course.slug}/learn`);
+        // Non-fatal: a failed lookup (offline/rules) must not block the
+        // payment form — the user can still submit; submitPaymentRequest()
+        // is a merge-write that works with or without an existing doc.
+        try {
+          const existing = await getEnrollment(currentUser.uid, course.id);
+          setEnrollment(existing);
+          // Already-approved users don't belong on the payment page.
+          if (existing?.status === "approved") {
+            router.replace(`/courses/${course.slug}/learn`);
+          }
+        } catch (lookupError) {
+          console.error("Error loading existing enrollment:", lookupError);
+          setEnrollment(null);
         }
       }
     });

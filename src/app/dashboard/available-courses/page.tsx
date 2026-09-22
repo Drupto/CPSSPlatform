@@ -43,11 +43,28 @@ export default function AvailableCoursesPage() {
         // Published courses only — a rules-v2-compliant query for non-admins
         // (an unconstrained getAllCourses() query is rejected with
         // permission-denied for students).
-        const allCourses = await getPublishedCourses();
-        
-        // Fetch user's enrollments
-        const userEnrollments = await getEnrollmentsForUser(user.uid);
-        setEnrollments(userEnrollments);
+        // NOTE: courses and enrollments are loaded independently so a failure
+        // in one (e.g. enrollments permission/index issue) never wipes out the
+        // other. Previously a single try/catch around both meant an
+        // enrollments failure left `courses` empty → "No courses available" +
+        // "Failed to load courses" even when published courses existed.
+        let allCourses: Course[] = [];
+        try {
+          allCourses = await getPublishedCourses();
+        } catch (coursesError) {
+          console.error("Error fetching courses:", coursesError);
+          throw coursesError;
+        }
+
+        // Fetch user's enrollments (non-fatal — courses still render with
+        // "Request Access" buttons if this fails).
+        try {
+          const userEnrollments = await getEnrollmentsForUser(user.uid);
+          setEnrollments(userEnrollments);
+        } catch (enrollmentsError) {
+          console.error("Error fetching enrollments:", enrollmentsError);
+          setEnrollments([]);
+        }
         
         setCourses(allCourses);
       } catch (error) {

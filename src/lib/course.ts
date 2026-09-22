@@ -227,29 +227,25 @@ export async function submitPaymentRequest(
 ): Promise<void> {
   const enrollmentId = `${userId}_${courseId}`;
   const enrollmentRef = doc(db, "enrollments", enrollmentId);
-  const paymentFields = {
+  // Single merge-write (no pre-read): the pay page previously did
+  // getDoc() to decide create-vs-update, but a `get` on a non-existent doc
+  // is denied unless the rules explicitly allow it (resource == null), so
+  // first-time payers got permission-denied → "Could not submit your payment
+  // details". Writing the full shape works for both paths:
+  // - doc missing → evaluated as `create` (exact 8-field whitelist below).
+  // - doc exists → evaluated as `update`; id/userId/courseId are unchanged
+  //   so diff().affectedKeys() only contains status/requestedAt/payment*
+  //   (the student branch of the update rule).
+  await setDoc(enrollmentRef, {
+    id: enrollmentId,
+    userId,
+    courseId,
+    status: "pending",
+    requestedAt: serverTimestamp(),
     paymentMethod: payment.method,
     paymentReference: payment.reference.trim(),
     paymentSubmittedAt: serverTimestamp(),
-  };
-
-  const existing = await getDoc(enrollmentRef);
-  if (existing.exists()) {
-    await setDoc(enrollmentRef, {
-      status: "pending",
-      requestedAt: serverTimestamp(),
-      ...paymentFields,
-    }, { merge: true });
-  } else {
-    await setDoc(enrollmentRef, {
-      id: enrollmentId,
-      userId,
-      courseId,
-      status: "pending",
-      requestedAt: serverTimestamp(),
-      ...paymentFields,
-    });
-  }
+  }, { merge: true });
 }
 
 /**
