@@ -43,6 +43,29 @@ const formatQuizTime = (seconds: number) => {
   return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
 };
 
+// Maps raw callable failures to student-friendly copy. A stale deployed
+// startQuizAttempt still throws already-exists (HTTP 409 "Quiz attempt
+// already in progress") when a pending quizSessions doc exists; newer
+// deploys resume that session instead. Either way the student just needs
+// to know an unfinished attempt is blocking a fresh start.
+const getFriendlyQuizStartError = (rawMessage: string, action: "start" | "restart"): string => {
+  if (rawMessage.includes("Failed to fetch") || rawMessage.includes("fetch")) {
+    return "The quiz service could not be reached. If you are testing locally, make sure the Functions emulator is running or disable emulator mode in your environment settings.";
+  }
+  const lower = rawMessage.toLowerCase();
+  if (
+    lower.includes("already-exists") ||
+    lower.includes("already in progress") ||
+    lower.includes("409") ||
+    lower.includes("conflict")
+  ) {
+    return "You already have an unfinished attempt for this quiz. Please finish or submit it before starting again. If you closed the quiz tab, reopen it from this page to resume. (An admin can clear a stuck quizSessions document if needed.)";
+  }
+  return rawMessage || (action === "restart"
+    ? "Unable to restart the quiz right now. Please try again."
+    : "Unable to start the quiz right now. Please try again.");
+};
+
 // ---------------------------------------------------------------------------
 // Quiz modal — declared at MODULE SCOPE on purpose. A component defined inside
 // CourseLearnPage's function body would get a new identity on every render,
@@ -64,6 +87,7 @@ const QuizModal = ({
   canRetake,
   timeRemaining,
   isSubmitting,
+  isStarting,
   error
 }: { 
   quiz: any; 
@@ -79,6 +103,7 @@ const QuizModal = ({
   canRetake: boolean;
   timeRemaining: number | null;
   isSubmitting: boolean;
+  isStarting: boolean;
   error: string | null;
 }) => {
   if (!quiz) return null;
@@ -186,9 +211,10 @@ const QuizModal = ({
                 {canRetake ? (
                   <Button 
                     onClick={onRestart} 
+                    disabled={isStarting}
                     className="flex-1"
                   >
-                    Retake Quiz
+                    {isStarting ? "Starting..." : "Retake Quiz"}
                   </Button>
                 ) : (
                   <Button 
@@ -295,6 +321,9 @@ export default function CourseLearnPage() {
   const [currentQuizAttemptsUsed, setCurrentQuizAttemptsUsed] = useState(0);
   const [isSubmittingQuiz, setIsSubmittingQuiz] = useState(false);
   const [isQuizTimerActive, setIsQuizTimerActive] = useState(false);
+  // Guards startQuiz/restartQuiz against double-clicks creating duplicate
+  // startQuizAttempt calls (which race on the singleton quizSessions doc).
+  const [isStartingQuiz, setIsStartingQuiz] = useState(false);
   // Custom PDF reader window — set when a PDF document section is opened.
   const [pdfViewer, setPdfViewer] = useState<PdfViewerState | null>(null);
 
@@ -494,6 +523,12 @@ export default function CourseLearnPage() {
       return;
     }
 
+    // Block double-clicks: duplicate startQuizAttempt calls race on the
+    // singleton quizSessions/{uid:quizId} doc and surface 409s.
+    if (isStartingQuiz) {
+      return;
+    }
+
     const maxAttempts = quiz.maxAttempts ?? 1;
     const attemptsForQuiz = quizAttempts.filter(attempt => attempt.quizId === quiz.id);
     const timeLimitSeconds = getQuizTimeLimitSeconds(quiz);
@@ -510,6 +545,7 @@ export default function CourseLearnPage() {
     }
 
     setQuizError(null);
+    setIsStartingQuiz(true);
 
     try {
       const sessionResult = await callable({ courseId: course.id, quizId: quiz.id });
@@ -538,10 +574,9 @@ export default function CourseLearnPage() {
     } catch (error) {
       console.error("Error starting quiz attempt:", error);
       const message = error instanceof Error ? error.message : String(error);
-      const friendlyMessage = message.includes("Failed to fetch") || message.includes("fetch")
-        ? "The quiz service could not be reached. If you are testing locally, make sure the Functions emulator is running or disable emulator mode in your environment settings."
-        : message || "Unable to start the quiz right now. Please try again.";
-      setQuizError(friendlyMessage);
+      setQuizError(getFriendlyQuizStartError(message, "start"));
+    } finally {
+      setIsStartingQuiz(false);
     }
   };
 
@@ -601,6 +636,10 @@ export default function CourseLearnPage() {
       return;
     }
 
+    if (isStartingQuiz) {
+      return;
+    }
+
     const callable = getCallable("startQuizAttempt");
     if (!callable) {
       setQuizError("Quiz service is not ready yet. Please refresh the page and try again.");
@@ -611,6 +650,7 @@ export default function CourseLearnPage() {
     const timeLimitSeconds = getQuizTimeLimitSeconds(currentQuiz);
 
     setQuizError(null);
+    setIsStartingQuiz(true);
 
     try {
       const sessionResult = await callable({ courseId: course.id, quizId: currentQuiz.id });
@@ -634,10 +674,9 @@ export default function CourseLearnPage() {
     } catch (error) {
       console.error("Error restarting quiz attempt:", error);
       const message = error instanceof Error ? error.message : String(error);
-      const friendlyMessage = message.includes("Failed to fetch") || message.includes("fetch")
-        ? "The quiz service could not be reached. If you are testing locally, make sure the Functions emulator is running or disable emulator mode in your environment settings."
-        : message || "Unable to restart the quiz right now. Please try again.";
-      setQuizError(friendlyMessage);
+      setQuizError(getFriendlyQuizStartError(message, "restart"));
+    } finally {
+      setIsStartingQuiz(false);
     }
   };
 
@@ -924,7 +963,7 @@ export default function CourseLearnPage() {
                     <li key={`quiz-${quiz.id}`}>
                       <button
                         onClick={() => startQuiz(quiz)}
-                        disabled={!canStartQuiz}
+                        disabled={!canStartQuiz || isStartingQuiz}
                         className={`w-full text-left text-sm py-1.5 px-3 rounded-lg transition ${
                           !canStartQuiz
                             ? "bg-slate-100 text-slate-400 cursor-not-allowed"
@@ -991,6 +1030,7 @@ export default function CourseLearnPage() {
           canRetake={currentQuiz ? currentQuizAttemptsUsed < (currentQuiz.maxAttempts ?? 1) : false}
           timeRemaining={quizTimeRemaining}
           isSubmitting={isSubmittingQuiz}
+          isStarting={isStartingQuiz}
           error={quizError}
         />
       )}
