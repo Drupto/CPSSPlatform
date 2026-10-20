@@ -215,11 +215,11 @@ export function Curriculum() {
   };
 
   return (
-    <section className="py-24 bg-white" id="curriculum">
+    <section className="py-24 bg-white dark:bg-zinc-950" id="curriculum">
       <div className="container max-w-6xl mx-auto px-6">
         <div className="mb-10 text-center">
           <h2 className="text-4xl font-extrabold mb-4">Choose Your Curriculum Track.</h2>
-          <p className="text-slate-600 max-w-2xl mx-auto">
+          <p className="text-slate-600 max-w-2xl mx-auto dark:text-zinc-400">
             Switch between program tracks — every chapter of both courses is listed below, syllabus-style.
           </p>
         </div>
@@ -229,7 +229,7 @@ export function Curriculum() {
           <div
             role="tablist"
             aria-label="Curriculum track"
-            className="inline-flex flex-wrap justify-center gap-2 p-2 rounded-full bg-slate-100"
+            className="inline-flex flex-wrap justify-center gap-2 p-2 rounded-full bg-slate-100 dark:bg-zinc-800"
           >
             {(
               [
@@ -246,14 +246,14 @@ export function Curriculum() {
                 className={`px-5 sm:px-6 py-3 rounded-full text-sm font-bold transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                   track === t.id
                     ? "bg-slate-900 text-white shadow-lg"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                    : "text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-white/60 dark:hover:bg-zinc-800/50"
                 }`}
               >
                 <t.Icon className="w-4 h-4 inline mr-2 -mt-0.5" />
                 {t.label}
                 <span
                   className={`ml-2 text-xs font-semibold ${
-                    track === t.id ? "text-primary" : "text-slate-400"
+                    track === t.id ? "text-primary" : "text-slate-400 dark:text-zinc-400"
                   }`}
                 >
                   {t.meta}
@@ -268,7 +268,7 @@ export function Curriculum() {
           {trackFacts[track].map((fact) => (
             <span
               key={fact}
-              className="px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-600 font-medium shadow-sm"
+              className="px-4 py-2 rounded-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-zinc-400 font-medium shadow-sm"
             >
               {fact}
             </span>
@@ -281,7 +281,7 @@ export function Curriculum() {
               <AccordionItem
                 key={module.id}
                 value={module.id}
-                className="border rounded-2xl px-6 bg-slate-50 data-[state=open]:bg-white data-[state=open]:shadow-xl transition-all border-slate-200"
+                className="border rounded-2xl px-6 bg-slate-50 dark:bg-zinc-900 data-[state=open]:bg-white dark:data-[state=open]:bg-zinc-800 data-[state=open]:shadow-xl transition-all border-slate-200 dark:border-white/10"
               >
                 <AccordionTrigger className="hover:no-underline py-6 gap-4">
                   <div className="text-left flex items-start gap-4">
@@ -291,13 +291,13 @@ export function Curriculum() {
                     <div>
                       <h3 className="text-xl font-bold mb-1.5">{module.title}</h3>
                       <div className="flex flex-wrap gap-2">
-                        <Badge variant="secondary" className="bg-primary/5 text-primary border-none font-medium text-xs">
+                        <Badge variant="secondary" className="bg-primary/5 text-primary dark:bg-primary/20 border-none font-medium text-xs">
                           {module.chapters}
                         </Badge>
                         {module.practical && (
                           <Badge
                             variant="secondary"
-                            className="bg-slate-200/70 text-slate-600 border-none font-medium text-xs"
+                            className="bg-slate-200/70 text-slate-600 dark:bg-zinc-800/70 dark:text-zinc-300 border-none font-medium text-xs"
                           >
                             {module.practical}
                           </Badge>
@@ -309,7 +309,7 @@ export function Curriculum() {
                 <AccordionContent className="pb-8 pl-[3.25rem]">
                   <ul className="grid sm:grid-cols-2 gap-4">
                     {module.topics.map((topic, i2) => (
-                      <li key={i2} className="flex items-start space-x-3 text-slate-600">
+                      <li key={i2} className="flex items-start space-x-3 text-slate-600 dark:text-zinc-400">
                         <div className="mt-2 w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                         <span>{topic}</span>
                       </li>

@@ -8,15 +8,15 @@ import { homepageFaqs as faqs } from "@/lib/faq-data";
 export function FAQ() {
 
   return (
-    <section className="py-24 bg-slate-50">
+    <section className="py-24 bg-slate-50 dark:bg-zinc-950">
       <div className="container max-w-4xl mx-auto px-6">
-        <div className="bg-primary/5 rounded-[3xl] p-8 md:p-12 mb-16 flex flex-col md:flex-row items-center gap-8 border border-primary/10 shadow-sm">
-          <div className="bg-primary/10 w-24 h-24 rounded-full flex items-center justify-center text-primary flex-shrink-0">
+        <div className="bg-primary/5 rounded-[3xl] p-8 md:p-12 mb-16 flex flex-col md:flex-row items-center gap-8 border border-primary/10 dark:border-primary/20 shadow-sm">
+          <div className="bg-primary/10 w-24 h-24 rounded-full flex items-center justify-center text-primary flex-shrink-0 dark:bg-primary/20">
             <ShieldCheck className="w-12 h-12" />
           </div>
           <div>
             <h3 className="text-2xl font-bold mb-2">30-Day Money-Back Guarantee</h3>
-            <p className="text-slate-600 text-lg leading-relaxed">
+            <p className="text-slate-600 text-lg leading-relaxed dark:text-zinc-400">
               If you don't feel 10x more confident about the exam after going through our curriculum, 
               simply email us for a full refund. No questions asked.
             </p>
@@ -29,11 +29,11 @@ export function FAQ() {
 
         <Accordion type="single" collapsible className="w-full space-y-4">
           {faqs.map((faq, i) => (
-            <AccordionItem key={i} value={`item-${i}`} className="bg-white rounded-2xl border-none shadow-sm px-6 overflow-hidden">
+            <AccordionItem key={i} value={`item-${i}`} className="bg-white dark:bg-zinc-900 rounded-2xl border-none shadow-sm px-6 overflow-hidden">
               <AccordionTrigger className="text-left py-6 font-bold hover:no-underline text-lg">
                 {faq.q}
               </AccordionTrigger>
-              <AccordionContent className="pb-6 text-slate-600 text-lg leading-relaxed">
+              <AccordionContent className="pb-6 text-slate-600 dark:text-zinc-400 text-lg leading-relaxed">
                 {faq.a}
               </AccordionContent>
             </AccordionItem>

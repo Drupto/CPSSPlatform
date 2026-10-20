@@ -26,22 +26,22 @@ export function Features() {
   ];
 
   return (
-    <section className="py-24 bg-slate-50">
+    <section className="py-24 bg-slate-50 dark:bg-zinc-950">
       <div className="container max-w-6xl mx-auto px-6">
         <div className="mb-16">
           <h2 className="text-4xl font-extrabold mb-4">Everything You Need to Coach and Certify.</h2>
-          <p className="text-xl text-slate-600">Two programs, one standard: evidence-based, assessment-driven, and built for real-world performance.</p>
+          <p className="text-xl text-slate-600 dark:text-zinc-400">Two programs, one standard: evidence-based, assessment-driven, and built for real-world performance.</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
           {features.map((feature, index) => (
-            <div key={index} className="flex gap-6 p-8 bg-white rounded-3xl shadow-lg border border-slate-100 hover:border-primary/20 transition-colors">
-              <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center text-primary">
+            <div key={index} className="flex gap-6 p-8 bg-white dark:bg-zinc-900 rounded-3xl shadow-lg border border-slate-100 dark:border-white/10 hover:border-primary/20 transition-colors">
+              <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-primary/5 dark:bg-primary/20 flex items-center justify-center text-primary">
                 {feature.icon}
               </div>
               <div>
                 <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                <p className="text-slate-600 leading-relaxed">
+                <p className="text-slate-600 leading-relaxed dark:text-zinc-400">
                   {feature.description}
                 </p>
               </div>

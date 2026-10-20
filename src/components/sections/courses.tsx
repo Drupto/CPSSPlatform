@@ -23,7 +23,7 @@ export function Courses() {
   const frameworkSteps = ["Assess", "Diagnose", "Develop", "Integrate", "Specify", "Perform", "Adapt"];
 
   return (
-    <section className="py-24 bg-slate-50" id="courses">
+    <section className="py-24 bg-slate-50 dark:bg-zinc-950" id="courses">
       <div className="container max-w-6xl mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <Badge className="w-fit mx-auto mb-6 bg-primary/10 text-primary border-primary/20 px-4 py-1">
@@ -32,7 +32,7 @@ export function Courses() {
           <h2 className="text-4xl md:text-5xl font-extrabold mb-6">
             Choose Your Path in Fitness Education.
           </h2>
-          <p className="text-lg text-slate-600 leading-relaxed">
+          <p className="text-lg text-slate-600 leading-relaxed dark:text-zinc-400">
             Whether you&apos;re preparing for the NSCA CSCS exam or building a
             complete hybrid coaching practice, KINÉTIKA gives you a structured,
             evidence-based path from theory to real-world performance.
@@ -41,20 +41,20 @@ export function Courses() {
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12 items-stretch">
           {/* CSCS Prep */}
-          <div className="relative flex flex-col p-10 rounded-[2.5rem] bg-white border-2 border-transparent shadow-xl">
+          <div className="relative flex flex-col p-10 rounded-[2.5rem] bg-white border-2 border-transparent dark:bg-zinc-900 dark:border-white/10 shadow-xl">
             <Badge className="w-fit mb-6 bg-slate-900 text-white border-none px-4 py-1 text-xs font-bold rounded-full">
               BESTSELLER
             </Badge>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary">
                 <Dumbbell className="w-6 h-6" />
               </div>
               <h3 className="text-2xl font-extrabold">CSCS Exam Prep</h3>
             </div>
-            <p className="text-slate-500 font-medium mb-6">
+            <p className="text-slate-500 font-medium mb-6 dark:text-zinc-400">
               NSCA Certified Strength &amp; Conditioning Specialist
             </p>
-            <p className="text-slate-600 leading-relaxed mb-8">
+            <p className="text-slate-600 leading-relaxed mb-8 dark:text-zinc-400">
               A complete, exam-focused prep program covering all 26 chapters —
               scientific foundations, exercise technique, program design,
               testing &amp; evaluation, and facility administration — aligned
@@ -63,15 +63,15 @@ export function Courses() {
             <ul className="space-y-3 mb-8 flex-1">
               {cscsHighlights.map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
-                  <div className="mt-1 p-0.5 rounded-full bg-primary/20 flex-shrink-0">
+                  <div className="mt-1 p-0.5 rounded-full bg-primary/20 dark:bg-primary/30 flex-shrink-0">
                     <Check className="w-3.5 h-3.5 text-primary" />
                   </div>
-                  <span className="text-slate-700 text-sm">{item}</span>
+                  <span className="text-slate-700 text-sm dark:text-zinc-300">{item}</span>
                 </li>
               ))}
             </ul>
 
-            <div className="flex flex-wrap items-baseline gap-3 mb-8 pb-8 border-b border-slate-200">
+            <div className="flex flex-wrap items-baseline gap-3 mb-8 pb-8 border-b border-slate-200 dark:border-white/10">
               <span className="text-4xl font-extrabold text-slate-900">₹10,000</span>
               <span className="text-xs uppercase tracking-wider text-slate-500 font-bold">
                 One-time · Lifetime access
@@ -94,7 +94,7 @@ export function Courses() {
               NEW · LAUNCH OFFER — FIRST 20 STUDENTS
             </Badge>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary">
+              <div className="w-12 h-12 rounded-2xl bg-primary/20 dark:bg-primary/30 flex items-center justify-center text-primary">
                 <Timer className="w-6 h-6" />
               </div>
               <h3 className="text-2xl font-extrabold leading-tight">

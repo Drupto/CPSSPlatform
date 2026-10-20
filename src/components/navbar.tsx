@@ -9,6 +9,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getUserProfile, isAdminProfile } from "@/lib/course";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
@@ -64,8 +65,8 @@ export function Navbar() {
     <nav
       className={`fixed top-0 left-0 right-0 z-50 px-6 py-4 transition-all duration-300 ${
         scrolled
-          ? "bg-white/90 backdrop-blur-lg border-b border-slate-200 shadow-sm"
-          : "bg-white border-b border-slate-200"
+          ? "bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg border-b border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none"
+          : "bg-white/60 dark:bg-zinc-950/50 backdrop-blur-md border-b border-slate-200/70 dark:border-white/5"
       }`}
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -87,7 +88,7 @@ export function Navbar() {
             <Link
               key={link.name}
               href={`/${link.href}`}
-              className="text-sm font-medium hover:text-primary transition-colors text-slate-600"
+              className="text-sm font-medium hover:text-primary transition-colors text-slate-600 dark:text-zinc-400 dark:hover:text-zinc-100"
             >
               {link.name}
             </Link>
@@ -96,6 +97,7 @@ export function Navbar() {
 
         {/* Desktop Buttons */}
         <div className="hidden md:flex items-center space-x-4">
+          <ThemeToggle />
           <Button variant="ghost" className="text-sm font-medium" onClick={() => router.push("/checklist")}>
             Free Study Guide
           </Button>
@@ -105,7 +107,7 @@ export function Navbar() {
                  {isAdmin && (
                    <Button
                      variant="ghost"
-                     className="text-sm font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                     className="text-sm font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-500/10"
                      onClick={() => router.push("/admin")}
                    >
                      <Shield className="h-4 w-4 mr-1.5" />
@@ -138,23 +140,27 @@ export function Navbar() {
         </div>
 
         {/* Mobile Toggle */}
-        <button
-          className="md:hidden p-2 text-slate-600"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          {mobileMenuOpen ? <X /> : <Menu />}
-        </button>
+        <div className="md:hidden flex items-center gap-1">
+          <ThemeToggle />
+          <button
+            className="p-2 text-slate-600 dark:text-zinc-300"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {mobileMenuOpen ? <X /> : <Menu />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b p-6 space-y-4 flex flex-col items-center animate-in slide-in-from-top-4">
+        <div className="md:hidden absolute top-full left-0 right-0 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-lg border-b border-slate-200 dark:border-white/10 p-6 space-y-4 flex flex-col items-center animate-in slide-in-from-top-4">
           {navLinks.map((link) => (
             <Link
               key={link.name}
               href={`/${link.href}`}
               onClick={() => setMobileMenuOpen(false)}
-              className="text-lg font-medium text-slate-700"
+              className="text-lg font-medium text-slate-700 dark:text-zinc-200"
             >
               {link.name}
             </Link>

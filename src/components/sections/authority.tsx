@@ -37,14 +37,14 @@ export function Authority() {
   ];
 
   return (
-    <section className="py-24 bg-white">
+    <section className="py-24 bg-white dark:bg-zinc-950">
       <div className="container max-w-6xl mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-4xl md:text-5xl font-extrabold mb-6">
               Two Goals. One Standard of Coaching. <br />
               Studying Doesn&apos;t Have to Be Guesswork.
             </h2>
-            <p className="text-lg text-slate-600 leading-relaxed">
+            <p className="text-lg text-slate-600 leading-relaxed dark:text-zinc-400">
               Whether you&apos;re tackling the CSCS exam&apos;s two demanding sections
               or building a hybrid coaching practice from assessment to
               periodization, rote memorization and generic templates won&apos;t cut
@@ -55,13 +55,13 @@ export function Authority() {
 
         <div className="grid md:grid-cols-3 gap-8">
           {painPoints.map((point, index) => (
-            <Card key={index} className="border-none shadow-xl rounded-3xl bg-slate-50 overflow-hidden group hover:translate-y-[-4px] transition-all duration-300">
+            <Card key={index} className="border-none shadow-xl rounded-3xl bg-slate-50 dark:bg-zinc-900 dark:border-white/5 overflow-hidden group hover:translate-y-[-4px] transition-all duration-300">
               <CardContent className="p-8">
-                <div className="mb-6 bg-white w-20 h-20 rounded-2xl shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="mb-6 bg-white dark:bg-zinc-900 w-20 h-20 rounded-2xl shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
                   {point.icon}
                 </div>
                 <h3 className="text-xl font-bold mb-4">{point.title}</h3>
-                <p className="text-slate-600 leading-relaxed">
+                <p className="text-slate-600 leading-relaxed dark:text-zinc-400">
                   {point.description}
                 </p>
               </CardContent>

@@ -35,7 +35,7 @@ export const dynamic = "force-dynamic";
 
 export default function Home() {
   return (
-    <main className="relative min-h-screen bg-slate-50 overflow-x-hidden">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-950 overflow-x-hidden">
       <JsonLd
         data={[
           faqJsonLd(homepageFaqs),

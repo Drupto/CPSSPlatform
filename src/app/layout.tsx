@@ -1,5 +1,6 @@
 import type {Metadata, Viewport} from 'next';
 import type {ReactNode} from 'react';
+import {ThemeProvider} from 'next-themes';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthCookieSync } from "@/components/auth-cookie-sync";
@@ -79,8 +80,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
     { media: '(prefers-color-scheme: light)', color: '#f8fafc' },
-    { media: '(prefers-color-scheme: dark)', color: '#020617' },
   ],
   width: 'device-width',
   initialScale: 1,
@@ -92,17 +93,22 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased bg-slate-50 text-slate-900">
-        <AuthCookieSync />
-        <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
-        {children}
-        <Toaster />
+      {/* className omits bg/text: globals.css `@apply bg-background text-foreground`
+          drives them from tokens, which flip with the .dark/.light html class
+          (set pre-paint by next-themes — no white flash on load). */}
+      <body className="font-body antialiased">
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+          <AuthCookieSync />
+          <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

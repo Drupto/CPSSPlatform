@@ -48,12 +48,12 @@ export function Testimonials() {
   ];
 
   return (
-    <section className="py-24 bg-white" id="testimonials">
+    <section className="py-24 bg-white dark:bg-zinc-950" id="testimonials">
       <div className="container max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
-          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">Success Stories</Badge>
+          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 dark:bg-primary/20">Success Stories</Badge>
           <h2 className="text-4xl font-extrabold mb-4">What Our Students Say</h2>
-          <p className="text-slate-600 text-lg max-w-2xl mx-auto">
+          <p className="text-slate-600 text-lg max-w-2xl mx-auto dark:text-zinc-400">
             Real feedback from students who achieved their goals with our courses.
           </p>
         </div>
@@ -73,9 +73,9 @@ export function Testimonials() {
 
               return (
                 <CarouselItem key={index} className="pb-8">
-                  <Card className="p-8 rounded-[2rem] border border-slate-200 bg-white shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+                  <Card className="p-8 rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col h-full">
                     <div className="flex items-center gap-4 mb-6">
-                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[1.5rem] border border-slate-200 bg-slate-100 shadow-sm">
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[1.5rem] border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-zinc-800 shadow-sm">
                         <Image
                           src={testimonial.image}
                           alt={testimonial.author}
@@ -88,21 +88,21 @@ export function Testimonials() {
                         <p className="text-xs uppercase tracking-[0.3em] text-primary font-semibold mb-2">
                           Student testimonial
                         </p>
-                        <p className="text-xl font-semibold text-slate-950 leading-tight">
+                        <p className="text-xl font-semibold text-slate-950 dark:text-zinc-100 leading-tight">
                           {testimonial.author}
                         </p>
-                        <p className="text-sm text-slate-500 mt-1">{testimonial.location}</p>
+                        <p className="text-sm text-slate-500 mt-1 dark:text-zinc-400">{testimonial.location}</p>
                       </div>
 
-                      <div className="rounded-full bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-700 border border-slate-200">
+                      <div className="rounded-full bg-slate-50 dark:bg-zinc-800 px-3 py-1 text-sm font-semibold text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-white/10">
                         {[...Array(testimonial.rating)].map((_, i) => (
                           <Star key={i} className="inline-block w-4 h-4 fill-amber-400 text-amber-400" />
                         ))}
                       </div>
                     </div>
 
-                    <div className="text-slate-700 text-base leading-8 mb-6">
-                      <blockquote className="not-italic text-slate-800">
+                    <div className="text-slate-700 text-base leading-8 mb-6 dark:text-zinc-300">
+                      <blockquote className="not-italic text-slate-800 dark:text-zinc-200">
                         {displayedQuote}
                       </blockquote>
                     </div>
@@ -119,7 +119,7 @@ export function Testimonials() {
                     ) : null}
 
                     <div className="mt-auto pt-6 border-t border-slate-200">
-                      <p className="text-sm text-slate-500">KINÉTIKA alumni</p>
+                      <p className="text-sm text-slate-500 dark:text-zinc-400">KINÉTIKA alumni</p>
                     </div>
                   </Card>
                 </CarouselItem>
@@ -128,7 +128,7 @@ export function Testimonials() {
           </CarouselContent>
         </Carousel>
 
-        <p className="text-center text-slate-500 text-sm mt-8 italic">
+        <p className="text-center text-slate-500 text-sm mt-8 italic dark:text-zinc-400">
           *These are representative testimonials. We'll update with verified student feedback soon.*
         </p>
       </div>

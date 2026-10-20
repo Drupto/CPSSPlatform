@@ -9,10 +9,10 @@ import { useRouter } from "next/navigation";
 export function Footer() {
   const router = useRouter();
   return (
-    <footer className="bg-slate-950 text-white">
+    <footer className="bg-slate-950 text-white dark:bg-zinc-950 dark:text-white">
       <div className="container max-w-6xl mx-auto px-6">
         {/* Final CTA */}
-        <div className="py-24 border-b border-white/10 text-center">
+        <div className="py-24 border-b border-white/10 dark:border-zinc-800 text-center">
           <h2 className="text-4xl md:text-5xl font-extrabold mb-8 max-w-3xl mx-auto leading-tight">
             Ready to become a CSCS or Certified Hybrid Performance Coach?
           </h2>
@@ -23,7 +23,7 @@ export function Footer() {
           >
             Enroll Now
           </Button>
-          <p className="mt-8 text-slate-500 font-medium">
+          <p className="mt-8 text-slate-500 font-medium dark:text-zinc-400">
             Join 1,200+ sport science professionals globally.
           </p>
         </div>
@@ -40,7 +40,7 @@ export function Footer() {
             />
           </Link>
           
-          <nav className="flex flex-wrap justify-center gap-x-10 gap-y-4 text-sm font-medium text-slate-400" aria-label="Footer">
+          <nav className="flex flex-wrap justify-center gap-x-10 gap-y-4 text-sm font-medium text-slate-400 dark:text-zinc-400" aria-label="Footer">
             <Link href="/courses" className="hover:text-white transition-colors">Courses</Link>
             <Link href="/#curriculum" className="hover:text-white transition-colors">Curriculum</Link>
             <Link href="/#instructor" className="hover:text-white transition-colors">Instructor</Link>
@@ -48,7 +48,7 @@ export function Footer() {
             <Link href="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link>
           </nav>
 
-          <div className="text-sm text-slate-500">
+          <div className="text-sm text-slate-500 dark:text-zinc-400">
             &copy; 2024 KINÉTIKA. All rights reserved.
           </div>
         </div>
