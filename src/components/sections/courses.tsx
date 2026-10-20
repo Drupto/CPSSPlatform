@@ -60,7 +60,7 @@ export function Courses() {
               testing &amp; evaluation, and facility administration — aligned
               with the NSCA Exam Content Outline.
             </p>
-            <ul className="space-y-3 mb-10 flex-1">
+            <ul className="space-y-3 mb-8 flex-1">
               {cscsHighlights.map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <div className="mt-1 p-0.5 rounded-full bg-primary/20 flex-shrink-0">
@@ -70,6 +70,14 @@ export function Courses() {
                 </li>
               ))}
             </ul>
+
+            <div className="flex flex-wrap items-baseline gap-3 mb-8 pb-8 border-b border-slate-200">
+              <span className="text-4xl font-extrabold text-slate-900">₹10,000</span>
+              <span className="text-xs uppercase tracking-wider text-slate-500 font-bold">
+                One-time · Lifetime access
+              </span>
+            </div>
+
             <Button
               className="w-full h-14 rounded-2xl text-lg font-bold bg-slate-900 text-white hover:bg-slate-800"
               asChild
@@ -116,11 +124,11 @@ export function Courses() {
               ))}
             </ul>
 
-            <div className="flex items-baseline gap-3 mb-8 pb-8 border-b border-white/10">
+            <div className="flex flex-wrap items-baseline gap-3 mb-8 pb-8 border-b border-white/10">
               <span className="text-4xl font-extrabold">₹4,999</span>
               <span className="text-lg text-slate-400 line-through">₹7,999</span>
-              <span className="text-xs uppercase tracking-wider text-primary font-bold">
-                Launch price
+              <span className="text-xs uppercase tracking-wider text-primary font-bold rounded-full bg-primary/10 px-2.5 py-1">
+                Save ₹3,000 · Launch price
               </span>
             </div>
 
