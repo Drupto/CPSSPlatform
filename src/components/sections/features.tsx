@@ -1,26 +1,26 @@
 
-import { Video, ClipboardCheck, Search, Infinity } from "lucide-react";
+import { Layers, ClipboardCheck, Scale, Infinity } from "lucide-react";
 
 export function Features() {
   const features = [
     {
-      title: "Chapter-by-Chapter Lectures",
-      description: "30+ hours of video walking you through every chapter of the Essentials of Sport Science textbook.",
-      icon: <Video className="w-8 h-8" />,
+      title: "Systems, Not Templates",
+      description: "Assessment-driven frameworks — from CSCS exam domains to the Hybrid ASSESS → ADAPT coaching loop — so you can think like a coach, not memorize a plan.",
+      icon: <Layers className="w-8 h-8" />,
     },
     {
-      title: "Domain-Aligned Quizzes",
-      description: "Reinforce Scientific Disciplines, Assessment Tech, and Research Process with targeted practice.",
+      title: "Strength + Endurance Integration",
+      description: "Concurrent training, the interference effect, compromised running, and periodization — the exact skills hybrid athletes demand.",
       icon: <ClipboardCheck className="w-8 h-8" />,
     },
     {
-      title: "Case Study Frameworks",
-      description: "Step-by-step methods to tackle Athlete and Research scenarios like a seasoned pro scientist.",
-      icon: <Search className="w-8 h-8" />,
+      title: "Exam + Coaching Outcomes",
+      description: "Domain-aligned CSCS prep on one track; real-world case studies and a capstone coaching project on the other.",
+      icon: <Scale className="w-8 h-8" />,
     },
     {
       title: "Lifetime Access",
-      description: "Study at your own pace. Access never expires and we provide free updates when the exam changes.",
+      description: "Study at your own pace. Access never expires and we provide free updates when exams or course material change.",
       icon: <Infinity className="w-8 h-8" />,
     },
   ];
@@ -29,8 +29,8 @@ export function Features() {
     <section className="py-24 bg-slate-50">
       <div className="container max-w-6xl mx-auto px-6">
         <div className="mb-16">
-          <h2 className="text-4xl font-extrabold mb-4">Everything You Need to Pass.</h2>
-          <p className="text-xl text-slate-600">Nothing you don't. A curriculum focused entirely on exam performance.</p>
+          <h2 className="text-4xl font-extrabold mb-4">Everything You Need to Coach and Certify.</h2>
+          <p className="text-xl text-slate-600">Two programs, one standard: evidence-based, assessment-driven, and built for real-world performance.</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">

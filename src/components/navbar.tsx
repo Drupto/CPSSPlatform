@@ -54,7 +54,7 @@ export function Navbar() {
   };
 
   const navLinks = [
-    { name: "Course", href: "#course" },
+    { name: "Courses", href: "#courses" },
     { name: "Curriculum", href: "#curriculum" },
     { name: "Instructor", href: "#instructor" },
     { name: "Pricing", href: "#pricing" },

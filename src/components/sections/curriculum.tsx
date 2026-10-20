@@ -73,8 +73,8 @@ export function Curriculum() {
     <section className="py-24 bg-white" id="curriculum">
       <div className="container max-w-6xl mx-auto px-6">
         <div className="mb-16 text-center">
-          <h2 className="text-4xl font-extrabold mb-4">Complete Strength & Conditioning Curriculum</h2>
-          <p className="text-slate-600 max-w-2xl mx-auto">Master all 26 chapters covering scientific foundations, exercise techniques, program design, testing & evaluation, and facility administration.</p>
+          <h2 className="text-4xl font-extrabold mb-4">Choose Your Curriculum Track.</h2>
+          <p className="text-slate-600 max-w-2xl mx-auto">Switch between program tracks below — each course has its own detailed syllabus available on its course page.</p>
         </div>
 
         <div className="max-w-4xl mx-auto">

@@ -19,4 +19,16 @@ export const homepageFaqs: { q: string; a: string }[] = [
     q: "How is the exam formatted?",
     a: "The CSCS exam is split into two sections: Scientific Foundations and Practical/Applied. The Scientific Foundations section is 1.5 hours long with 80 scored and 15 non-scored multiple-choice questions covering exercise sciences, exercise physiology, and nutrition. The Practical/Applied section is 2.5 hours long with 110 scored and 15 non-scored multiple-choice questions covering exercise technique, program design, organization/administration, and testing/evaluation, including video-supported technique items.",
   },
+  {
+    q: "What courses does KINÉTIKA offer?",
+    a: "KINÉTIKA currently offers two flagship programs: CSCS Exam Prep for coaches preparing for the NSCA CSCS exam, and the KINETIKA Certified Hybrid Performance Coach - Level 1, a 60-75 hour self-paced coaching system covering strength, running, HYROX application, programming, and case studies. Both are available in the course catalog.",
+  },
+  {
+    q: "Is the Hybrid Performance Coach course HYROX-only?",
+    a: "No. HYROX is a major application and case study inside a broader Hybrid Performance coaching system. You will learn how to assess, program, and coach hybrid athletes across energy systems, strength and power, running, concurrent training, nutrition, recovery, and periodization — not just HYROX race stations.",
+  },
+  {
+    q: "How do I earn the Certified Hybrid Performance Coach credential?",
+    a: "Certification is not MCQ-only. The capstone requires completing case studies and a full final project: athlete profile, goal analysis, assessment, limiter identification, exercise selection, zones, weekly plan, 4-8 week progression, monitoring, and reassessment.",
+  },
 ];

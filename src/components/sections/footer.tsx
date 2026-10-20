@@ -14,7 +14,7 @@ export function Footer() {
         {/* Final CTA */}
         <div className="py-24 border-b border-white/10 text-center">
           <h2 className="text-4xl md:text-5xl font-extrabold mb-8 max-w-3xl mx-auto leading-tight">
-            Ready to become a Certified Strength and Conditioning Specialist?
+            Ready to become a CSCS or Certified Hybrid Performance Coach?
           </h2>
           <Button 
             size="lg" 

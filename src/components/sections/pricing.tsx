@@ -23,15 +23,16 @@ export function Pricing() {
       popular: true,
     },
     {
-      name: "Ultimate Bundle",
-      price: "30,000",
+      name: "Certified Hybrid Performance Coach - Level 1",
+      price: "4,999",
+      badge: "LAUNCH OFFER — FIRST 20 STUDENTS",
       features: [
-        "Everything in Full CSCS Prep Course",
-        "1-on-1 Live Class: Personalized coaching",
-        "Priority Support: Fast responses",
-        "Private Study Community: Exclusive group access",
-        "All video lectures & 150+ questions",
-        "Lifetime access & free updates"
+        "60-75 hrs: self-paced video + manual + assignments + case studies",
+        "8 case studies + full capstone coaching project",
+        "Assessment-driven system for real athletes",
+        "Strength × Endurance × Running × Recovery",
+        "HYROX race application + periodization",
+        "Course completion certificate"
       ],
       cta: "Get Access",
       popular: false,
@@ -42,11 +43,11 @@ export function Pricing() {
     <section className="py-24 bg-white" id="pricing">
       <div className="container max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-extrabold mb-4">Course Offerings</h2>
-          <p className="text-slate-600">Choose the package that best fits your preparation needs and goals.</p>
+          <h2 className="text-4xl font-extrabold mb-4">Choose Your Course.</h2>
+          <p className="text-slate-600">Select the program that matches your goal — CSCS exam mastery or Hybrid Performance coaching.</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-12 max-w-4xl mx-auto items-stretch">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-12 max-w-6xl mx-auto items-stretch">
           {plans.map((plan, index) => (
             <div
               key={index}
@@ -59,6 +60,11 @@ export function Pricing() {
               {plan.popular && (
                 <Badge className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white border-none px-6 py-1 text-sm font-bold rounded-full">
                   MOST POPULAR
+                </Badge>
+              )}
+              {plan.badge && (
+                <Badge className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white border-none px-6 py-1 text-xs font-bold rounded-full">
+                  {plan.badge}
                 </Badge>
               )}
               <div className="mb-8">
@@ -83,7 +89,7 @@ export function Pricing() {
                 className={`w-full h-14 rounded-2xl text-lg font-bold ${
                   plan.popular ? "bg-primary hover:bg-primary/90" : "bg-slate-900 text-white hover:bg-slate-800"
                 }`}
-                onClick={() => router.push("/auth")}
+                onClick={() => router.push("/courses")}
               >
                 {plan.cta}
               </Button>

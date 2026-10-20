@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Navbar } from "@/components/navbar";
 import { Hero } from "@/components/sections/hero";
 import { Authority } from "@/components/sections/authority";
+import { Courses } from "@/components/sections/courses";
 import { Features } from "@/components/sections/features";
 import { Curriculum } from "@/components/sections/curriculum";
 import { Instructor } from "@/components/sections/instructor";
@@ -16,7 +17,7 @@ import { homepageFaqs } from "@/lib/faq-data";
 export const metadata: Metadata = buildMetadata({
   title: "KINÉTIKA | Redefining Fitness Education",
   description:
-    "Master the science of fitness with KINÉTIKA's evidence-based CSCS exam prep courses. 30+ hours of video, 150+ practice questions, and self-paced learning for future Certified Strength and Conditioning Specialists.",
+    "Master the science of fitness with KINÉTIKA's evidence-based courses — CSCS Exam Prep and the Certified Hybrid Performance Coach program. Self-paced video, practice questions, case studies, and lifetime access for strength & conditioning coaches.",
   path: "/",
   keywords: [
     "CSCS exam prep",
@@ -46,6 +47,7 @@ export default function Home() {
       <Navbar />
       <Hero />
       <Authority />
+      <Courses />
       <Features />
       <Curriculum />
       <Instructor />

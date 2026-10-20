@@ -38,14 +38,14 @@ export function Hero() {
             </span>
           </h1>
           <p className="text-xl text-slate-400 mb-10 leading-relaxed max-w-2xl">
-            Master the science of fitness with our comprehensive, evidence-based courses. 
-            From foundational principles to advanced training techniques, unlock your potential 
-            and build a career you're proud of.
+            Master the science of fitness with our comprehensive, evidence-based courses.{" "}
+            Prepare for the NSCA CSCS exam or become a Certified Hybrid Performance
+            Coach — unlock your potential and build a career you&apos;re proud of.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-12">
-            <Button size="lg" className="h-14 px-8 text-lg font-bold rounded-full group" onClick={() => router.push("/auth")}>
-              Start Studying Now
+            <Button size="lg" className="h-14 px-8 text-lg font-bold rounded-full group" onClick={() => router.push("/courses")}>
+              Browse Courses
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button size="lg" variant="ghost" className="h-14 px-8 text-lg font-semibold rounded-full border border-white/10 hover:bg-white/5" onClick={() => router.push("/checklist")}>
@@ -57,15 +57,15 @@ export function Hero() {
           <div className="flex flex-wrap items-center gap-x-8 gap-y-4 border-t border-white/10 pt-8">
             <div className="flex items-center space-x-2">
               <CheckCircle className="w-5 h-5 text-primary" />
-              <span className="text-slate-300 font-medium">30+ Hours of Video</span>
+              <span className="text-slate-300 font-medium">2 Flagship Programs</span>
             </div>
             <div className="flex items-center space-x-2">
               <CheckCircle className="w-5 h-5 text-primary" />
-              <span className="text-slate-300 font-medium">150+ Practice Questions</span>
+              <span className="text-slate-300 font-medium">60-75 Hr Hybrid Coaching System</span>
             </div>
             <div className="flex items-center space-x-2">
               <CheckCircle className="w-5 h-5 text-primary" />
-              <span className="text-slate-300 font-medium">Self-Paced Learning</span>
+              <span className="text-slate-300 font-medium">Lifetime Access</span>
             </div>
           </div>
         </div>

@@ -24,12 +24,16 @@ export const siteConfig = {
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
     "https://learnkinetika.com",
   description:
-    "Master the science of fitness with KINÉTIKA's comprehensive, evidence-based courses. Prepare for the CSCS exam with 30+ hours of video, 150+ practice questions, and self-paced learning.",
+    "Master the science of fitness with KINÉTIKA's comprehensive, evidence-based courses. Prepare for the CSCS exam or become a KINETIKA Certified Hybrid Performance Coach — with self-paced video, practice questions, and lifetime access.",
   tagline: "Redefining Fitness Education for Every Body.",
   keywords: [
     "CSCS exam prep",
     "Certified Strength and Conditioning Specialist",
     "NSCA CSCS preparation",
+    "certified hybrid performance coach",
+    "HYROX coach course",
+    "hybrid performance training",
+    "concurrent training programming",
     "strength and conditioning certification",
     "fitness education",
     "exercise science course",

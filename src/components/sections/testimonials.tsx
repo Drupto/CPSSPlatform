@@ -119,7 +119,7 @@ export function Testimonials() {
                     ) : null}
 
                     <div className="mt-auto pt-6 border-t border-slate-200">
-                      <p className="text-sm text-slate-500">CSCS Prep Batch alumni</p>
+                      <p className="text-sm text-slate-500">KINÉTIKA alumni</p>
                     </div>
                   </Card>
                 </CarouselItem>
