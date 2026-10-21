@@ -1,7 +1,7 @@
 import type { User } from "firebase/auth";
-import type { Course, CourseContentItem, CourseProgress, Enrollment, EnrollmentStatus, Flashcard, PaymentMethod, UserProfile, Quiz, QuizAttempt } from "./types";
+import type { Course, CourseContentItem, CourseProgress, Enrollment, EnrollmentStatus, Flashcard, FlashcardStudyStatus, PaymentMethod, ResourceProgress, UserProfile, Quiz, QuizAttempt } from "./types";
 import { isFlashcard } from "./types";
-import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, deleteField, doc, getDoc, getDocs, orderBy, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { addDoc, arrayRemove, arrayUnion, collection, deleteDoc, deleteField, doc, getDoc, getDocs, getCountFromServer, limit, orderBy, query, serverTimestamp, setDoc, startAfter, where, type QueryDocumentSnapshot } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes, deleteObject } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 
@@ -441,6 +441,211 @@ export async function getCourseResources(courseId: string): Promise<CourseConten
   // `order` value; re-sort client-side (order asc, then doc id) so the listing
   // order is deterministic without needing a composite index.
   return resources.sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+}
+
+/**
+ * Firestore cursor for paginated resource listing (see getVisibleResourcePage).
+ */
+export type ResourcePageCursor = QueryDocumentSnapshot;
+
+export interface CourseResourcePage {
+  /** Non-flashcard resources for this page, in `order` asc sequence. */
+  resources: CourseContentItem[];
+  /** Pass back to getVisibleResourcePage for the next page; null = exhausted. */
+  nextCursor: ResourcePageCursor | null;
+}
+
+/**
+ * Fetches one page of *non-flashcard* resources for a course, in `order` asc
+ * sequence.
+ *
+ * Flashcard documents are skipped — they surface through the collapsed
+ * flashcard deck card instead of individual rows — while the cursor keeps its
+ * position, so pagination resumes exactly where this page ended even when
+ * hundreds of flashcards sit between two document resources. Reads stay
+ * proportional to the rows actually shown (plus skipped cards), never the
+ * whole collection.
+ */
+export async function getVisibleResourcePage(
+  courseId: string,
+  pageSize = 25,
+  cursor?: ResourcePageCursor | null,
+): Promise<CourseResourcePage> {
+  const resourcesRef = collection(db, "courses", courseId, "resources");
+  // Overshoot each fetch: a page dense with flashcards would otherwise need
+  // one round-trip per collected row.
+  const fetchSize = Math.max(pageSize * 2, 50);
+  const collected: { item: CourseContentItem; snap: QueryDocumentSnapshot }[] = [];
+  let current: QueryDocumentSnapshot | null = cursor ?? null;
+
+  while (collected.length <= pageSize) {
+    const pageQuery = current
+      ? query(resourcesRef, orderBy("order", "asc"), startAfter(current), limit(fetchSize))
+      : query(resourcesRef, orderBy("order", "asc"), limit(fetchSize));
+    const snapshot = await getDocs(pageQuery);
+    if (snapshot.empty) {
+      current = null;
+      break;
+    }
+    for (const docSnap of snapshot.docs) {
+      if (collected.length > pageSize) break;
+      const item = { id: docSnap.id, courseId, ...docSnap.data() } as CourseContentItem;
+      if (item.type === "flashcard") continue;
+      collected.push({ item, snap: docSnap });
+    }
+    if (collected.length > pageSize) {
+      // Cursor lands on the first non-returned row so the next page resumes
+      // precisely after the last returned item.
+      current = collected[pageSize].snap;
+      collected.length = pageSize;
+      break;
+    }
+    if (snapshot.docs.length < fetchSize) {
+      current = null;
+      break;
+    }
+    current = snapshot.docs[snapshot.docs.length - 1];
+  }
+
+  return {
+    resources: collected.map((entry) => entry.item),
+    nextCursor: current,
+  };
+}
+
+/**
+ * Cheap counts for a course's resources via server-side aggregations (no
+ * document reads): total resources and total flashcards. Powers the collapsed
+ * course sections and flashcard deck cards without loading any documents.
+ */
+export async function getCourseResourceCounts(courseId: string): Promise<{ total: number; flashcards: number }> {
+  const resourcesRef = collection(db, "courses", courseId, "resources");
+  const [totalSnap, flashcardSnap] = await Promise.all([
+    getCountFromServer(resourcesRef),
+    getCountFromServer(query(resourcesRef, where("type", "==", "flashcard"))),
+  ]);
+  return { total: totalSnap.data().count, flashcards: flashcardSnap.data().count };
+}
+
+/**
+ * Returns every flashcard of a course, in `order` asc sequence. Used when a
+ * study session opens (the session needs the full deck in memory for
+ * shuffling/resume/review filtering).
+ *
+ * The `type` filter runs on the automatic single-field index (no composite
+ * index needed — a (type, order) combination would require one); ordering is
+ * applied client-side, mirroring getCourseResources.
+ */
+export async function getCourseFlashcards(courseId: string): Promise<Flashcard[]> {
+  const resourcesRef = collection(db, "courses", courseId, "resources");
+  const flashcardQuery = query(resourcesRef, where("type", "==", "flashcard"));
+  const snapshot = await getDocs(flashcardQuery);
+  const flashcards = snapshot.docs.map((docSnap) => ({ id: docSnap.id, courseId, ...docSnap.data() } as Flashcard));
+  // Legacy documents may be missing front/back (backfilled by
+  // scripts/backfill-flashcards.mjs); the type guard drops anything malformed
+  // so the study UI only ever renders complete cards.
+  return flashcards
+    .filter(isFlashcard)
+    .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+}
+
+function emptyResourceProgress(userId: string, courseId: string): ResourceProgress {
+  return {
+    id: `${userId}_${courseId}`,
+    userId,
+    courseId,
+    viewedResourceIds: {},
+    flashcardStates: {},
+    lastStudiedCardId: null,
+    lastStudiedAt: null,
+    updatedAt: null,
+  };
+}
+
+/**
+ * Loads the signed-in user's study state for a course. Never null — returns an
+ * empty scaffold so callers can read/update the maps without existence checks.
+ */
+export async function getResourceProgress(userId: string, courseId: string): Promise<ResourceProgress> {
+  const snapshot = await getDoc(doc(db, "resourceProgress", `${userId}_${courseId}`));
+  return snapshot.exists()
+    ? ({ id: snapshot.id, ...snapshot.data() } as ResourceProgress)
+    : emptyResourceProgress(userId, courseId);
+}
+
+/**
+ * Persists a change to the user's resource progress document.
+ *
+ * Map fields (viewedResourceIds / flashcardStates) have no atomic server-side
+ * "set one key" operation, so the full document is re-merged on every write.
+ * Unchanged fields produce no rules diff, keeping the update rules'
+ * affectedKeys whitelist satisfied. The resulting client state is returned so
+ * callers can reconcile optimistic UI with what was actually written.
+ */
+async function saveResourceProgress(
+  userId: string,
+  courseId: string,
+  changes: (current: ResourceProgress) => Record<string, unknown>,
+): Promise<ResourceProgress> {
+  const progressRef = doc(db, "resourceProgress", `${userId}_${courseId}`);
+  const snapshot = await getDoc(progressRef);
+  const current: ResourceProgress = snapshot.exists()
+    ? ({ id: snapshot.id, ...snapshot.data() } as ResourceProgress)
+    : emptyResourceProgress(userId, courseId);
+  const delta = changes(current);
+  // Merge write doubles as create; rules see the post-merge document shape.
+  await setDoc(progressRef, { ...current, ...delta, updatedAt: serverTimestamp() }, { merge: true });
+  // delta may carry serverTimestamp() sentinels, which callers never read —
+  // they re-read via getResourceProgress when precision matters.
+  return { ...current, ...delta } as ResourceProgress;
+}
+
+/** Marks (or unmarks) a document/link/video resource as done for the user. */
+export async function setResourceViewed(
+  userId: string,
+  courseId: string,
+  resourceId: string,
+  viewed: boolean,
+): Promise<ResourceProgress> {
+  return saveResourceProgress(userId, courseId, (current) => {
+    const viewedResourceIds = { ...current.viewedResourceIds };
+    if (viewed) {
+      viewedResourceIds[resourceId] = true;
+    } else {
+      delete viewedResourceIds[resourceId];
+    }
+    return { viewedResourceIds };
+  });
+}
+
+/** Stores (or clears) the study state of a single flashcard for the user. */
+export async function setFlashcardStudyState(
+  userId: string,
+  courseId: string,
+  resourceId: string,
+  state: FlashcardStudyStatus | null,
+): Promise<ResourceProgress> {
+  return saveResourceProgress(userId, courseId, (current) => {
+    const flashcardStates = { ...current.flashcardStates };
+    if (state) {
+      flashcardStates[resourceId] = state;
+    } else {
+      delete flashcardStates[resourceId];
+    }
+    return { flashcardStates };
+  });
+}
+
+/** Records the flashcard the user is currently viewing (powers resume). */
+export async function setLastStudiedCard(
+  userId: string,
+  courseId: string,
+  cardId: string,
+): Promise<ResourceProgress> {
+  return saveResourceProgress(userId, courseId, () => ({
+    lastStudiedCardId: cardId,
+    lastStudiedAt: serverTimestamp(),
+  }));
 }
 
 /**

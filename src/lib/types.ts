@@ -136,3 +136,28 @@ export interface CourseProgress {
   completedContentIds: string[];
   updatedAt: Timestamp | null;
 }
+
+/** Per-flashcard study state tracked for the signed-in student. */
+export type FlashcardStudyStatus = "seen" | "known" | "review";
+
+/**
+ * Per-user, per-course study state for the Resources dashboard.
+ *
+ * One document per user+course (`resourceProgress/{userId}_{courseId}`) holds
+ * map fields keyed by resource id, so thousands of flashcards stay well within
+ * the 1 MiB document limit while avoiding one-document-per-card write storms.
+ * Absent keys mean "not yet studied/viewed".
+ */
+export interface ResourceProgress {
+  id: string;
+  userId: string;
+  courseId: string;
+  /** resource id -> true, for documents/links/videos the student marked as done. */
+  viewedResourceIds: Record<string, true>;
+  /** flashcard resource id -> study state; absent key = not yet studied. */
+  flashcardStates: Record<string, FlashcardStudyStatus>;
+  /** Last flashcard the student was viewing — powers session resume. */
+  lastStudiedCardId: string | null;
+  lastStudiedAt: Timestamp | null;
+  updatedAt: Timestamp | null;
+}

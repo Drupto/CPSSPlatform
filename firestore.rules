@@ -295,6 +295,41 @@ service cloud.firestore {
       allow delete: if request.auth != null && isAdmin();
     }
 
+    // Per-user study state for the Resources dashboard (viewed documents,
+    // flashcard "known/review" states, last-studied resume card). One document
+    // per user+course holds map fields keyed by resource id. Same ownership
+    // model as /progress: students may only touch their own document, and
+    // writes are restricted to the whitelisted fields with size caps sized
+    // for multi-thousand-card decks.
+    match /resourceProgress/{progressId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.userId || isAdmin()
+      );
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.userId
+        && request.resource.data.keys().hasOnly(['id', 'userId', 'courseId', 'viewedResourceIds', 'flashcardStates', 'lastStudiedCardId', 'lastStudiedAt', 'updatedAt'])
+        && request.resource.data.userId is string
+        && request.resource.data.courseId is string
+        && request.resource.data.viewedResourceIds is map
+        && request.resource.data.viewedResourceIds.size() <= 5000
+        && request.resource.data.flashcardStates is map
+        && request.resource.data.flashcardStates.size() <= 5000
+        && (request.resource.data.lastStudiedCardId == null || request.resource.data.lastStudiedCardId is string)
+        && (request.resource.data.lastStudiedAt == null || request.resource.data.lastStudiedAt is timestamp)
+        && request.resource.data.updatedAt is timestamp;
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewedResourceIds', 'flashcardStates', 'lastStudiedCardId', 'lastStudiedAt', 'updatedAt'])
+        && request.resource.data.viewedResourceIds is map
+        && request.resource.data.viewedResourceIds.size() <= 5000
+        && request.resource.data.flashcardStates is map
+        && request.resource.data.flashcardStates.size() <= 5000
+        && (request.resource.data.lastStudiedCardId == null || request.resource.data.lastStudiedCardId is string)
+        && (request.resource.data.lastStudiedAt == null || request.resource.data.lastStudiedAt is timestamp)
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if request.auth != null && isAdmin();
+    }
+
     // Quiz attempts are written by server-side quiz actions only.
     match /quizAttempts/{attemptId} {
       allow read: if request.auth != null && (

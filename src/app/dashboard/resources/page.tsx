@@ -4,111 +4,73 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getEnrollmentsForUser, getCourseById, getCourseResources } from "@/lib/course";
-import { isFlashcard } from "@/lib/types";
-import type { Course, CourseContentItem, Enrollment } from "@/lib/types";
+import {
+  getEnrollmentsForUser,
+  getCourseById,
+  getVisibleResourcePage,
+  getCourseResourceCounts,
+  getCourseFlashcards,
+  getResourceProgress,
+  setResourceViewed,
+  setFlashcardStudyState,
+  setLastStudiedCard,
+  type ResourcePageCursor,
+} from "@/lib/course";
+import type { Course, CourseContentItem, FlashcardStudyStatus, ResourceProgress } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import {
-  Download,
-  ChevronLeft,
-  ChevronRight,
-  X,
-  BookOpen,
-  Play,
-  Sparkles,
-  RotateCcw,
-  Brain,
-  FileText,
-} from "lucide-react";
-import { getResourceIcon, getResourceTypeBadge } from "@/components/resources/resource-display";
+import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { PdfViewerDialog, isPdfUrl, type PdfViewerState } from "@/components/resources/pdf-viewer-dialog";
+import { ResourceList } from "@/components/resources/resource-list";
+import { FlashcardDeckCard } from "@/components/resources/flashcard-deck-card";
+import { StudySession, type StudyCard } from "@/components/resources/study-session";
 
-interface FlashcardStudyState {
+const PAGE_SIZE = 25;
+
+/** A course section header — cheap to build (no document reads, only counts). */
+interface CourseSection {
+  course: Course;
+  totalResources: number;
+  flashcardCount: number;
+}
+
+interface CourseListState {
+  resources: CourseContentItem[];
+  nextCursor: ResourcePageCursor | null;
+  loading: boolean;
+  loaded: boolean;
+}
+
+interface StudyLaunch {
   courseId: string;
   courseTitle: string;
-  cards: { resourceId: string; front: string; back: string; title: string }[];
-  currentIndex: number;
-  isFlipped: boolean;
+  cards: StudyCard[];
+  startIndex: number;
+  reviewOnly: boolean;
+}
+
+function emptyListState(): CourseListState {
+  return { resources: [], nextCursor: null, loading: false, loaded: false };
 }
 
 export default function ResourcesPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  const [courses, setCourses] = useState<{course: Course, resources: CourseContentItem[]}[]>([]);
+  const [sections, setSections] = useState<CourseSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [studyState, setStudyState] = useState<FlashcardStudyState | null>(null);
 
-  const openStudyMode = (courseId: string, courseTitle: string, flashcards: CourseContentItem[]) => {
-    const cards = flashcards
-      .filter(r => r.type === "flashcard")
-      .map(r => {
-        // Legacy flashcards may be missing front/back (backfilled by
-        // scripts/backfill-flashcards.mjs); degrade gracefully in the UI.
-        const content = isFlashcard(r) ? r : null;
-        return {
-          resourceId: r.id,
-          front: content?.front.trim() || "(empty card — content missing)",
-          back: content?.back.trim() || "(empty card — content missing)",
-          title: r.title,
-        };
-      });
-    if (cards.length === 0) return;
-    setStudyState({
-      courseId,
-      courseTitle,
-      cards,
-      currentIndex: 0,
-      isFlipped: false,
-    });
-  };
-
-  const closeStudyMode = useCallback(() => setStudyState(null), []);
-
-  const flipCard = useCallback(() => {
-    setStudyState(prev => (prev ? { ...prev, isFlipped: !prev.isFlipped } : null));
-  }, []);
-
-  const goNext = useCallback(() => {
-    setStudyState(prev => {
-      if (!prev) return null;
-      const next = prev.currentIndex < prev.cards.length - 1 ? prev.currentIndex + 1 : 0;
-      return { ...prev, currentIndex: next, isFlipped: false };
-    });
-  }, []);
-
-  const goPrev = useCallback(() => {
-    setStudyState(prev => {
-      if (!prev) return null;
-      const prevIndex = prev.currentIndex > 0 ? prev.currentIndex - 1 : prev.cards.length - 1;
-      return { ...prev, currentIndex: prevIndex, isFlipped: false };
-    });
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!studyState || e.repeat) return;
-      if (e.key === " " || e.code === "Space") {
-        e.preventDefault();
-        flipCard();
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        goNext();
-      } else if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        goPrev();
-      } else if (e.key === "Escape") {
-        closeStudyMode();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [studyState, flipCard, goNext, goPrev]);
+  // Accordion state: resources are fetched per course on expand, never all at
+  // once — a course with thousands of flashcards costs a couple of count
+  // queries on page load, and full document reads only when opened.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [listState, setListState] = useState<Record<string, CourseListState>>({});
+  const [progressByCourse, setProgressByCourse] = useState<Record<string, ResourceProgress>>({});
+  const [study, setStudy] = useState<StudyLaunch | null>(null);
+  const [preparingCourse, setPreparingCourse] = useState<string | null>(null);
+  const [pdfViewer, setPdfViewer] = useState<PdfViewerState | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -121,33 +83,32 @@ export default function ResourcesPage() {
 
       try {
         const userEnrollments = await getEnrollmentsForUser(currentUser.uid);
-        setEnrollments(userEnrollments);
-
         // Only approved enrollments grant access to course resources —
         // pending/rejected requests must not surface course materials
         // (mirrors the gating on the my-courses page).
         const approvedEnrollments = userEnrollments.filter(
-          (enrollment) => enrollment.status === "approved"
+          (enrollment) => enrollment.status === "approved",
         );
 
-        const coursePromises = approvedEnrollments.map(async (enrollment) => {
-          const course = await getCourseById(enrollment.courseId);
-          if (course) {
-            const resources = await getCourseResources(enrollment.courseId);
-            return { course, resources };
-          }
-          return null;
-        });
+        const courseResults = await Promise.allSettled(
+          approvedEnrollments.map((enrollment) => getCourseById(enrollment.courseId)),
+        );
+        const courses = courseResults
+          .filter((result): result is PromiseFulfilledResult<Course | null> =>
+            result.status === "fulfilled" && result.value !== null)
+          .map((result) => result.value as Course);
 
-        const courseResults = await Promise.allSettled(coursePromises);
-        const validCourses = courseResults
-          .filter(
-            (result): result is PromiseFulfilledResult<{course: Course, resources: CourseContentItem[]}> =>
-              result.status === "fulfilled" && result.value !== null
-          )
-          .map(result => result.value);
+        setSections(courses.map((course) => ({ course, totalResources: 0, flashcardCount: 0 })));
 
-        setCourses(validCourses);
+        // Cheap server-side counts per course (no document reads) so every
+        // collapsed section can show its size + deck entry point instantly.
+        const countResults = await Promise.allSettled(courses.map((course) => getCourseResourceCounts(course.id)));
+        setSections((prev) =>
+          prev.map((section, index) => {
+            const result = countResults[index];
+            return result.status === "fulfilled" ? { ...section, ...result.value } : section;
+          }),
+        );
       } catch (err) {
         console.error("Error loading resources:", err);
         setError("Failed to load resources. Please try again later.");
@@ -159,13 +120,172 @@ export default function ResourcesPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const getFlashcardCount = (resources: CourseContentItem[]) =>
-    resources.filter(r => r.type === "flashcard").length;
+  /** Applies an optimistic local progress change (reverted on write failure). */
+  const updateProgress = useCallback(
+    (courseId: string, mutate: (p: ResourceProgress) => ResourceProgress) => {
+      setProgressByCourse((prev) => {
+        const current = prev[courseId] ?? {
+          id: `${user?.uid ?? ""}_${courseId}`,
+          userId: user?.uid ?? "",
+          courseId,
+          viewedResourceIds: {},
+          flashcardStates: {},
+          lastStudiedCardId: null,
+          lastStudiedAt: null,
+          updatedAt: null,
+        };
+        return { ...prev, [courseId]: mutate(current) };
+      });
+    },
+    [user],
+  );
 
-  // Custom PDF reader window — set when a PDF resource is clicked.
-  const [pdfViewer, setPdfViewer] = useState<PdfViewerState | null>(null);
+  const toggleCourse = useCallback(
+    async (courseId: string) => {
+      if (!user) return;
+      const next = new Set(expanded);
+      if (next.has(courseId)) {
+        next.delete(courseId);
+        setExpanded(next);
+        return;
+      }
+      next.add(courseId);
+      setExpanded(next);
 
-  const handleResourceClick = (url?: string, title?: string) => {
+      const existing = listState[courseId];
+      if (existing?.loaded || existing?.loading) return;
+
+      setListState((prev) => ({ ...prev, [courseId]: { ...emptyListState(), loading: true } }));
+      try {
+        // First resource page and the user's study state load in parallel —
+        // both are needed before the section is fully interactive.
+        const [page] = await Promise.all([
+          getVisibleResourcePage(courseId, PAGE_SIZE),
+          progressByCourse[courseId]
+            ? Promise.resolve(null)
+            : getResourceProgress(user.uid, courseId).then((progress) => {
+                setProgressByCourse((prev) => ({ ...prev, [courseId]: progress }));
+              }),
+        ]);
+        setListState((prev) => ({
+          ...prev,
+          [courseId]: { resources: page.resources, nextCursor: page.nextCursor, loading: false, loaded: true },
+        }));
+      } catch (err) {
+        console.error("Error loading course resources:", err);
+        setListState((prev) => ({ ...prev, [courseId]: emptyListState() }));
+      }
+    },
+    [expanded, listState, progressByCourse, user],
+  );
+
+  const loadMore = useCallback(
+    async (courseId: string) => {
+      const state = listState[courseId];
+      if (!user || !state?.loaded || state.loading || !state.nextCursor) return;
+      setListState((prev) => ({ ...prev, [courseId]: { ...state, loading: true } }));
+      try {
+        const page = await getVisibleResourcePage(courseId, PAGE_SIZE, state.nextCursor);
+        setListState((prev) => ({
+          ...prev,
+          [courseId]: {
+            resources: [...(prev[courseId]?.resources ?? []), ...page.resources],
+            nextCursor: page.nextCursor,
+            loading: false,
+            loaded: true,
+          },
+        }));
+      } catch (err) {
+        console.error("Error loading more resources:", err);
+        setListState((prev) => ({ ...prev, [courseId]: { ...prev[courseId], loading: false } }));
+      }
+    },
+    [listState, user],
+  );
+
+  const toggleViewed = useCallback(
+    (courseId: string, resourceId: string, viewed: boolean) => {
+      if (!user) return;
+      const previous = progressByCourse[courseId];
+      updateProgress(courseId, (p) => {
+        const viewedResourceIds = { ...p.viewedResourceIds };
+        if (viewed) viewedResourceIds[resourceId] = true;
+        else delete viewedResourceIds[resourceId];
+        return { ...p, viewedResourceIds };
+      });
+      setResourceViewed(user.uid, courseId, resourceId, viewed)
+        .then((next) => setProgressByCourse((prev) => ({ ...prev, [courseId]: next })))
+        .catch((err) => {
+          console.error("Failed to save resource state:", err);
+          if (previous) setProgressByCourse((prev) => ({ ...prev, [courseId]: previous }));
+        });
+    },
+    [progressByCourse, updateProgress, user],
+  );
+
+  const handleFlashcardState = useCallback(
+    (courseId: string, resourceId: string, state: FlashcardStudyStatus) => {
+      if (!user) return;
+      const previous = progressByCourse[courseId];
+      updateProgress(courseId, (p) => ({
+        ...p,
+        flashcardStates: { ...p.flashcardStates, [resourceId]: state },
+      }));
+      setFlashcardStudyState(user.uid, courseId, resourceId, state)
+        .then((next) => setProgressByCourse((prev) => ({ ...prev, [courseId]: next })))
+        .catch((err) => {
+          console.error("Failed to save flashcard state:", err);
+          if (previous) setProgressByCourse((prev) => ({ ...prev, [courseId]: previous }));
+        });
+    },
+    [progressByCourse, updateProgress, user],
+  );
+
+  const handlePositionChange = useCallback(
+    (courseId: string, cardId: string) => {
+      if (!user) return;
+      // Optimistic only — the server write may carry a timestamp sentinel we
+      // must not route back into client state.
+      updateProgress(courseId, (p) => ({ ...p, lastStudiedCardId: cardId }));
+      setLastStudiedCard(user.uid, courseId, cardId).catch((err) =>
+        console.error("Failed to save study position:", err),
+      );
+    },
+    [updateProgress, user],
+  );
+
+  const startStudy = useCallback(
+    async (courseId: string, courseTitle: string, mode: "all" | "review") => {
+      if (!user || preparingCourse) return;
+      setPreparingCourse(courseId);
+      try {
+        const flashcards = await getCourseFlashcards(courseId);
+        const progress = progressByCourse[courseId] ?? (await getResourceProgress(user.uid, courseId));
+        const cards: StudyCard[] = flashcards.map((f) => ({
+          resourceId: f.id,
+          front: f.front.trim() || "(empty card — content missing)",
+          back: f.back.trim() || "(empty card — content missing)",
+          title: f.title,
+        }));
+        if (cards.length === 0) return;
+
+        // Resume where the student left off (ordered sessions only).
+        let startIndex = 0;
+        if (mode === "all" && progress.lastStudiedCardId) {
+          const index = cards.findIndex((c) => c.resourceId === progress.lastStudiedCardId);
+          if (index >= 0) startIndex = index;
+        }
+        setStudy({ courseId, courseTitle, cards, startIndex, reviewOnly: mode === "review" });
+      } catch (err) {
+        console.error("Error preparing study session:", err);
+      } finally {
+        setPreparingCourse(null);
+      }
+    },
+    [preparingCourse, progressByCourse, user],
+  );
+
+  const handleResourceClick = useCallback((url?: string, title?: string) => {
     if (!url) return;
     // PDFs open in the custom in-app reader window; everything else keeps
     // opening in a new tab. "noopener,noreferrer" blocks reverse tabnabbing
@@ -175,16 +295,11 @@ export default function ResourcesPage() {
     } else {
       window.open(url, "_blank", "noopener,noreferrer");
     }
-  };
-
-  const currentCard = studyState?.cards[studyState.currentIndex];
-  const progressValue = studyState
-    ? ((studyState.currentIndex + 1) / studyState.cards.length) * 100
-    : 0;
+  }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-950">
         <p className="text-lg text-slate-600 dark:text-zinc-400">Loading resources...</p>
       </div>
     );
@@ -192,7 +307,7 @@ export default function ResourcesPage() {
 
   if (error) {
     return (
-      <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+      <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-950">
         <Navbar />
         <div className="max-w-6xl mx-auto px-6 py-28">
           <Card className="max-w-2xl mx-auto">
@@ -209,17 +324,18 @@ export default function ResourcesPage() {
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-28">
-        <div className="mb-12">
+        <div className="mb-10">
           <h1 className="text-4xl font-bold text-slate-900 dark:text-zinc-100">Study Resources</h1>
           <p className="mt-4 text-slate-600 dark:text-zinc-400">
-            Access study materials and additional resources for your enrolled courses.
+            Access study materials for your enrolled courses. Open a course to load its materials, mark them
+            as done, and study flashcard decks with progress tracking and resume support.
           </p>
         </div>
 
-        {courses.length === 0 ? (
+        {sections.length === 0 ? (
           <Card className="max-w-2xl mx-auto">
             <CardContent className="p-8 text-center">
               <p className="text-lg text-slate-600 dark:text-zinc-400">
@@ -231,224 +347,115 @@ export default function ResourcesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-8">
-            {courses.map(({ course, resources }) => (
-              <Card key={course.id}>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>{course.title}</span>
-                    <Badge variant="default">Course</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-600 dark:text-zinc-400 mb-4">{course.description}</p>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-slate-900 dark:text-zinc-100">Resources</h3>
-                      {getFlashcardCount(resources) > 0 && (
-                        <Button
-                          size="sm"
-                          className="gap-2"
-                          onClick={() => openStudyMode(course.id, course.title, resources)}
-                        >
-                          <BookOpen className="h-4 w-4" />
-                          Study Flashcards
-                        </Button>
-                      )}
-                    </div>
-
-                    {resources.length > 0 ? (
-                      <div className="grid gap-3">
-                        {resources.map((resource) => (
-                          <div
-                            key={resource.id}
-                            role={resource.type === "flashcard" ? "button" : undefined}
-                            tabIndex={resource.type === "flashcard" ? 0 : undefined}
-                            aria-label={resource.type === "flashcard" ? `Study flashcards for ${course.title}` : undefined}
-                            onClick={resource.type === "flashcard" ? () => openStudyMode(course.id, course.title, resources) : undefined}
-                            onKeyDown={(e) => {
-                              // Guard: while the study overlay is open this row may
-                              // still hold focus — Space/Enter must not re-open
-                              // (and reset) the session.
-                              if (studyState) return;
-                              if (resource.type === "flashcard" && (e.key === "Enter" || e.key === " ")) {
-                                e.preventDefault();
-                                openStudyMode(course.id, course.title, resources);
-                              }
-                            }}
-                            className={`border border-slate-200 dark:border-white/10 rounded-lg p-4 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors ${
-                              resource.type === "flashcard" ? "cursor-pointer" : ""
-                            }`}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-start gap-3">
-                                {getResourceIcon(resource.type)}
-                                <div>
-                                  <h3 className="font-medium text-slate-900 dark:text-zinc-100">{resource.title}</h3>
-                                  {resource.type === "flashcard" ? (
-                                    <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
-                                      {isFlashcard(resource) ? resource.front : ""}
-                                    </p>
-                                  ) : (
-                                    <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">{resource.body}</p>
-                                  )}
-                                  {getResourceTypeBadge(resource.type)}
-                                </div>
-                              </div>
-                              {resource.url && resource.type !== "flashcard" && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleResourceClick(resource.url, resource.title);
-                                  }}
-                                >
-                                  {isPdfUrl(resource.url) ? (
-                                    <>
-                                      <FileText className="h-4 w-4 mr-1" />
-                                      Read
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Download className="h-4 w-4 mr-1" />
-                                      {resource.type === "document" ? "Download" : "Open"}
-                                    </>
-                                  )}
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+          <div className="space-y-6">
+            {sections.map((section) => {
+              const courseId = section.course.id;
+              const materialsTotal = Math.max(section.totalResources - section.flashcardCount, 0);
+              const progress = progressByCourse[courseId];
+              const viewedCount = progress ? Object.keys(progress.viewedResourceIds).length : 0;
+              const list = listState[courseId];
+              const isExpanded = expanded.has(courseId);
+              return (
+                <Card key={courseId}>
+                  <CardHeader>
+                    <button
+                      type="button"
+                      onClick={() => toggleCourse(courseId)}
+                      aria-expanded={isExpanded}
+                      className="flex w-full items-center justify-between gap-4 text-left"
+                    >
+                      <div className="min-w-0">
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                          <span className="truncate">{section.course.title}</span>
+                          <Badge variant="default">Course</Badge>
+                        </CardTitle>
+                        <p className="mt-1 line-clamp-2 text-sm font-normal text-slate-500 dark:text-zinc-400">
+                          {section.course.description}
+                        </p>
                       </div>
-                    ) : (
-                      <p className="text-slate-500 dark:text-zinc-400 italic">
-                        No resources available for this course yet.
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      <div className="flex shrink-0 items-center gap-3">
+                        <span className="hidden text-xs text-slate-500 dark:text-zinc-400 sm:block">
+                          {materialsTotal > 0
+                            ? `${materialsTotal} material${materialsTotal === 1 ? "" : "s"}`
+                            : ""}
+                          {materialsTotal > 0 && section.flashcardCount > 0 ? " • " : ""}
+                          {section.flashcardCount > 0
+                            ? `${section.flashcardCount} flashcard${section.flashcardCount === 1 ? "" : "s"}`
+                            : ""}
+                          {materialsTotal === 0 && section.flashcardCount === 0 ? "No resources yet" : ""}
+                        </span>
+                        {isExpanded ? (
+                          <ChevronUp className="h-5 w-5 shrink-0 text-slate-400" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 shrink-0 text-slate-400" />
+                        )}
+                      </div>
+                    </button>
+                  </CardHeader>
+                  {isExpanded && (
+                    <CardContent>
+                      {!list?.loaded ? (
+                        <div className="flex items-center gap-2 py-6 text-sm text-slate-500 dark:text-zinc-400">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Loading resources…
+                        </div>
+                      ) : (
+                        <div className="space-y-5">
+                          {/* Whole flashcard deck collapsed into one entry —
+                              never rendered as thousands of individual rows. */}
+                          {section.flashcardCount > 0 && progress && (
+                            <FlashcardDeckCard
+                              flashcardCount={section.flashcardCount}
+                              states={progress.flashcardStates ?? {}}
+                              hasResume={Boolean(progress.lastStudiedCardId)}
+                              preparing={preparingCourse === courseId}
+                              onStart={(mode) => startStudy(courseId, section.course.title, mode)}
+                            />
+                          )}
+
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-base font-semibold text-slate-900 dark:text-zinc-100">
+                              Study Materials
+                            </h3>
+                            <span className="text-xs text-slate-500 dark:text-zinc-400">
+                              {viewedCount} / {materialsTotal} marked done
+                            </span>
+                          </div>
+                          <ResourceList
+                            resources={list.resources}
+                            viewedIds={progress?.viewedResourceIds ?? {}}
+                            loadingMore={Boolean(list.loading)}
+                            hasMore={Boolean(list.nextCursor)}
+                            onLoadMore={() => loadMore(courseId)}
+                            onToggleViewed={(resourceId, viewed) => toggleViewed(courseId, resourceId, viewed)}
+                            onOpenUrl={handleResourceClick}
+                          />
+                        </div>
+                      )}
+                    </CardContent>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {studyState && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 sm:p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-4xl overflow-hidden rounded-[28px] border border-white/10 bg-white dark:bg-zinc-900 shadow-2xl">
-            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-500" />
-            <div className="relative p-4 sm:p-6 md:p-8 lg:p-10">
-              <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 p-4 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6">
-                <div>
-                  <div className="flex items-center gap-2 text-sm font-medium text-indigo-600">
-                    <Brain className="h-4 w-4" />
-                    Study Session
-                  </div>
-                  <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-zinc-100">Flashcard Review</h2>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
-                    {studyState.courseTitle} • Card {studyState.currentIndex + 1} of {studyState.cards.length}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
-                    {studyState.cards.length} cards
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={closeStudyMode} className="rounded-full">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="mt-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-4">
-                <div className="mb-3 flex items-center justify-between text-sm text-slate-500 dark:text-zinc-400">
-                  <span>Progress</span>
-                  <span>{Math.round(progressValue)}%</span>
-                </div>
-                <Progress value={progressValue} className="h-2" />
-              </div>
-
-              <div className="mt-6 rounded-[24px] border border-slate-200 dark:border-white/10 bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-800 p-3 shadow-inner sm:p-4">
-                <div className="perspective-1000">
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    aria-pressed={studyState.isFlipped}
-                    aria-label={`Flashcard ${studyState.currentIndex + 1} of ${studyState.cards.length}: ${currentCard?.title ?? ""}`}
-                    className={`flip-card-3d relative h-[320px] w-full cursor-pointer select-none rounded-[20px] shadow-lg transition-transform duration-700 sm:h-[380px] ${
-                      studyState.isFlipped ? "rotate-y-180" : ""
-                    }`}
-                    onClick={flipCard}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        flipCard();
-                      }
-                    }}
-                  >
-                    <div className="card-face rounded-[20px] border border-slate-200 dark:border-white/10 bg-gradient-to-br from-white to-slate-100 dark:from-zinc-900 dark:to-zinc-800 p-6 sm:p-8">
-                      <div className="text-center">
-                        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
-                          <Sparkles className="h-5 w-5" />
-                        </div>
-                        <p className="mt-4 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-zinc-400">
-                          Front
-                        </p>
-                        <p className="mt-3 text-lg font-semibold text-slate-900 dark:text-zinc-100 sm:text-2xl">
-                          {currentCard?.front}
-                        </p>
-                        <p className="mt-4 text-sm text-slate-500 dark:text-zinc-400">
-                          {currentCard?.title}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="card-face rotate-y-180 rounded-[20px] border border-indigo-500/30 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 p-6 text-white sm:p-8">
-                      <div className="text-center">
-                        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-white/20 text-white">
-                          <RotateCcw className="h-5 w-5" />
-                        </div>
-                        <p className="mt-4 text-sm font-semibold uppercase tracking-[0.2em] text-white/70">
-                          Back
-                        </p>
-                        <p className="mt-3 text-lg font-semibold sm:text-2xl">
-                          {currentCard?.back}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-zinc-400">
-                  <span className="rounded-full bg-slate-100 dark:bg-zinc-800 px-3 py-1">Tap card to flip</span>
-                  <span className="rounded-full bg-slate-100 dark:bg-zinc-800 px-3 py-1">Space / Arrow keys</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={goPrev} className="gap-2">
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-                  <Button onClick={flipCard} className="gap-2">
-                    <Play className="h-4 w-4" />
-                    {studyState.isFlipped ? "Show Front" : "Show Back"}
-                  </Button>
-                  <Button variant="outline" onClick={goNext} className="gap-2">
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {study && (
+        <StudySession
+          courseTitle={study.courseTitle}
+          cards={study.cards}
+          states={progressByCourse[study.courseId]?.flashcardStates ?? {}}
+          startIndex={study.startIndex}
+          reviewOnly={study.reviewOnly}
+          onStateChange={(resourceId, state) => handleFlashcardState(study.courseId, resourceId, state)}
+          onPositionChange={(resourceId) => handlePositionChange(study.courseId, resourceId)}
+          onClose={() => setStudy(null)}
+        />
       )}
 
       {/* Custom PDF reader window */}
       <PdfViewerDialog pdf={pdfViewer} onClose={() => setPdfViewer(null)} />
-
     </main>
   );
 }
