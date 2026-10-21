@@ -10,19 +10,26 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 0 84.2% 60.2%;
+    /* Brand red darkened to red-600 (≈ #dc2626) for light mode: white text on it
+       measures ~4.8:1 (WCAG AA for normal text). The previous 60.2% lightness red
+       measured only ~3.8:1 against white — failing on every primary button/badge. */
+    --primary: 0 72% 51%;
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 84.2% 60.2%;
+    /* 45.1% gray was borderline (~4.5:1) on muted/secondary fills; 40% (≈ #666)
+       gives ~5.7:1 on white and ~5.4:1 on --muted. */
+    --muted-foreground: 0 0% 40%;
+    /* Accent/destructive mirror --primary so white foreground text on their fills
+       (ghost/outline hover states, destructive buttons/toasts) also passes AA. */
+    --accent: 0 72% 51%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 0 84.2% 60.2%;
+    --ring: 0 72% 51%;
     --radius: 1rem;
   }
   .dark {

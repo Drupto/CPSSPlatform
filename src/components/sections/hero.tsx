@@ -28,7 +28,7 @@ export function Hero() {
 
       <div className="container max-w-6xl mx-auto px-6 relative z-10">
         <div className="max-w-3xl">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 dark:border-primary/30 dark:bg-primary/20 text-primary text-sm font-bold uppercase tracking-wider mb-6 animate-in fade-in slide-in-from-bottom-2">
+          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 dark:border-primary/30 dark:bg-primary/20 text-red-400 dark:text-primary text-sm font-bold uppercase tracking-wider mb-6 animate-in fade-in slide-in-from-bottom-2">
             Fitness Education Platform
           </span>
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
