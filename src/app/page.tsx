@@ -9,6 +9,7 @@ import { Instructor } from "@/components/sections/instructor";
 import { Testimonials } from "@/components/sections/testimonials";
 import { Pricing } from "@/components/sections/pricing";
 import { FAQ } from "@/components/sections/faq";
+import { Gallery } from "@/components/sections/gallery";
 import { Footer } from "@/components/sections/footer";
 import { JsonLd } from "@/components/json-ld";
 import { buildMetadata, faqJsonLd, breadcrumbJsonLd } from "@/lib/seo";
@@ -51,6 +52,7 @@ export default function Home() {
       <Features />
       <Curriculum />
       <Instructor />
+      <Gallery />
       <Testimonials />
       <Pricing />
       <FAQ />

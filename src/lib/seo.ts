@@ -50,9 +50,12 @@ export const siteConfig = {
   twitter: "@kinetika",
   /** Default OG image (relative to site root). */
   ogImage: "/opengraph-image.png",
-  /** Contact / support email shown in structured data. */
-  email: "support@kinetika.fit",
+  /** Contact / support email — single source of truth for UI + structured data. */
+  email: "contact@learnkinetika.com",
 } as const;
+
+/** Ready-to-use `mailto:` link for the public contact address. */
+export const contactHref = `mailto:${siteConfig.email}`;
 
 export type SiteConfig = typeof siteConfig;
 
@@ -164,6 +167,12 @@ export function organizationJsonLd() {
     logo: absoluteUrl("/logo.png"),
     description: siteConfig.description,
     email: siteConfig.email,
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer support",
+      email: siteConfig.email,
+      availableLanguage: ["English"],
+    },
     sameAs: [
       "https://twitter.com/kinetika",
       "https://www.youtube.com/@kinetika",

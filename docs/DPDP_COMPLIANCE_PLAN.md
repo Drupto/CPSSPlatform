@@ -254,7 +254,7 @@ The rewritten page MUST contain, in clear and plain language, in this order:
 11. **Withdrawal of consent / account deletion** — how it works, including the 48-hour pre-erasure notice.
 12. **Security measures summary** — encryption in transit/at rest, access control, logging, backups (feeds from Phase 4 outcomes).
 13. **Changes to this notice** — version number, effective date, change log; material changes trigger re-consent (Phase 2).
-14. **Contact** — support (real, existing channels only: `support@kinetika.fit` per `src/lib/seo.ts`) and grievance mailboxes.
+14. **Contact** — support (real, existing channels only: `contact@learnkinetika.com` per `src/lib/seo.ts`) and grievance mailboxes.
 
 **Fix factual inaccuracies:** remove the "contact form on our website" claim (no such form exists) and the "unsubscribe from marketing emails" claim (no marketing email is sent).
 

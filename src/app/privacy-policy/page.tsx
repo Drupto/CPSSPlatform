@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/sections/footer"
-import { buildMetadata } from "@/lib/seo"
+import { buildMetadata, contactHref, siteConfig } from "@/lib/seo"
 
 export const metadata: Metadata = buildMetadata({
   title: "Privacy Policy",
@@ -68,7 +68,15 @@ export default function PrivacyPolicy() {
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold text-slate-900">Contact Us</h2>
                 <p>
-                  If you have questions about this policy, please reach out through the contact form on our website.
+                  If you have questions about this policy, or want to review, update, or delete
+                  your personal data, email us at{" "}
+                  <a
+                    href={contactHref}
+                    className="font-semibold text-primary underline underline-offset-4 hover:no-underline"
+                  >
+                    {siteConfig.email}
+                  </a>{" "}
+                  and we will get back to you.
                 </p>
               </div>
             </div>

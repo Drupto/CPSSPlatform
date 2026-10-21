@@ -9,6 +9,7 @@ import { getPublishedCourseBySlug, getEnrollment, submitPaymentRequest } from "@
 import { PAYMENT_METHODS } from "@/lib/payments";
 import { formatInr } from "@/lib/currency";
 import { isProfileComplete } from "@/lib/profile-check";
+import { contactHref, siteConfig } from "@/lib/seo";
 import type { Course, Enrollment } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
@@ -221,8 +222,14 @@ export default function CoursePaymentPage() {
                     </span>
                   </div>
                   {qrFailed[option.method] ? (
-                    <div className="flex h-64 w-full items-center justify-center rounded-2xl border border-dashed border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 px-4 text-sm text-slate-500 dark:text-zinc-400">
-                      {option.label} QR coming soon — please contact the admin.
+                    <div className="flex h-64 w-full flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 px-4 text-center text-sm text-slate-500 dark:text-zinc-400">
+                      <span>{option.label} QR coming soon.</span>
+                      <a
+                        href={contactHref}
+                        className="font-semibold text-primary underline underline-offset-4 hover:no-underline"
+                      >
+                        {siteConfig.email}
+                      </a>
                     </div>
                   ) : (
                     <Image
@@ -276,6 +283,17 @@ export default function CoursePaymentPage() {
               {submitting ? "Submitting..." : "Submit Payment Details"}
             </Button>
           </div>
+
+          <p className="mt-6 text-center text-sm text-slate-500 dark:text-zinc-400">
+            Paid but something looks wrong, or the reference isn&apos;t available? Email{" "}
+            <a
+              href={contactHref}
+              className="font-semibold text-primary underline underline-offset-4 hover:no-underline"
+            >
+              {siteConfig.email}
+            </a>{" "}
+            with your name and course and we&apos;ll sort it out.
+          </p>
         </div>
       </div>
     </main>

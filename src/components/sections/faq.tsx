@@ -4,6 +4,7 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ShieldCheck } from "lucide-react";
 import { homepageFaqs as faqs } from "@/lib/faq-data";
+import { contactHref, siteConfig } from "@/lib/seo";
 
 export function FAQ() {
 
@@ -17,8 +18,15 @@ export function FAQ() {
           <div>
             <h3 className="text-2xl font-bold mb-2">30-Day Money-Back Guarantee</h3>
             <p className="text-slate-600 text-lg leading-relaxed dark:text-zinc-400">
-              If you don't feel 10x more confident about the exam after going through our curriculum, 
-              simply email us for a full refund. No questions asked.
+              If you don&apos;t feel 10x more confident about the exam after going through our curriculum,{" "}
+              simply email us at{" "}
+              <a
+                href={contactHref}
+                className="font-semibold text-primary underline underline-offset-4 hover:no-underline"
+              >
+                {siteConfig.email}
+              </a>{" "}
+              for a full refund. No questions asked.
             </p>
           </div>
         </div>
