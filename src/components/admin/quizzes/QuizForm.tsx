@@ -145,7 +145,7 @@ export function QuizForm({ mode, courseId, quizId, initialQuiz, onSave, isSaving
   return (
     <div className="grid gap-6">
       {error && (
-        <div className="mb-6 rounded-2xl bg-red-100 border border-red-200 px-4 py-3 text-red-700">
+        <div className="mb-6 rounded-2xl bg-red-100 border border-red-200 dark:bg-red-950/40 dark:border-red-900 px-4 py-3 text-red-700 dark:text-red-300">
           {error}
         </div>
       )}
@@ -257,15 +257,15 @@ export function QuizForm({ mode, courseId, quizId, initialQuiz, onSave, isSaving
         </CardHeader>
         <CardContent>
           {(!quiz.questions || quiz.questions.length === 0) ? (
-            <div className="text-center py-8 text-slate-500">
+            <div className="text-center py-8 text-slate-500 dark:text-zinc-400">
               No questions added yet. Click "Add Question" to create your first question.
             </div>
           ) : (
             <div className="space-y-6">
               {quiz.questions.map((question, qIndex) => (
-                <div key={question.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                <div key={question.id} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-4">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-medium">Question {qIndex + 1}</h3>
+                    <h3 className="font-medium text-slate-900 dark:text-zinc-100">Question {qIndex + 1}</h3>
                     <Button 
                       variant="destructive" 
                       size="sm"
@@ -303,7 +303,7 @@ export function QuizForm({ mode, courseId, quizId, initialQuiz, onSave, isSaving
                             onChange={() => updateQuestion(qIndex, 'correctAnswerIndex', oIndex)}
                             className="h-4 w-4"
                           />
-                          <span>Correct Answer</span>
+                          <span className="text-sm text-slate-600 dark:text-zinc-400 whitespace-nowrap">Correct Answer</span>
                         </div>
                       ))}
                       <Button 

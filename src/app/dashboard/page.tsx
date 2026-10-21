@@ -87,7 +87,7 @@ export default function DashboardPage() {
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-8">
-          <h1 className="text-4xl font-bold mb-2">Welcome to Your Dashboard!</h1>
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-zinc-100 mb-2">Welcome to Your Dashboard!</h1>
           <p className="text-slate-600 dark:text-zinc-400 mb-2">
             Hello, <span className="font-semibold">{user?.email}</span>
           </p>
@@ -98,12 +98,12 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Admin Panel Card - only shown for admin users */}
             {isAdmin && (
-              <div className="border-2 border-amber-200 rounded-lg p-6 bg-amber-50">
+              <div className="border-2 border-amber-200 dark:border-amber-500/30 rounded-lg p-6 bg-amber-50 dark:bg-amber-500/10">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="rounded-lg bg-amber-500 p-2 text-amber-950">
                     <Shield className="h-5 w-5" />
                   </div>
-                  <h2 className="text-xl font-semibold">Admin Panel</h2>
+                  <h2 className="text-xl font-semibold text-amber-950 dark:text-amber-300">Admin Panel</h2>
                 </div>
                 <p className="text-slate-600 dark:text-zinc-400 mb-4">
                   Manage courses, users, and platform settings.
@@ -117,45 +117,45 @@ export default function DashboardPage() {
               </div>
             )}
 
-            <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">My Courses</h2>
+            <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6 transition-colors hover:border-slate-300 dark:hover:border-white/20">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-zinc-100 mb-4">My Courses</h2>
               <p className="text-slate-600 dark:text-zinc-400 mb-4">
                 Access your enrolled courses and continue learning.
               </p>
               <Button onClick={() => router.push('/dashboard/my-courses')}>View Courses</Button>
             </div>
 
-            <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Available Courses</h2>
+            <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6 transition-colors hover:border-slate-300 dark:hover:border-white/20">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-zinc-100 mb-4">Available Courses</h2>
               <p className="text-slate-600 dark:text-zinc-400 mb-4">
                 Browse and enroll in new courses to expand your knowledge.
               </p>
               <Button onClick={() => router.push('/dashboard/available-courses')}>Browse Courses</Button>
             </div>
 
-            <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Profile Settings</h2>
+            <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6 transition-colors hover:border-slate-300 dark:hover:border-white/20">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-zinc-100 mb-4">Profile Settings</h2>
               <p className="text-slate-600 dark:text-zinc-400 mb-4">
                 Update your profile information and preferences.
               </p>
               <Button variant="outline" onClick={() => router.push('/dashboard/profile')}>Edit Profile</Button>
             </div>
 
-             <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6">
-               <h2 className="text-xl font-semibold mb-4">Progress</h2>
-               <p className="text-slate-600 dark:text-zinc-400 mb-4">
-                 Track your learning progress and achievements.
-               </p>
-               <Button variant="outline" onClick={() => router.push('/dashboard/progress')}>View Progress</Button>
-             </div>
+            <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6 transition-colors hover:border-slate-300 dark:hover:border-white/20">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-zinc-100 mb-4">Progress</h2>
+              <p className="text-slate-600 dark:text-zinc-400 mb-4">
+                Track your learning progress and achievements.
+              </p>
+              <Button variant="outline" onClick={() => router.push('/dashboard/progress')}>View Progress</Button>
+            </div>
 
-             <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6">
-               <h2 className="text-xl font-semibold mb-4">Resources</h2>
-               <p className="text-slate-600 dark:text-zinc-400 mb-4">
-                 Access study materials and additional resources.
-               </p>
-               <Button variant="outline" onClick={() => router.push('/dashboard/resources')}>Browse Resources</Button>
-             </div>
+            <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6 transition-colors hover:border-slate-300 dark:hover:border-white/20">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-zinc-100 mb-4">Resources</h2>
+              <p className="text-slate-600 dark:text-zinc-400 mb-4">
+                Access study materials and additional resources.
+              </p>
+              <Button variant="outline" onClick={() => router.push('/dashboard/resources')}>Browse Resources</Button>
+            </div>
           </div>
         </div>
       </div>
