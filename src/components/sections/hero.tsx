@@ -7,7 +7,7 @@ import { ArrowRight, Download, CheckCircle } from "lucide-react";
 export function Hero() {
   const router = useRouter();
   return (
-    <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-slate-50 text-slate-900 dark:bg-zinc-950 dark:text-white">
+    <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-zinc-950 text-white">
       {/* Video Background */}
       <video
         autoPlay
@@ -23,8 +23,8 @@ export function Hero() {
       </video>
 
       {/* Dark Overlay for readability */}
-      <div className="absolute inset-0 bg-slate-50/40 dark:bg-zinc-950/70 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-r from-slate-50 via-slate-50/40 to-transparent dark:from-zinc-950 dark:via-zinc-950/60 pointer-events-none" />
+      <div className="absolute inset-0 bg-zinc-950/40 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/40 via-zinc-950/60 to-transparent pointer-events-none" />
 
       <div className="container max-w-6xl mx-auto px-6 relative z-10">
         <div className="max-w-3xl">
@@ -37,7 +37,7 @@ export function Hero() {
               for Every Body.
             </span>
           </h1>
-          <p className="text-xl text-slate-400 mb-10 leading-relaxed max-w-2xl dark:text-zinc-400">
+          <p className="text-xl text-zinc-400 mb-10 leading-relaxed max-w-2xl">
             Master the science of fitness with our comprehensive, evidence-based courses.{" "}
             Prepare for the NSCA CSCS exam or become a Certified Hybrid Performance
             Coach — unlock your potential and build a career you&apos;re proud of.
