@@ -494,9 +494,10 @@ export async function getVisibleResourcePage(
       collected.push({ item, snap: docSnap });
     }
     if (collected.length > pageSize) {
-      // Cursor lands on the first non-returned row so the next page resumes
-      // precisely after the last returned item.
-      current = collected[pageSize].snap;
+      // Cursor lands on the last *returned* row so the next page (startAfter)
+      // resumes at the first unreturned row — collected[pageSize] — instead of
+      // skipping it.
+      current = collected[pageSize - 1].snap;
       collected.length = pageSize;
       break;
     }
@@ -549,7 +550,13 @@ export async function getCourseFlashcards(courseId: string): Promise<Flashcard[]
     .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 }
 
-function emptyResourceProgress(userId: string, courseId: string): ResourceProgress {
+/**
+ * Canonical all-empty study state for a user+course. Also used as the
+ * client-side fallback when a progress read is unavailable (offline, rules
+ * denial on a brand-new account, transient network error) so study UI can
+ * still mount without a stored document.
+ */
+export function emptyResourceProgress(userId: string, courseId: string): ResourceProgress {
   return {
     id: `${userId}_${courseId}`,
     userId,

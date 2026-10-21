@@ -275,8 +275,17 @@ service cloud.firestore {
     // may be modified, the array is size-capped, and the document must
     // belong to the authenticated user.
     match /progress/{progressId} {
+      // A `get` on a NON-EXISTENT doc has `resource == null`, so any
+      // `resource.data...` access errors → deny. First-time students have no
+      // progress doc yet, and getProgress() does getDoc(`${uid}_${courseId}`),
+      // so without the `resource == null` branch that read throws
+      // permission-denied (same pattern as /enrollments above). The prefix
+      // check is safe: ids are deterministically `${uid}_${courseId}` and Auth
+      // UIDs are alphanumeric, so interpolation cannot inject regex.
       allow read: if request.auth != null && (
-        request.auth.uid == resource.data.userId || isAdmin()
+        isAdmin()
+        || (resource != null && request.auth.uid == resource.data.userId)
+        || (resource == null && progressId.matches('^' + request.auth.uid + '_.*'))
       );
       allow create: if request.auth != null
         && request.auth.uid == request.resource.data.userId
@@ -302,8 +311,14 @@ service cloud.firestore {
     // writes are restricted to the whitelisted fields with size caps sized
     // for multi-thousand-card decks.
     match /resourceProgress/{progressId} {
+      // Same non-existent-doc handling as /progress: first-time visitors have
+      // no study-state doc, and getResourceProgress() does
+      // getDoc(`${uid}_${courseId}`) — `resource == null` must be allowed for
+      // that get to return an empty snapshot instead of permission-denied.
       allow read: if request.auth != null && (
-        request.auth.uid == resource.data.userId || isAdmin()
+        isAdmin()
+        || (resource != null && request.auth.uid == resource.data.userId)
+        || (resource == null && progressId.matches('^' + request.auth.uid + '_.*'))
       );
       allow create: if request.auth != null
         && request.auth.uid == request.resource.data.userId

@@ -11,6 +11,7 @@ import {
   getCourseResourceCounts,
   getCourseFlashcards,
   getResourceProgress,
+  emptyResourceProgress,
   setResourceViewed,
   setFlashcardStudyState,
   setLastStudiedCard,
@@ -36,11 +37,18 @@ interface CourseSection {
   flashcardCount: number;
 }
 
+interface CourseResourceCounts {
+  total: number;
+  flashcards: number;
+}
+
 interface CourseListState {
   resources: CourseContentItem[];
   nextCursor: ResourcePageCursor | null;
   loading: boolean;
   loaded: boolean;
+  /** Set when the initial page fetch failed; triggers the retry UI. */
+  error: string | null;
 }
 
 interface StudyLaunch {
@@ -52,7 +60,7 @@ interface StudyLaunch {
 }
 
 function emptyListState(): CourseListState {
-  return { resources: [], nextCursor: null, loading: false, loaded: false };
+  return { resources: [], nextCursor: null, loading: false, loaded: false, error: null };
 }
 
 export default function ResourcesPage() {
@@ -106,7 +114,15 @@ export default function ResourcesPage() {
         setSections((prev) =>
           prev.map((section, index) => {
             const result = countResults[index];
-            return result.status === "fulfilled" ? { ...section, ...result.value } : section;
+            if (result.status !== "fulfilled") return section;
+            // result.value is { total, flashcards } from getCourseResourceCounts;
+            // the section speaks totalResources / flashcardCount — map explicitly.
+            const counts: CourseResourceCounts = result.value;
+            return {
+              ...section,
+              totalResources: counts.total,
+              flashcardCount: counts.flashcards,
+            };
           }),
         );
       } catch (err) {
@@ -140,6 +156,58 @@ export default function ResourcesPage() {
     [user],
   );
 
+  /** Fetches a course's first page + progress; also used by the retry button. */
+  const loadCourse = useCallback(
+    async (courseId: string) => {
+      if (!user) return;
+      const uid = user.uid;
+      setListState((prev) => ({ ...prev, [courseId]: { ...emptyListState(), loading: true } }));
+      try {
+        // 1. Load resources first (critical path — always succeeds or errors).
+        // Flashcard-only courses skip the page query entirely: scanning the
+        // collection just to skip every card would read the whole deck (e.g.
+        // 1,160 flashcards) for an empty material list.
+        const section = sections.find((s) => s.course.id === courseId);
+        const knownMaterials = section ? Math.max(section.totalResources - section.flashcardCount, 0) : 0;
+        const flashcardOnly = Boolean(section && section.totalResources > 0 && knownMaterials === 0);
+        const page = flashcardOnly
+          ? { resources: [] as CourseContentItem[], nextCursor: null }
+          : await getVisibleResourcePage(courseId, PAGE_SIZE);
+
+        // 2. Load progress best-effort — never gating the list on it
+        try {
+          const progress = await getResourceProgress(uid, courseId);
+          setProgressByCourse((prev) => ({ ...prev, [courseId]: progress }));
+        } catch (err) {
+          console.warn(`Failed to load progress for course ${courseId}:`, err);
+          // Fall back to an empty state so the deck card and checklist still
+          // render (a brand-new account may have no progress doc yet).
+          setProgressByCourse((prev) => ({ ...prev, [courseId]: emptyResourceProgress(uid, courseId) }));
+        }
+
+        // 3. Always mark list as loaded
+        setListState((prev) => ({
+          ...prev,
+          [courseId]: {
+            resources: page.resources,
+            nextCursor: page.nextCursor,
+            loading: false,
+            loaded: true,
+            error: null,
+          },
+        }));
+      } catch (err) {
+        console.error("Error loading course resources:", err);
+        // Surface the failure instead of leaving the section on a spinner.
+        setListState((prev) => ({
+          ...prev,
+          [courseId]: { ...emptyListState(), loaded: true, error: "Failed to load materials. Please try again." },
+        }));
+      }
+    },
+    [sections, user],
+  );
+
   const toggleCourse = useCallback(
     async (courseId: string) => {
       if (!user) return;
@@ -154,29 +222,9 @@ export default function ResourcesPage() {
 
       const existing = listState[courseId];
       if (existing?.loaded || existing?.loading) return;
-
-      setListState((prev) => ({ ...prev, [courseId]: { ...emptyListState(), loading: true } }));
-      try {
-        // First resource page and the user's study state load in parallel —
-        // both are needed before the section is fully interactive.
-        const [page] = await Promise.all([
-          getVisibleResourcePage(courseId, PAGE_SIZE),
-          progressByCourse[courseId]
-            ? Promise.resolve(null)
-            : getResourceProgress(user.uid, courseId).then((progress) => {
-                setProgressByCourse((prev) => ({ ...prev, [courseId]: progress }));
-              }),
-        ]);
-        setListState((prev) => ({
-          ...prev,
-          [courseId]: { resources: page.resources, nextCursor: page.nextCursor, loading: false, loaded: true },
-        }));
-      } catch (err) {
-        console.error("Error loading course resources:", err);
-        setListState((prev) => ({ ...prev, [courseId]: emptyListState() }));
-      }
+      await loadCourse(courseId);
     },
-    [expanded, listState, progressByCourse, user],
+    [expanded, listState, loadCourse, user],
   );
 
   const loadMore = useCallback(
@@ -193,6 +241,7 @@ export default function ResourcesPage() {
             nextCursor: page.nextCursor,
             loading: false,
             loaded: true,
+            error: null,
           },
         }));
       } catch (err) {
@@ -257,17 +306,31 @@ export default function ResourcesPage() {
   const startStudy = useCallback(
     async (courseId: string, courseTitle: string, mode: "all" | "review") => {
       if (!user || preparingCourse) return;
+      const uid = user.uid;
       setPreparingCourse(courseId);
       try {
         const flashcards = await getCourseFlashcards(courseId);
-        const progress = progressByCourse[courseId] ?? (await getResourceProgress(user.uid, courseId));
+        // Progress only supplies the resume pointer — a failed read (offline,
+        // missing document, rules denial) must never block studying.
+        const progress =
+          progressByCourse[courseId] ??
+          (await getResourceProgress(uid, courseId).catch((err) => {
+            console.warn(`Failed to load progress for course ${courseId}:`, err);
+            return emptyResourceProgress(uid, courseId);
+          }));
         const cards: StudyCard[] = flashcards.map((f) => ({
           resourceId: f.id,
           front: f.front.trim() || "(empty card — content missing)",
           back: f.back.trim() || "(empty card — content missing)",
           title: f.title,
         }));
-        if (cards.length === 0) return;
+        if (cards.length === 0) {
+          // Counts can include malformed legacy cards that the type guard in
+          // getCourseFlashcards drops — tell the student instead of doing
+          // nothing at all when they press "Start studying".
+          setError("This course has no studyable flashcards yet. Please check back soon.");
+          return;
+        }
 
         // Resume where the student left off (ordered sessions only).
         let startIndex = 0;
@@ -278,6 +341,7 @@ export default function ResourcesPage() {
         setStudy({ courseId, courseTitle, cards, startIndex, reviewOnly: mode === "review" });
       } catch (err) {
         console.error("Error preparing study session:", err);
+        setError("Failed to prepare the study session. Please try again.");
       } finally {
         setPreparingCourse(null);
       }
@@ -394,7 +458,21 @@ export default function ResourcesPage() {
                   </CardHeader>
                   {isExpanded && (
                     <CardContent>
-                      {!list?.loaded ? (
+                      {list?.error ? (
+                        <div className="py-6 text-sm text-red-600 dark:text-red-400">
+                          <p>{list.error}</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3"
+                            onClick={() => {
+                              void loadCourse(courseId);
+                            }}
+                          >
+                            Retry
+                          </Button>
+                        </div>
+                      ) : !list?.loaded ? (
                         <div className="flex items-center gap-2 py-6 text-sm text-slate-500 dark:text-zinc-400">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           Loading resources…
@@ -403,11 +481,11 @@ export default function ResourcesPage() {
                         <div className="space-y-5">
                           {/* Whole flashcard deck collapsed into one entry —
                               never rendered as thousands of individual rows. */}
-                          {section.flashcardCount > 0 && progress && (
+                          {section.flashcardCount > 0 && (
                             <FlashcardDeckCard
                               flashcardCount={section.flashcardCount}
-                              states={progress.flashcardStates ?? {}}
-                              hasResume={Boolean(progress.lastStudiedCardId)}
+                              states={progress?.flashcardStates ?? {}}
+                              hasResume={Boolean(progress?.lastStudiedCardId)}
                               preparing={preparingCourse === courseId}
                               onStart={(mode) => startStudy(courseId, section.course.title, mode)}
                             />
@@ -418,7 +496,7 @@ export default function ResourcesPage() {
                               Study Materials
                             </h3>
                             <span className="text-xs text-slate-500 dark:text-zinc-400">
-                              {viewedCount} / {materialsTotal} marked done
+                              {materialsTotal > 0 ? `${viewedCount} / ${materialsTotal} marked done` : ""}
                             </span>
                           </div>
                           <ResourceList
@@ -429,6 +507,11 @@ export default function ResourcesPage() {
                             onLoadMore={() => loadMore(courseId)}
                             onToggleViewed={(resourceId, viewed) => toggleViewed(courseId, resourceId, viewed)}
                             onOpenUrl={handleResourceClick}
+                            emptyMessage={
+                              materialsTotal === 0 && section.flashcardCount > 0
+                                ? "This course is flashcards-only — start a study session from the deck above."
+                                : undefined
+                            }
                           />
                         </div>
                       )}

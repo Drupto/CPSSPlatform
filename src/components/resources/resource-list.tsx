@@ -32,6 +32,8 @@ interface ResourceListProps {
   onLoadMore: () => void;
   onToggleViewed: (resourceId: string, viewed: boolean) => void;
   onOpenUrl: (url?: string, title?: string) => void;
+  /** Optional custom empty state message when resources.length === 0. */
+  emptyMessage?: string;
 }
 
 /**
@@ -46,6 +48,7 @@ export function ResourceList({
   onLoadMore,
   onToggleViewed,
   onOpenUrl,
+  emptyMessage,
 }: ResourceListProps) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
@@ -146,7 +149,9 @@ export function ResourceList({
         </div>
       ) : (
         <p className="italic text-slate-500 dark:text-zinc-400">
-          {resources.length === 0 ? "No resources available for this course yet." : "No resources match your search."}
+          {resources.length === 0
+            ? emptyMessage || "No resources available for this course yet."
+            : "No resources match your search."}
         </p>
       )}
 
