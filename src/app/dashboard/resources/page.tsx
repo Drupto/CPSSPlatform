@@ -184,15 +184,15 @@ export default function ResourcesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-lg text-slate-600">Loading resources...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Loading resources...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <main className="relative min-h-screen bg-slate-50">
+      <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
         <Navbar />
         <div className="max-w-6xl mx-auto px-6 py-28">
           <Card className="max-w-2xl mx-auto">
@@ -209,12 +209,12 @@ export default function ResourcesPage() {
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-28">
         <div className="mb-12">
-          <h1 className="text-4xl font-bold text-slate-900">Study Resources</h1>
-          <p className="mt-4 text-slate-600">
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-zinc-100">Study Resources</h1>
+          <p className="mt-4 text-slate-600 dark:text-zinc-400">
             Access study materials and additional resources for your enrolled courses.
           </p>
         </div>
@@ -222,7 +222,7 @@ export default function ResourcesPage() {
         {courses.length === 0 ? (
           <Card className="max-w-2xl mx-auto">
             <CardContent className="p-8 text-center">
-              <p className="text-lg text-slate-600">
+              <p className="text-lg text-slate-600 dark:text-zinc-400">
                 You haven&apos;t enrolled in any courses yet.
               </p>
               <Button className="mt-4" onClick={() => router.push("/dashboard/available-courses")}>
@@ -241,11 +241,11 @@ export default function ResourcesPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-slate-600 mb-4">{course.description}</p>
+                  <p className="text-slate-600 dark:text-zinc-400 mb-4">{course.description}</p>
 
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-slate-900">Resources</h3>
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-zinc-100">Resources</h3>
                       {getFlashcardCount(resources) > 0 && (
                         <Button
                           size="sm"
@@ -277,7 +277,7 @@ export default function ResourcesPage() {
                                 openStudyMode(course.id, course.title, resources);
                               }
                             }}
-                            className={`border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors ${
+                            className={`border border-slate-200 dark:border-white/10 rounded-lg p-4 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors ${
                               resource.type === "flashcard" ? "cursor-pointer" : ""
                             }`}
                           >
@@ -285,13 +285,13 @@ export default function ResourcesPage() {
                               <div className="flex items-start gap-3">
                                 {getResourceIcon(resource.type)}
                                 <div>
-                                  <h3 className="font-medium text-slate-900">{resource.title}</h3>
+                                  <h3 className="font-medium text-slate-900 dark:text-zinc-100">{resource.title}</h3>
                                   {resource.type === "flashcard" ? (
-                                    <p className="text-sm text-slate-500 mt-1">
+                                    <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">
                                       {isFlashcard(resource) ? resource.front : ""}
                                     </p>
                                   ) : (
-                                    <p className="text-sm text-slate-500 mt-1">{resource.body}</p>
+                                    <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">{resource.body}</p>
                                   )}
                                   {getResourceTypeBadge(resource.type)}
                                 </div>
@@ -323,7 +323,7 @@ export default function ResourcesPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-slate-500 italic">
+                      <p className="text-slate-500 dark:text-zinc-400 italic">
                         No resources available for this course yet.
                       </p>
                     )}
@@ -337,17 +337,17 @@ export default function ResourcesPage() {
 
       {studyState && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 sm:p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-4xl overflow-hidden rounded-[28px] border border-white/10 bg-white shadow-2xl">
+          <div className="relative w-full max-w-4xl overflow-hidden rounded-[28px] border border-white/10 bg-white dark:bg-zinc-900 shadow-2xl">
             <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-500" />
             <div className="relative p-4 sm:p-6 md:p-8 lg:p-10">
-              <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6">
+              <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 p-4 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6">
                 <div>
                   <div className="flex items-center gap-2 text-sm font-medium text-indigo-600">
                     <Brain className="h-4 w-4" />
                     Study Session
                   </div>
-                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Flashcard Review</h2>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-zinc-100">Flashcard Review</h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
                     {studyState.courseTitle} • Card {studyState.currentIndex + 1} of {studyState.cards.length}
                   </p>
                 </div>
@@ -361,15 +361,15 @@ export default function ResourcesPage() {
                 </div>
               </div>
 
-              <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="mb-3 flex items-center justify-between text-sm text-slate-500">
+              <div className="mt-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-4">
+                <div className="mb-3 flex items-center justify-between text-sm text-slate-500 dark:text-zinc-400">
                   <span>Progress</span>
                   <span>{Math.round(progressValue)}%</span>
                 </div>
                 <Progress value={progressValue} className="h-2" />
               </div>
 
-              <div className="mt-6 rounded-[24px] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-3 shadow-inner sm:p-4">
+              <div className="mt-6 rounded-[24px] border border-slate-200 dark:border-white/10 bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-800 p-3 shadow-inner sm:p-4">
                 <div className="perspective-1000">
                   <div
                     role="button"
@@ -387,18 +387,18 @@ export default function ResourcesPage() {
                       }
                     }}
                   >
-                    <div className="card-face rounded-[20px] border border-slate-200 bg-gradient-to-br from-white to-slate-100 p-6 sm:p-8">
+                    <div className="card-face rounded-[20px] border border-slate-200 dark:border-white/10 bg-gradient-to-br from-white to-slate-100 dark:from-zinc-900 dark:to-zinc-800 p-6 sm:p-8">
                       <div className="text-center">
                         <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
                           <Sparkles className="h-5 w-5" />
                         </div>
-                        <p className="mt-4 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
+                        <p className="mt-4 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-zinc-400">
                           Front
                         </p>
-                        <p className="mt-3 text-lg font-semibold text-slate-900 sm:text-2xl">
+                        <p className="mt-3 text-lg font-semibold text-slate-900 dark:text-zinc-100 sm:text-2xl">
                           {currentCard?.front}
                         </p>
-                        <p className="mt-4 text-sm text-slate-500">
+                        <p className="mt-4 text-sm text-slate-500 dark:text-zinc-400">
                           {currentCard?.title}
                         </p>
                       </div>
@@ -422,9 +422,9 @@ export default function ResourcesPage() {
               </div>
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                  <span className="rounded-full bg-slate-100 px-3 py-1">Tap card to flip</span>
-                  <span className="rounded-full bg-slate-100 px-3 py-1">Space / Arrow keys</span>
+                <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-zinc-400">
+                  <span className="rounded-full bg-slate-100 dark:bg-zinc-800 px-3 py-1">Tap card to flip</span>
+                  <span className="rounded-full bg-slate-100 dark:bg-zinc-800 px-3 py-1">Space / Arrow keys</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={goPrev} className="gap-2">

@@ -107,7 +107,7 @@ export function Navbar() {
                  {isAdmin && (
                    <Button
                      variant="ghost"
-                     className="text-sm font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-500/10"
+                     className="text-sm font-medium text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-500/10"
                      onClick={() => router.push("/admin")}
                    >
                      <Shield className="h-4 w-4 mr-1.5" />

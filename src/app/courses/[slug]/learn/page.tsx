@@ -115,13 +115,13 @@ const QuizModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
-            <h2 className="text-2xl font-bold text-slate-900">{quiz.title}</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-zinc-100">{quiz.title}</h2>
             <button 
               onClick={onClose}
-              className="text-slate-500 hover:text-slate-700"
+              className="text-slate-500 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-200"
             >
               ✕
             </button>
@@ -137,7 +137,7 @@ const QuizModal = ({
             <div className={`mb-4 rounded-2xl border p-4 text-center ${
               timeRemaining !== null && timeRemaining <= 60
                 ? "border-red-200 bg-red-50 text-red-700"
-                : "border-slate-200 bg-slate-50 text-slate-700"
+                : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300"
             }`}>
               <div className="text-sm font-medium">Time remaining</div>
               <div className="text-3xl font-bold">{formatQuizTime(timeRemaining)}</div>
@@ -153,7 +153,7 @@ const QuizModal = ({
                 <div className={`text-lg font-semibold ${passed ? 'text-emerald-600' : 'text-red-600'}`}>
                   {passed ? 'Passed!' : 'Failed'}
                 </div>
-                <p className="text-slate-600 mt-2">
+                <p className="text-slate-600 dark:text-zinc-400 mt-2">
                   {passed 
                     ? 'Congratulations! You passed the quiz.' 
                     : `You need at least ${quiz.passPercentage}% to pass.`}
@@ -162,8 +162,8 @@ const QuizModal = ({
 
               <div className="space-y-4">
                 {quiz.questions.map((question: any, qIndex: number) => (
-                  <div key={qIndex} className="border border-slate-200 rounded-2xl p-4">
-                    <h3 className="font-semibold text-slate-900 mb-2">{question.question}</h3>
+                  <div key={qIndex} className="border border-slate-200 dark:border-white/10 rounded-2xl p-4">
+                    <h3 className="font-semibold text-slate-900 dark:text-zinc-100 mb-2">{question.question}</h3>
                     <div className="space-y-2">
                        {question.options.map((option: string, oIndex: number) => {
                         const reviewItem = review?.[qIndex];
@@ -182,7 +182,7 @@ const QuizModal = ({
                                   ? 'bg-red-100 border-red-500 text-red-800' 
                                   : isSkipped
                                     ? 'bg-amber-50 border-amber-300 text-amber-800'
-                                    : 'bg-slate-100 border-slate-200'
+                                    : 'bg-slate-100 dark:bg-zinc-800 border-slate-200 dark:border-white/10'
                             } border`}
                           >
                             <div className="flex items-center">
@@ -195,7 +195,7 @@ const QuizModal = ({
                               )}
                             </div>
                             {reviewItem?.explanation && isCorrect && (
-                              <p className="text-sm text-slate-600 mt-2 italic">
+                              <p className="text-sm text-slate-600 dark:text-zinc-400 mt-2 italic">
                                 Explanation: {reviewItem.explanation}
                               </p>
                             )}
@@ -228,12 +228,12 @@ const QuizModal = ({
             </div>
           ) : (
             <>
-              <p className="text-slate-600 mb-6">{quiz.description}</p>
+              <p className="text-slate-600 dark:text-zinc-400 mb-6">{quiz.description}</p>
 
               <div className="space-y-6">
                 {quiz.questions.map((question: any, qIndex: number) => (
-                  <div key={qIndex} className="border border-slate-200 rounded-2xl p-4">
-                    <h3 className="font-semibold text-slate-900 mb-3">{question.question}</h3>
+                  <div key={qIndex} className="border border-slate-200 dark:border-white/10 rounded-2xl p-4">
+                    <h3 className="font-semibold text-slate-900 dark:text-zinc-100 mb-3">{question.question}</h3>
                     <div className="space-y-2">
                       {question.options.map((option: string, oIndex: number) => (
                         <div 
@@ -242,17 +242,17 @@ const QuizModal = ({
                           className={`p-3 rounded-lg border cursor-pointer transition ${
                             answers[qIndex] === oIndex
                               ? 'border-primary bg-primary/10'
-                              : 'border-slate-200 hover:border-slate-300'
+                              : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-zinc-600'
                           }`}
                         >
                           <div className="flex items-center">
                             <div className={`w-5 h-5 rounded-full border mr-3 flex items-center justify-center ${
                               answers[qIndex] === oIndex
                                 ? 'border-primary bg-primary'
-                                : 'border-slate-300'
+                                : 'border-slate-300 dark:border-zinc-700'
                             }`}>
                               {answers[qIndex] === oIndex && (
-                                <div className="w-2 h-2 rounded-full bg-white"></div>
+                                <div className="w-2 h-2 rounded-full bg-white dark:bg-zinc-900"></div>
                               )}
                             </div>
                             {option}
@@ -725,19 +725,19 @@ export default function CourseLearnPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-lg text-slate-600">Checking your access...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Checking your access...</p>
       </div>
     );
   }
 
   if (!course) {
     return (
-      <main className="relative min-h-screen bg-slate-50">
+      <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
         <Navbar />
         <div className="max-w-4xl mx-auto px-6 py-28 text-center">
-          <h1 className="text-3xl font-bold text-slate-900">Course not found</h1>
-          <p className="mt-4 text-slate-600">The requested course could not be loaded.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-zinc-100">Course not found</h1>
+          <p className="mt-4 text-slate-600 dark:text-zinc-400">The requested course could not be loaded.</p>
           <Button className="mt-8" onClick={() => router.push("/courses")}>Back to Courses</Button>
         </div>
       </main>
@@ -751,11 +751,11 @@ export default function CourseLearnPage() {
     const isPending = enrollmentStatus === "pending";
     const isRejected = enrollmentStatus === "rejected";
     return (
-      <main className="relative min-h-screen bg-slate-50">
+      <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
         <Navbar />
         <div className="max-w-4xl mx-auto px-6 py-28 text-center">
-          <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
-            <h1 className="text-3xl font-bold text-slate-900">{course.title}</h1>
+          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10 shadow-sm">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-zinc-100">{course.title}</h1>
             <div className={`mt-6 rounded-2xl border px-4 py-3 text-sm ${
               isRejected
                 ? "bg-red-100 border-red-200 text-red-700"
@@ -783,12 +783,12 @@ export default function CourseLearnPage() {
 
   if (content.length === 0) {
     return (
-      <main className="relative min-h-screen bg-slate-50">
+      <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
         <Navbar />
         <div className="max-w-6xl mx-auto px-6 py-28">
-          <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
-            <h1 className="text-4xl font-bold text-slate-900">{course.title}</h1>
-            <p className="mt-4 text-slate-600">This course has no content sections yet.</p>
+          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10 shadow-sm">
+            <h1 className="text-4xl font-bold text-slate-900 dark:text-zinc-100">{course.title}</h1>
+            <p className="mt-4 text-slate-600 dark:text-zinc-400">This course has no content sections yet.</p>
           </div>
         </div>
       </main>
@@ -796,34 +796,34 @@ export default function CourseLearnPage() {
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-28">
         {/* Progress bar */}
-         <div className="mb-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+         <div className="mb-8 rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-6 shadow-sm">
            <div className="flex items-center justify-between mb-3">
-             <h2 className="text-lg font-semibold text-slate-900">{course.title}</h2>
-             <span className="text-sm text-slate-500">{completedIds.length} / {content.length} completed</span>
+             <h2 className="text-lg font-semibold text-slate-900 dark:text-zinc-100">{course.title}</h2>
+             <span className="text-sm text-slate-500 dark:text-zinc-400">{completedIds.length} / {content.length} completed</span>
            </div>
            <Progress value={progressPercent} className="h-2" />
-           <p className="mt-2 text-sm text-slate-500">{progressPercent}% complete</p>
+           <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400">{progressPercent}% complete</p>
          </div>
 
         <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
           {/* Main content area */}
           <div className="space-y-6">
             {/* Current content section */}
-            <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <section className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-8 shadow-sm">
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <p className="text-sm uppercase tracking-[0.3em] text-secondary mb-2">
                     Section {currentItem.order} of {content.length}
                   </p>
-                  <h2 className="text-2xl font-bold text-slate-900">{currentItem.title}</h2>
-                  <p className="mt-1 text-sm text-slate-500">{currentItem.type.toUpperCase()}</p>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-zinc-100">{currentItem.title}</h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">{currentItem.type.toUpperCase()}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <label htmlFor={`complete-${currentItem.id}`} className="text-sm text-slate-600 cursor-pointer select-none">
+                  <label htmlFor={`complete-${currentItem.id}`} className="text-sm text-slate-600 dark:text-zinc-400 cursor-pointer select-none">
                     Mark complete
                   </label>
                   <Checkbox
@@ -836,7 +836,7 @@ export default function CourseLearnPage() {
 
               {currentItem.type === "text" && (
                 <div className="prose prose-slate max-w-none">
-                  <p className="text-slate-700 whitespace-pre-line leading-relaxed">{currentItem.body}</p>
+                  <p className="text-slate-700 dark:text-zinc-300 whitespace-pre-line leading-relaxed">{currentItem.body}</p>
                 </div>
               )}
 
@@ -846,7 +846,7 @@ export default function CourseLearnPage() {
                     <iframe
                       src={getYouTubeEmbedUrl(currentItem.url)}
                       title={currentItem.title}
-                      className="h-80 w-full rounded-3xl border border-slate-200"
+                      className="h-80 w-full rounded-3xl border border-slate-200 dark:border-white/10"
                       allowFullScreen
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     />
@@ -859,8 +859,8 @@ export default function CourseLearnPage() {
               )}
 
               {currentItem.type === "document" && currentItem.url && (
-                <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-6">
-                  <p className="text-slate-600 mb-4">This section contains a document for reference.</p>
+                <div className="mt-4 rounded-3xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-6">
+                  <p className="text-slate-600 dark:text-zinc-400 mb-4">This section contains a document for reference.</p>
                   {isPdfUrl(currentItem.url) ? (
                     <div className="flex flex-wrap items-center gap-3">
                       <Button
@@ -876,7 +876,7 @@ export default function CourseLearnPage() {
                         href={currentItem.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-slate-500 underline underline-offset-4 hover:text-slate-700"
+                        className="text-sm text-slate-500 dark:text-zinc-400 underline underline-offset-4 hover:text-slate-700 dark:hover:text-zinc-200"
                       >
                         Open in new tab ↗
                       </a>
@@ -910,7 +910,7 @@ export default function CourseLearnPage() {
               >
                 ← Previous Section
               </Button>
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-slate-500 dark:text-zinc-400">
                 {currentIndex + 1} of {content.length}
               </span>
               <Button
@@ -924,8 +924,8 @@ export default function CourseLearnPage() {
 
           {/* Sidebar */}
           <aside className="space-y-4">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900 mb-3">Course Outline</h3>
+            <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-zinc-100 mb-3">Course Outline</h3>
               <ul className="space-y-2">
                 {content.map((item, idx) => (
                   <li key={item.id}>
@@ -934,14 +934,14 @@ export default function CourseLearnPage() {
                       className={`w-full text-left text-sm py-1.5 px-3 rounded-lg transition ${
                         idx === currentIndex
                           ? "bg-primary/10 text-primary font-medium"
-                          : "text-slate-600 hover:bg-slate-100"
+                          : "text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800"
                       }`}
                     >
                       <span className="flex items-center gap-2">
                         <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
                           completedIds.includes(item.id)
-                            ? "bg-emerald-500 text-white"
-                            : "bg-slate-200 text-slate-600"
+                            ? "bg-emerald-500 text-emerald-950"
+                            : "bg-slate-200 dark:bg-zinc-700 text-slate-600 dark:text-zinc-400"
                         }`}>
                           {completedIds.includes(item.id) ? "✓" : idx + 1}
                         </span>
@@ -966,17 +966,17 @@ export default function CourseLearnPage() {
                         disabled={!canStartQuiz || isStartingQuiz}
                         className={`w-full text-left text-sm py-1.5 px-3 rounded-lg transition ${
                           !canStartQuiz
-                            ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                            ? "bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 cursor-not-allowed"
                             : passed 
                               ? "bg-emerald-100 text-emerald-700" 
-                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700"
                         }`}
                       >
                         <span className="flex items-center gap-2">
                           <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
                             passed 
-                              ? "bg-emerald-500 text-white"
-                              : "bg-slate-200 text-slate-600"
+                              ? "bg-emerald-500 text-emerald-950"
+                              : "bg-slate-200 dark:bg-zinc-700 text-slate-600 dark:text-zinc-400"
                           }`}>
                             {passed ? "✓" : "Q"}
                           </span>
@@ -999,9 +999,9 @@ export default function CourseLearnPage() {
               </ul>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">Course Info</h3>
-              <div className="space-y-2 text-sm text-slate-600">
+            <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-zinc-100 mb-2">Course Info</h3>
+              <div className="space-y-2 text-sm text-slate-600 dark:text-zinc-400">
                 <p>Status: {course.published ? "Published" : "Draft"}</p>
                 <p>Sections: {content.length}</p>
                 <p>Completed: {completedIds.length}</p>

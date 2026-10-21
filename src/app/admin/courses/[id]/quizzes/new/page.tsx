@@ -92,15 +92,15 @@ export default function CreateQuizPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-lg text-slate-600">Loading quiz form...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Loading quiz form...</p>
       </div>
     );
   }
 
   if (error && !course) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
         <div className="bg-red-100 border border-red-200 rounded-2xl p-6 max-w-md text-center">
           <p className="text-red-700">{error}</p>
           <Button className="mt-4" onClick={() => router.push("/admin/courses")}>
@@ -112,7 +112,7 @@ export default function CreateQuizPage() {
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-6">
@@ -124,10 +124,10 @@ export default function CreateQuizPage() {
           >
             ← Back to Course
           </Button>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-zinc-100 mb-2">
             Create Quiz
           </h1>
-          <p className="text-slate-600">
+          <p className="text-slate-600 dark:text-zinc-400">
             Create a new quiz for {course?.title}
           </p>
         </div>

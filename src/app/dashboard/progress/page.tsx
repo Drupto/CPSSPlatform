@@ -104,10 +104,10 @@ export default function ProgressPage() {
 
   if (loading) {
     return (
-      <main className="relative min-h-screen bg-slate-50">
+      <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
         <Navbar />
         <div className="max-w-6xl mx-auto px-6 py-28">
-          <div className="rounded-3xl border border-slate-200 bg-white p-10 text-slate-600">
+          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10 text-slate-600 dark:text-zinc-400">
             Loading your progress...
           </div>
         </div>
@@ -116,19 +116,19 @@ export default function ProgressPage() {
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-28">
         <div className="space-y-8">
           <div>
-            <h1 className="text-4xl font-bold text-slate-900">Learning Progress</h1>
-            <p className="mt-2 text-slate-600">Track your learning journey and achievements</p>
+            <h1 className="text-4xl font-bold text-slate-900 dark:text-zinc-100">Learning Progress</h1>
+            <p className="mt-2 text-slate-600 dark:text-zinc-400">Track your learning journey and achievements</p>
           </div>
 
           {enrollments.length === 0 ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-10">
-              <h2 className="text-xl font-semibold text-slate-900 mb-4">No courses enrolled</h2>
-              <p className="text-slate-600 mb-6">You haven't enrolled in any courses yet. Start your learning journey by enrolling in a course.</p>
+            <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-zinc-100 mb-4">No courses enrolled</h2>
+              <p className="text-slate-600 dark:text-zinc-400 mb-6">You haven't enrolled in any courses yet. Start your learning journey by enrolling in a course.</p>
               <Button onClick={() => router.push("/dashboard/available-courses")}>Browse Courses</Button>
             </div>
           ) : (
@@ -142,19 +142,19 @@ export default function ProgressPage() {
                 const totalCount = getTotalCount(course.id);
 
                  return (
-                   <Card key={enrollment.id} className="border-slate-200">
+                   <Card key={enrollment.id} className="border-slate-200 dark:border-white/10">
                      <CardHeader>
                        <CardTitle className="flex items-center justify-between">
                          <span>{course.title}</span>
-                         <span className="text-sm font-normal text-slate-500">
+                         <span className="text-sm font-normal text-slate-500 dark:text-zinc-400">
                            {progressPercentage}% complete
                          </span>
                        </CardTitle>
-                       <p className="text-xs text-slate-500 mt-1">ID: {course.id}</p>
+                       <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">ID: {course.id}</p>
                      </CardHeader>
                      <CardContent>
                        <div className="mb-4">
-                         <div className="flex justify-between text-sm text-slate-600 mb-1">
+                         <div className="flex justify-between text-sm text-slate-600 dark:text-zinc-400 mb-1">
                            <span>Progress</span>
                            <span>{completedCount}/{totalCount} sections completed</span>
                          </div>
@@ -182,7 +182,7 @@ export default function ProgressPage() {
             </div>
           )}
 
-          <div className="pt-8 border-t border-slate-200">
+          <div className="pt-8 border-t border-slate-200 dark:border-white/10">
             <Button variant="outline" onClick={() => router.push("/dashboard")}>Back to Dashboard</Button>
           </div>
         </div>

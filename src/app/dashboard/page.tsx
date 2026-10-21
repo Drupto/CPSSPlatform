@@ -53,7 +53,7 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-lg text-slate-600">Loading...</p>
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Loading...</p>
       </div>
     );
   }
@@ -61,7 +61,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Navigation */}
-      <nav className="bg-white border-b border-slate-200 shadow-sm">
+      <nav className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-white/10 shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold tracking-tight">
             KINÉTIKA
@@ -70,7 +70,7 @@ export default function DashboardPage() {
             {isAdmin && (
               <Button
                 variant="ghost"
-                className="text-sm font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                className="text-sm font-medium text-amber-700 hover:text-amber-800 hover:bg-amber-50 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-500/10"
                 onClick={() => router.push("/admin")}
               >
                 <Shield className="h-4 w-4 mr-1.5" />
@@ -86,12 +86,12 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-8">
           <h1 className="text-4xl font-bold mb-2">Welcome to Your Dashboard!</h1>
-          <p className="text-slate-600 mb-2">
+          <p className="text-slate-600 dark:text-zinc-400 mb-2">
             Hello, <span className="font-semibold">{user?.email}</span>
           </p>
-          <p className="text-sm text-slate-500 mb-8">
+          <p className="text-sm text-slate-500 dark:text-zinc-400 mb-8">
             User ID: <span className="font-mono">{user?.uid}</span>
           </p>
 
@@ -100,16 +100,16 @@ export default function DashboardPage() {
             {isAdmin && (
               <div className="border-2 border-amber-200 rounded-lg p-6 bg-amber-50">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="rounded-lg bg-amber-500 p-2 text-white">
+                  <div className="rounded-lg bg-amber-500 p-2 text-amber-950">
                     <Shield className="h-5 w-5" />
                   </div>
                   <h2 className="text-xl font-semibold">Admin Panel</h2>
                 </div>
-                <p className="text-slate-600 mb-4">
+                <p className="text-slate-600 dark:text-zinc-400 mb-4">
                   Manage courses, users, and platform settings.
                 </p>
                 <Button
-                  className="bg-amber-500 hover:bg-amber-600 text-white"
+                  className="bg-amber-500 text-amber-950 hover:bg-amber-400"
                   onClick={() => router.push('/admin')}
                 >
                   Go to Admin Dashboard
@@ -117,41 +117,41 @@ export default function DashboardPage() {
               </div>
             )}
 
-            <div className="border border-slate-200 rounded-lg p-6">
+            <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6">
               <h2 className="text-xl font-semibold mb-4">My Courses</h2>
-              <p className="text-slate-600 mb-4">
+              <p className="text-slate-600 dark:text-zinc-400 mb-4">
                 Access your enrolled courses and continue learning.
               </p>
               <Button onClick={() => router.push('/dashboard/my-courses')}>View Courses</Button>
             </div>
 
-            <div className="border border-slate-200 rounded-lg p-6">
+            <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6">
               <h2 className="text-xl font-semibold mb-4">Available Courses</h2>
-              <p className="text-slate-600 mb-4">
+              <p className="text-slate-600 dark:text-zinc-400 mb-4">
                 Browse and enroll in new courses to expand your knowledge.
               </p>
               <Button onClick={() => router.push('/dashboard/available-courses')}>Browse Courses</Button>
             </div>
 
-            <div className="border border-slate-200 rounded-lg p-6">
+            <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6">
               <h2 className="text-xl font-semibold mb-4">Profile Settings</h2>
-              <p className="text-slate-600 mb-4">
+              <p className="text-slate-600 dark:text-zinc-400 mb-4">
                 Update your profile information and preferences.
               </p>
               <Button variant="outline" onClick={() => router.push('/dashboard/profile')}>Edit Profile</Button>
             </div>
 
-             <div className="border border-slate-200 rounded-lg p-6">
+             <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6">
                <h2 className="text-xl font-semibold mb-4">Progress</h2>
-               <p className="text-slate-600 mb-4">
+               <p className="text-slate-600 dark:text-zinc-400 mb-4">
                  Track your learning progress and achievements.
                </p>
                <Button variant="outline" onClick={() => router.push('/dashboard/progress')}>View Progress</Button>
              </div>
 
-             <div className="border border-slate-200 rounded-lg p-6">
+             <div className="border border-slate-200 dark:border-white/10 rounded-lg p-6">
                <h2 className="text-xl font-semibold mb-4">Resources</h2>
-               <p className="text-slate-600 mb-4">
+               <p className="text-slate-600 dark:text-zinc-400 mb-4">
                  Access study materials and additional resources.
                </p>
                <Button variant="outline" onClick={() => router.push('/dashboard/resources')}>Browse Resources</Button>

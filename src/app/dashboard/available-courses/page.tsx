@@ -89,53 +89,53 @@ export default function AvailableCoursesPage() {
   };
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-28">
         <div className="space-y-8">
           <div>
-            <h1 className="text-4xl font-bold text-slate-900">Available Courses</h1>
-            <p className="mt-2 text-slate-600">Browse and enroll in courses to advance your learning journey</p>
-            <p className="mt-2 text-sm text-slate-500">Track your progress in <Link href="/dashboard/progress" className="text-primary hover:underline">My Progress</Link></p>
+            <h1 className="text-4xl font-bold text-slate-900 dark:text-zinc-100">Available Courses</h1>
+            <p className="mt-2 text-slate-600 dark:text-zinc-400">Browse and enroll in courses to advance your learning journey</p>
+            <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400">Track your progress in <Link href="/dashboard/progress" className="text-primary hover:underline">My Progress</Link></p>
           </div>
 
           {loading ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-10 text-slate-600">
+            <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10 text-slate-600 dark:text-zinc-400">
               Loading available courses...
             </div>
           ) : courses.length === 0 ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-10">
-              <h2 className="text-xl font-semibold text-slate-900 mb-4">No courses available</h2>
-              <p className="text-slate-600 mb-6">There are currently no courses available. Please check back later.</p>
+            <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-zinc-100 mb-4">No courses available</h2>
+              <p className="text-slate-600 dark:text-zinc-400 mb-6">There are currently no courses available. Please check back later.</p>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2">
               {courses.map((course) => (
-                 <article key={course.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
+                 <article key={course.id} className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-6 shadow-sm hover:shadow-md transition">
                    <div className="space-y-4">
                        <div>
                          <p className="text-sm uppercase tracking-[0.3em] text-secondary">Course</p>
-                         <h2 className="mt-2 text-xl font-semibold text-slate-900">{course.title}</h2>
-                         <p className="text-xs text-slate-500 mt-1">ID: {course.id}</p>
+                         <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-zinc-100">{course.title}</h2>
+                         <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">ID: {course.id}</p>
                        </div>
-                     <p className="text-slate-600 line-clamp-2">{course.description}</p>
-                      <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200">
-                        <span className="text-sm text-slate-500">{formatCoursePrice(course)}</span>
+                     <p className="text-slate-600 dark:text-zinc-400 line-clamp-2">{course.description}</p>
+                      <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-200 dark:border-white/10">
+                        <span className="text-sm text-slate-500 dark:text-zinc-400">{formatCoursePrice(course)}</span>
                         {getEnrollmentStatus(course.id) === "approved" ? (
                           <Link
                             href={`/courses/${course.slug}/learn`}
-                            className="rounded-full bg-green-500 px-4 py-2 text-sm font-semibold text-white"
+                            className="rounded-full bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
                           >
                             Go to Course
                           </Link>
                         ) : getEnrollmentStatus(course.id) === "pending" ? (
-                          <Button disabled className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white">
+                          <Button disabled className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-amber-950">
                             Pending Approval
                           </Button>
                         ) : getEnrollmentStatus(course.id) === "rejected" ? (
                           <Button
                             onClick={() => handleRequest(course)}
-                            className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
+                            className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
                           >
                             Request Again
                           </Button>
@@ -154,7 +154,7 @@ export default function AvailableCoursesPage() {
             </div>
           )}
 
-          <div className="pt-8 border-t border-slate-200">
+          <div className="pt-8 border-t border-slate-200 dark:border-white/10">
             <Button variant="outline" onClick={() => router.push("/dashboard")}>Back to Dashboard</Button>
           </div>
         </div>

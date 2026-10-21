@@ -64,25 +64,25 @@ export default function AdminCoursesPage() {
   }, [router]);
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-24">
         <BackToAdminButton />
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Course Management</h1>
-              <p className="text-slate-600">All courses and their publication status.</p>
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-zinc-100">Course Management</h1>
+              <p className="text-slate-600 dark:text-zinc-400">All courses and their publication status.</p>
             </div>
             <Button onClick={() => router.push("/admin/courses/new")}>Create New Course</Button>
           </div>
 
           {loading ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 text-slate-600">
+            <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-8 text-slate-600 dark:text-zinc-400">
               Loading courses...
             </div>
           ) : courses.length === 0 ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-8 text-slate-600">
+            <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-8 text-slate-600 dark:text-zinc-400">
               No courses have been created yet.
             </div>
           ) : (
@@ -91,42 +91,42 @@ export default function AdminCoursesPage() {
                 const quizCount = courseQuizzes[course.id]?.length ?? 0;
                 const firstQuizId = courseQuizzes[course.id]?.[0]?.id || '';
                 return (
-                  <div key={course.id} className="rounded-3xl border border-slate-200 bg-white p-6">
+                  <div key={course.id} className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
-                        <h2 className="text-xl font-semibold text-slate-900">{course.title}</h2>
-                        <p className="text-slate-500">ID: {course.id}</p>
-                        <p className="text-slate-500">Slug: {course.slug}</p>
+                        <h2 className="text-xl font-semibold text-slate-900 dark:text-zinc-100">{course.title}</h2>
+                        <p className="text-slate-500 dark:text-zinc-400">ID: {course.id}</p>
+                        <p className="text-slate-500 dark:text-zinc-400">Slug: {course.slug}</p>
                       </div>
-                      <div className="flex flex-wrap gap-2 text-sm text-slate-500">
-                        <span className={course.published ? "rounded-full bg-emerald-100 px-3 py-1 text-emerald-700" : "rounded-full bg-slate-100 px-3 py-1 text-slate-600"}>
+                      <div className="flex flex-wrap gap-2 text-sm text-slate-500 dark:text-zinc-400">
+                        <span className={course.published ? "rounded-full bg-emerald-100 px-3 py-1 text-emerald-700" : "rounded-full bg-slate-100 dark:bg-zinc-800 px-3 py-1 text-slate-600 dark:text-zinc-400"}>
                           {course.published ? "Published" : "Draft"}
                         </span>
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">{formatCoursePrice(course)}</span>
+                        <span className="rounded-full bg-slate-100 dark:bg-zinc-800 px-3 py-1 text-slate-600 dark:text-zinc-400">{formatCoursePrice(course)}</span>
                       </div>
                     </div>
                     <div className="mt-4 flex items-center gap-3">
                       <Link href={`/courses/${course.slug}`} className="text-primary hover:underline text-sm">View Course</Link>
-                      <Link href={`/admin/courses/${course.id}/edit`} className="text-slate-600 hover:text-slate-900 text-sm">Edit Course</Link>
-                      <Link href={`/admin/courses/${course.id}/quizzes`} className="text-slate-600 hover:text-slate-900 text-sm">Quiz Analytics</Link>
-                      <Link href={`/admin/courses/${course.id}/analytics`} className="text-slate-600 hover:text-slate-900 text-sm">Course Analytics</Link>
-                      <Link href={`/admin/courses/${course.id}/quizzes/new`} className="text-slate-600 hover:text-slate-900 text-sm">Add Quiz</Link>
+                      <Link href={`/admin/courses/${course.id}/edit`} className="text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 text-sm">Edit Course</Link>
+                      <Link href={`/admin/courses/${course.id}/quizzes`} className="text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 text-sm">Quiz Analytics</Link>
+                      <Link href={`/admin/courses/${course.id}/analytics`} className="text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 text-sm">Course Analytics</Link>
+                      <Link href={`/admin/courses/${course.id}/quizzes/new`} className="text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 text-sm">Add Quiz</Link>
                       {quizCount > 0 ? (
                         <>
                           <Link
                             href={`/admin/courses/${course.id}/quizzes/${firstQuizId}/edit`}
-                            className="text-slate-600 hover:text-slate-900 text-sm"
+                            className="text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 text-sm"
                             title="Opens the most recent quiz — switch between quizzes from the list on that page"
                           >
                             Edit Quiz
                           </Link>
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-slate-500 dark:text-zinc-400">
                             {quizCount} {quizCount === 1 ? "quiz" : "quizzes"}
                           </span>
                         </>
                       ) : (
                         <span
-                          className="text-sm text-slate-300 cursor-not-allowed"
+                          className="text-sm text-slate-400 dark:text-zinc-500 cursor-not-allowed"
                           aria-disabled="true"
                           title="No quizzes yet — use Add Quiz to create one"
                         >
@@ -137,7 +137,7 @@ export default function AdminCoursesPage() {
                         <AlertDialogTrigger asChild>
                           <button
                             onClick={() => setCourseToDelete(course.id)}
-                            className="text-red-500 hover:text-red-700 text-sm"
+                            className="text-red-600 hover:text-red-700 text-sm"
                           >
                             Delete
                           </button>

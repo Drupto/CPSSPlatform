@@ -200,15 +200,15 @@ export default function CourseAnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-lg text-slate-600">Loading course analytics...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Loading course analytics...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
         <div className="bg-red-100 border border-red-200 rounded-2xl p-6 max-w-md text-center">
           <p className="text-red-700">{error}</p>
           <Button className="mt-4" onClick={() => router.push("/admin/courses")}>
@@ -220,7 +220,7 @@ export default function CourseAnalyticsPage() {
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-8">
@@ -232,8 +232,8 @@ export default function CourseAnalyticsPage() {
           >
             ← Back to Course
           </Button>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Course Analytics</h1>
-          <p className="text-slate-600">Student enrollment and progress overview for {course?.title}</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-zinc-100 mb-2">Course Analytics</h1>
+          <p className="text-slate-600 dark:text-zinc-400">Student enrollment and progress overview for {course?.title}</p>
         </div>
 
         <div className="grid gap-6 mb-8">
@@ -241,7 +241,7 @@ export default function CourseAnalyticsPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Enrolled</CardTitle>
-                <Users className="h-4 w-4 text-slate-500" />
+                <Users className="h-4 w-4 text-slate-500 dark:text-zinc-400" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalEnrolled}</div>
@@ -250,7 +250,7 @@ export default function CourseAnalyticsPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Completed</CardTitle>
-                <GraduationCap className="h-4 w-4 text-slate-500" />
+                <GraduationCap className="h-4 w-4 text-slate-500 dark:text-zinc-400" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{completedCount}</div>
@@ -259,7 +259,7 @@ export default function CourseAnalyticsPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-                <ClipboardCheck className="h-4 w-4 text-slate-500" />
+                <ClipboardCheck className="h-4 w-4 text-slate-500 dark:text-zinc-400" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{inProgressCount}</div>
@@ -268,7 +268,7 @@ export default function CourseAnalyticsPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Avg. Completion</CardTitle>
-                <BarChart3 className="h-4 w-4 text-slate-500" />
+                <BarChart3 className="h-4 w-4 text-slate-500 dark:text-zinc-400" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{avgCompletion}%</div>
@@ -301,7 +301,7 @@ export default function CourseAnalyticsPage() {
               <TableBody>
                 {students.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={5} className="text-center py-8 text-slate-500 dark:text-zinc-400">
                       No enrolled students yet.
                     </TableCell>
                   </TableRow>
@@ -317,7 +317,7 @@ export default function CourseAnalyticsPage() {
                       <TableRow key={student.userId}>
                         <TableCell>
                           <div className="font-medium">{student.name}</div>
-                          <div className="text-sm text-slate-500">{student.email}</div>
+                          <div className="text-sm text-slate-500 dark:text-zinc-400">{student.email}</div>
                         </TableCell>
                         <TableCell>{formatDate(student.enrolledAt)}</TableCell>
                         <TableCell>

@@ -63,8 +63,8 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-lg text-slate-600">Checking admin access...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Checking admin access...</p>
       </div>
     );
   }
@@ -77,12 +77,12 @@ export default function AdminPage() {
   ];
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-24">
-        <div className="bg-white rounded-3xl shadow-lg p-10">
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">Admin Dashboard</h1>
-          <p className="text-slate-600 mb-8">
+        <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-lg p-10">
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-zinc-100 mb-4">Admin Dashboard</h1>
+          <p className="text-slate-600 dark:text-zinc-400 mb-8">
             Overview and management of your course platform.
           </p>
 
@@ -95,41 +95,41 @@ export default function AdminPage() {
           {/* Stats Grid */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
             {stats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+              <div key={stat.label} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-6">
                 <div className="flex items-center gap-3 mb-3">
                   <div className={`${stat.color} rounded-lg p-2 text-white`}>
                     <stat.icon className="h-5 w-5" />
                   </div>
-                  <span className="text-sm text-slate-500">{stat.label}</span>
+                  <span className="text-sm text-slate-500 dark:text-zinc-400">{stat.label}</span>
                 </div>
-                <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-zinc-100">{stat.value}</p>
               </div>
             ))}
           </div>
 
              <div className="grid gap-4 sm:grid-cols-2">
-               <Link href="/admin/courses" className="rounded-2xl border border-slate-200 bg-slate-50 p-6 hover:border-primary transition">
+               <Link href="/admin/courses" className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-6 hover:border-primary transition">
                  <h2 className="text-xl font-semibold mb-2">Course Management</h2>
-                 <p className="text-slate-600">View and edit all available courses.</p>
+                 <p className="text-slate-600 dark:text-zinc-400">View and edit all available courses.</p>
                </Link>
-               <Link href="/admin/courses/new" className="rounded-2xl border border-slate-200 bg-slate-50 p-6 hover:border-primary transition">
+               <Link href="/admin/courses/new" className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-6 hover:border-primary transition">
                  <h2 className="text-xl font-semibold mb-2">Create New Course</h2>
-                 <p className="text-slate-600">Build a course using text, video, and document content.</p>
+                 <p className="text-slate-600 dark:text-zinc-400">Build a course using text, video, and document content.</p>
                </Link>
-               <Link href="/admin/enrollments" className="rounded-2xl border border-slate-200 bg-slate-50 p-6 hover:border-primary transition">
+               <Link href="/admin/enrollments" className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-6 hover:border-primary transition">
                  <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
                    Enrollment Requests
                    {pendingEnrollments > 0 && (
-                     <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">
+                     <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-amber-950">
                        {pendingEnrollments}
                      </span>
                    )}
                  </h2>
-                 <p className="text-slate-600">Review and approve student enrollment requests.</p>
+                 <p className="text-slate-600 dark:text-zinc-400">Review and approve student enrollment requests.</p>
                </Link>
-               <Link href="/admin/resources" className="rounded-2xl border border-slate-200 bg-slate-50 p-6 hover:border-primary transition">
+               <Link href="/admin/resources" className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-6 hover:border-primary transition">
                  <h2 className="text-xl font-semibold mb-2">Resource Management</h2>
-                 <p className="text-slate-600">Manage study materials and additional resources.</p>
+                 <p className="text-slate-600 dark:text-zinc-400">Manage study materials and additional resources.</p>
                </Link>
              </div>
 

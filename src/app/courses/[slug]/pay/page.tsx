@@ -141,19 +141,19 @@ export default function CoursePaymentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-lg text-slate-600">Loading payment details...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Loading payment details...</p>
       </div>
     );
   }
 
   if (!course) {
     return (
-      <main className="relative min-h-screen bg-slate-50">
+      <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
         <Navbar />
         <div className="max-w-4xl mx-auto px-6 py-28 text-center">
-          <h1 className="text-3xl font-bold text-slate-900">Course not found</h1>
-          <p className="mt-4 text-slate-600">This course may have been removed or the link is invalid.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-zinc-100">Course not found</h1>
+          <p className="mt-4 text-slate-600 dark:text-zinc-400">This course may have been removed or the link is invalid.</p>
           <Button className="mt-8" onClick={() => router.push("/courses")}>Back to Courses</Button>
         </div>
       </main>
@@ -161,24 +161,24 @@ export default function CoursePaymentPage() {
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-28">
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
+        <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-8 shadow-sm sm:p-10">
           <div className="space-y-2">
             <p className="text-sm uppercase tracking-[0.3em] text-secondary">Complete Enrollment</p>
-            <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">{course.title}</h1>
-            <p className="text-slate-600">{course.description}</p>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-zinc-100 sm:text-4xl">{course.title}</h1>
+            <p className="text-slate-600 dark:text-zinc-400">{course.description}</p>
           </div>
 
           {/* Amount to pay — INR (courses.price), admin-set at course
               creation/edit. The UPI QR is a static image with no amount
               embedded, so the student must enter the exact amount manually in
               their UPI app. */}
-          <div className="mt-8 rounded-3xl bg-slate-50 p-6 text-center">
+          <div className="mt-8 rounded-3xl bg-slate-50 dark:bg-zinc-800 p-6 text-center">
             <p className="text-sm uppercase tracking-[0.3em] text-secondary">Amount to Pay</p>
-            <p className="mt-2 text-4xl font-bold text-slate-900">{formatInr(course.price)}</p>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-4xl font-bold text-slate-900 dark:text-zinc-100">{formatInr(course.price)}</p>
+            <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">
               Pay exactly {formatInr(course.price)} via UPI (KOTAK), then
               submit the UPI transaction reference (UTR) to finish your enrollment.
             </p>
@@ -213,7 +213,7 @@ export default function CoursePaymentPage() {
                   className="flex flex-col items-center gap-3 rounded-3xl border-2 border-primary bg-primary/5 p-6 text-center shadow-sm"
                 >
                   <div className="flex w-full items-center justify-between">
-                    <span className="text-sm font-semibold uppercase tracking-wide text-slate-700">
+                    <span className="text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-zinc-300">
                       {option.label} (KOTAK)
                     </span>
                     <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-white">
@@ -221,7 +221,7 @@ export default function CoursePaymentPage() {
                     </span>
                   </div>
                   {qrFailed[option.method] ? (
-                    <div className="flex h-64 w-full items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 text-sm text-slate-500">
+                    <div className="flex h-64 w-full items-center justify-center rounded-2xl border border-dashed border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800 px-4 text-sm text-slate-500 dark:text-zinc-400">
                       {option.label} QR coming soon — please contact the admin.
                     </div>
                   ) : (
@@ -230,21 +230,21 @@ export default function CoursePaymentPage() {
                       alt={`${option.label} payment QR code`}
                       width={590}
                       height={1280}
-                      className="h-64 w-auto rounded-2xl border border-slate-200 object-contain"
+                      className="h-64 w-auto rounded-2xl border border-slate-200 dark:border-white/10 object-contain"
                       onError={() =>
                         setQrFailed((prev) => ({ ...prev, [option.method]: true }))
                       }
                     />
                   )}
-                  <p className="text-base font-bold text-slate-900">{formatInr(course.price)}</p>
-                  <p className="text-xs text-slate-500">{option.payToNote}</p>
+                  <p className="text-base font-bold text-slate-900 dark:text-zinc-100">{formatInr(course.price)}</p>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400">{option.payToNote}</p>
                 </div>
               );
             })}
           </div>
 
           <div className="mt-8 space-y-2">
-            <label htmlFor="payment-reference" className="text-sm font-medium text-slate-700">
+            <label htmlFor="payment-reference" className="text-sm font-medium text-slate-700 dark:text-zinc-300">
               UPI transaction reference (UTR number)
             </label>
             <input
@@ -254,9 +254,9 @@ export default function CoursePaymentPage() {
               onChange={(event) => setReference(event.target.value)}
               placeholder="e.g. 123456789012"
               maxLength={REFERENCE_MAX_LENGTH}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="w-full rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 px-4 py-3 text-slate-900 dark:text-zinc-100 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-zinc-400">
               Find this in your UPI app (GPay / PhonePe / Paytm / KOTAK) under the transaction receipt. An admin
               will manually match it against the received payment before granting access.
             </p>

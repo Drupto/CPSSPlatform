@@ -183,14 +183,14 @@ export default function AdminEnrollmentsPage() {
   ];
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-24">
-        <div className="bg-white rounded-3xl shadow-lg p-10">
+        <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-lg p-10">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-slate-900">Enrollment Requests</h1>
-              <p className="text-slate-600 mt-2">Review and approve student course access requests.</p>
+              <h1 className="text-4xl font-bold text-slate-900 dark:text-zinc-100">Enrollment Requests</h1>
+              <p className="text-slate-600 dark:text-zinc-400 mt-2">Review and approve student course access requests.</p>
             </div>
             <Button variant="outline" onClick={() => router.push("/admin")}>Back to Admin</Button>
           </div>
@@ -203,7 +203,7 @@ export default function AdminEnrollmentsPage() {
                 className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
                   tab === t.key
                     ? "bg-primary text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700"
                 }`}
               >
                 {t.label}
@@ -212,13 +212,13 @@ export default function AdminEnrollmentsPage() {
           </div>
 
           {loading ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-10 text-slate-600">
+            <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10 text-slate-600 dark:text-zinc-400">
               Loading requests...
             </div>
           ) : rows.length === 0 ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-10">
-              <h2 className="text-xl font-semibold text-slate-900 mb-2">No {tab} requests</h2>
-              <p className="text-slate-600">
+            <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-zinc-100 mb-2">No {tab} requests</h2>
+              <p className="text-slate-600 dark:text-zinc-400">
                 {tab === "pending"
                   ? "There are no pending enrollment requests right now."
                   : `There are no ${tab} enrollment requests.`}
@@ -229,27 +229,27 @@ export default function AdminEnrollmentsPage() {
               {rows.map((row) => (
                 <div
                   key={row.enrollment.id}
-                  className="rounded-2xl border border-slate-200 bg-slate-50 p-6"
+                  className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-6"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-lg font-semibold text-slate-900">
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-zinc-100">
                           {row.course ? row.course.title : "Unknown Course"}
                         </h2>
                         {/* Expected INR amount (UPI / KOTAK), admin-set at course
                             creation/edit — so the admin knows what to look
                             for when verifying the payment. */}
                         {row.course && (
-                          <span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                          <span className="rounded-full bg-slate-200 dark:bg-zinc-700 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:text-zinc-300">
                             {formatCoursePrice(row.course)}
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-slate-600">
+                      <p className="text-sm text-slate-600 dark:text-zinc-400">
                         Student: {row.user?.displayName || row.user?.email || row.enrollment.userId}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">
                         Requested: {dateFormat(row.enrollment.requestedAt)}
                       </p>
 
@@ -267,16 +267,16 @@ export default function AdminEnrollmentsPage() {
                           >
                             {row.enrollment.paymentMethod === "paypal" ? "PayPal" : "UPI"}
                           </span>
-                          <code className="rounded bg-white px-2 py-0.5 font-mono text-sm text-slate-800">
+                          <code className="rounded bg-white dark:bg-zinc-900 px-2 py-0.5 font-mono text-sm text-slate-800 dark:text-zinc-200">
                             {row.enrollment.paymentReference}
                           </code>
                           <CopyReferenceButton reference={row.enrollment.paymentReference} />
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-slate-500 dark:text-zinc-400">
                             Submitted: {dateFormat(row.enrollment.paymentSubmittedAt)}
                           </span>
                         </div>
                       ) : (
-                        <p className="pt-1 text-xs text-slate-400">
+                        <p className="pt-1 text-xs text-slate-500 dark:text-zinc-400">
                           Payment details not provided (legacy request)
                         </p>
                       )}

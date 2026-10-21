@@ -48,36 +48,36 @@ export function CoursesCatalog() {
   }, [courses, searchQuery]);
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-28">
         <div className="mb-12 text-center">
           <p className="text-sm uppercase tracking-[0.3em] text-primary">Course Catalog</p>
-          <h1 className="mt-4 text-4xl font-bold text-slate-900">Browse available courses</h1>
-          <p className="mt-4 text-slate-600">Enroll in courses and access structured learning content.</p>
+          <h1 className="mt-4 text-4xl font-bold text-slate-900 dark:text-zinc-100">Browse available courses</h1>
+          <p className="mt-4 text-slate-600 dark:text-zinc-400">Enroll in courses and access structured learning content.</p>
         </div>
 
         {!loading && (
           <div className="relative mb-8 max-w-md mx-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 dark:text-zinc-400" />
             <Input
               type="text"
               placeholder="Search courses by title or description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-12 rounded-2xl border-slate-200"
+              className="pl-10 h-12 rounded-2xl border-slate-200 dark:border-white/10"
             />
           </div>
         )}
 
         {loading ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-10 text-slate-600">Loading courses...</div>
+          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10 text-slate-600 dark:text-zinc-400">Loading courses...</div>
         ) : error ? (
           <div className="rounded-3xl border border-red-300 bg-red-50 p-10 text-red-700 whitespace-pre-line">
             {error}
           </div>
         ) : filteredCourses.length === 0 ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-slate-600">
+          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10 text-center text-slate-600 dark:text-zinc-400">
             {searchQuery.trim() ? (
               <>No courses match "{searchQuery}". Try a different search term.</>
             ) : (
@@ -87,21 +87,21 @@ export function CoursesCatalog() {
         ) : (
           <>
             {searchQuery.trim() && (
-              <p className="text-sm text-slate-500 mb-4 text-center">
+              <p className="text-sm text-slate-500 dark:text-zinc-400 mb-4 text-center">
                 Found {filteredCourses.length} course{filteredCourses.length !== 1 ? "s" : ""} matching "{searchQuery}"
               </p>
             )}
             <div className="grid gap-6 md:grid-cols-2">
               {filteredCourses.map((course) => (
-                <article key={course.id} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <article key={course.id} className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-6 shadow-sm">
                   <div className="space-y-4">
                      <div>
                        <p className="text-sm uppercase tracking-[0.3em] text-secondary">Course</p>
-                       <h2 className="mt-2 text-2xl font-semibold text-slate-900">{course.title}</h2>
+                       <h2 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-zinc-100">{course.title}</h2>
                      </div>
-                    <p className="text-slate-600 min-h-[3rem]">{course.description}</p>
+                    <p className="text-slate-600 dark:text-zinc-400 min-h-[3rem]">{course.description}</p>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-xl font-semibold text-slate-900">{formatCoursePrice(course)}</span>
+                      <span className="text-xl font-semibold text-slate-900 dark:text-zinc-100">{formatCoursePrice(course)}</span>
                       <Link href={`/courses/${course.slug}`} className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-primary/90">
                         View Course
                       </Link>

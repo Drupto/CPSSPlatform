@@ -65,9 +65,9 @@ export function ChecklistEnquiryForm() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden grid md:grid-cols-2">
+    <div className="max-w-4xl mx-auto bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-white/5 overflow-hidden grid md:grid-cols-2">
       {/* Pitch panel */}
-      <div className="bg-slate-900 text-white p-10 md:p-12 flex flex-col justify-center">
+      <div className="bg-slate-900 dark:bg-zinc-800 text-white p-10 md:p-12 flex flex-col justify-center">
         <span className="inline-block w-fit px-3 py-1 rounded-full bg-primary/20 border border-primary/40 text-primary text-xs font-bold uppercase tracking-wider mb-6">
           Free 5-Page PDF
         </span>
@@ -95,10 +95,10 @@ export function ChecklistEnquiryForm() {
             <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
               <CheckCircle2 className="h-8 w-8 text-green-600" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-zinc-100 mb-2">
               You&apos;re all set{name.trim() ? `, ${name.trim().split(/\s+/)[0]}` : ""}!
             </h3>
-            <p className="text-slate-600 mb-8">
+            <p className="text-slate-600 dark:text-zinc-400 mb-8">
               Your checklist is ready. Grab it below - happy studying!
             </p>
             <Button
@@ -111,14 +111,14 @@ export function ChecklistEnquiryForm() {
                 Download Your Free Checklist
               </a>
             </Button>
-            <p className="mt-6 text-sm text-slate-500">
+            <p className="mt-6 text-sm text-slate-500 dark:text-zinc-400">
               Download not starting? Right-click the button and choose &quot;Save link as&quot;.
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate>
-            <h3 className="text-2xl font-bold text-slate-900 mb-1">Get instant access</h3>
-            <p className="text-slate-500 text-sm mb-8">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-zinc-100 mb-1">Get instant access</h3>
+            <p className="text-slate-500 dark:text-zinc-400 text-sm mb-8">
               Fill in the form and the download unlocks right away.
             </p>
 
@@ -153,7 +153,7 @@ export function ChecklistEnquiryForm() {
 
               <div className="space-y-2">
                 <Label htmlFor="checklist-phone">
-                  Phone / WhatsApp <span className="text-slate-400 font-normal">(optional)</span>
+                  Phone / WhatsApp <span className="text-slate-500 dark:text-zinc-400 font-normal">(optional)</span>
                 </Label>
                 <Input
                   id="checklist-phone"
@@ -169,7 +169,7 @@ export function ChecklistEnquiryForm() {
               <div className="space-y-2">
                 <Label htmlFor="checklist-challenge">
                   What&apos;s your biggest CSCS prep challenge?{" "}
-                  <span className="text-slate-400 font-normal">(optional)</span>
+                  <span className="text-slate-500 dark:text-zinc-400 font-normal">(optional)</span>
                 </Label>
                 <Textarea
                   id="checklist-challenge"
@@ -206,7 +206,7 @@ export function ChecklistEnquiryForm() {
                 )}
               </Button>
 
-              <p className="text-xs text-slate-400 text-center leading-relaxed">
+              <p className="text-xs text-slate-500 dark:text-zinc-400 text-center leading-relaxed">
                 We&apos;ll only use your details to share study tips. See our{" "}
                 <Link href="/privacy-policy" className="underline hover:text-slate-600">
                   Privacy Policy

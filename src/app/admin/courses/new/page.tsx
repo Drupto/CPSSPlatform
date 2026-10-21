@@ -186,20 +186,20 @@ export default function NewCoursePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-lg text-slate-600">Checking admin permissions...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Checking admin permissions...</p>
       </div>
     );
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-24">
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+        <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10 shadow-sm">
           <BackToAdminButton />
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Create New Course</h1>
-          <p className="text-slate-600 mb-8">Build a course using structured sections and supporting assets.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-zinc-100 mb-2">Create New Course</h1>
+          <p className="text-slate-600 dark:text-zinc-400 mb-8">Build a course using structured sections and supporting assets.</p>
 
           {error && <div className="mb-6 rounded-2xl bg-red-100 border border-red-200 px-4 py-3 text-red-700">{error}</div>}
           {message && <div className="mb-6 rounded-2xl bg-emerald-100 border border-emerald-200 px-4 py-3 text-emerald-700">{message}</div>}
@@ -268,9 +268,9 @@ export default function NewCoursePage() {
               </div>
 
               {contentBlocks.map((block) => (
-                <div key={block.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                <div key={block.id} className="rounded-3xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-6">
                   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <h3 className="font-semibold text-slate-900">Section {block.order}</h3>
+                    <h3 className="font-semibold text-slate-900 dark:text-zinc-100">Section {block.order}</h3>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -286,7 +286,7 @@ export default function NewCoursePage() {
                           }
                         }}
                         disabled={contentBlocks.findIndex((b) => b.id === block.id) === 0}
-                        className="text-slate-500 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+                        className="text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed text-sm"
                         title="Move up"
                       >
                         ↑
@@ -305,12 +305,12 @@ export default function NewCoursePage() {
                           }
                         }}
                         disabled={contentBlocks.findIndex((b) => b.id === block.id) === contentBlocks.length - 1}
-                        className="text-slate-500 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+                        className="text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed text-sm"
                         title="Move down"
                       >
                         ↓
                       </button>
-                      <Button variant="ghost" className="text-sm text-slate-600" type="button" onClick={() => removeBlock(block.id)}>
+                      <Button variant="ghost" className="text-sm text-slate-600 dark:text-zinc-400" type="button" onClick={() => removeBlock(block.id)}>
                         Remove
                       </Button>
                     </div>
@@ -358,16 +358,16 @@ export default function NewCoursePage() {
                             type="file"
                             accept="video/mp4,video/webm,video/ogg,video/quicktime"
                             onChange={(event) => updateBlock(block.id, { file: event.target.files?.[0] ?? null })}
-                            className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-slate-900"
+                            className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-slate-900 dark:text-zinc-100"
                           />
-                          <p className="text-xs text-slate-500">Supported formats: MP4, WebM, OGG, MOV. Max file size depends on your Firebase plan.</p>
+                          <p className="text-xs text-slate-500 dark:text-zinc-400">Supported formats: MP4, WebM, OGG, MOV. Max file size depends on your Firebase plan.</p>
                         </div>
                         <div className="relative">
                           <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-slate-200" />
+                            <span className="w-full border-t border-slate-200 dark:border-white/10" />
                           </div>
                           <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-slate-50 px-2 text-slate-500">Or use an external URL</span>
+                            <span className="bg-slate-50 dark:bg-zinc-900 px-2 text-slate-500 dark:text-zinc-400">Or use an external URL</span>
                           </div>
                         </div>
                         <div className="space-y-2">
@@ -388,7 +388,7 @@ export default function NewCoursePage() {
                           type="file"
                           accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                           onChange={(event) => updateBlock(block.id, { file: event.target.files?.[0] ?? null })}
-                          className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-slate-900"
+                          className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-slate-900 dark:text-zinc-100"
                         />
                       </div>
                     )}
@@ -398,13 +398,13 @@ export default function NewCoursePage() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm text-slate-600">Publish now to make the course available to students.</div>
-              <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+              <div className="text-sm text-slate-600 dark:text-zinc-400">Publish now to make the course available to students.</div>
+              <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-zinc-300">
                 <input
                   type="checkbox"
                   checked={published}
                   onChange={(event) => setPublished(event.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                  className="h-4 w-4 rounded border-slate-300 dark:border-zinc-700 text-primary focus:ring-primary"
                 />
                 Publish Course
               </label>

@@ -126,15 +126,15 @@ export default function EditQuizPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-lg text-slate-600">Loading quiz...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Loading quiz...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
         <div className="bg-red-100 border border-red-200 rounded-2xl p-6 max-w-md text-center">
           <p className="text-red-700">{error}</p>
           <Button className="mt-4" onClick={() => router.push(`/admin/courses/${courseId}/quizzes`)}>
@@ -146,7 +146,7 @@ export default function EditQuizPage() {
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-6">
@@ -158,10 +158,10 @@ export default function EditQuizPage() {
           >
             ← Back to Course
           </Button>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-zinc-100 mb-2">
             Edit Quiz
           </h1>
-          <p className="text-slate-600">
+          <p className="text-slate-600 dark:text-zinc-400">
             Editing quiz for {course?.title}
           </p>
         </div>
@@ -222,12 +222,12 @@ function ExistingQuizzesSection({ quizzes, currentQuizId, courseId }: ExistingQu
               className={`flex items-center justify-between rounded-lg border p-4 transition-colors ${
                 existingQuiz.id === currentQuizId 
                   ? "border-primary bg-primary/5" 
-                  : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+                  : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800"
               }`}
             >
               <div className="flex-1">
-                <h3 className="font-medium text-slate-900">{existingQuiz.title}</h3>
-                <p className="text-sm text-slate-600">
+                <h3 className="font-medium text-slate-900 dark:text-zinc-100">{existingQuiz.title}</h3>
+                <p className="text-sm text-slate-600 dark:text-zinc-400">
                   {existingQuiz.questions.length} question{existingQuiz.questions.length !== 1 ? 's' : ''}
                   {existingQuiz.description && ` • ${existingQuiz.description}`}
                 </p>

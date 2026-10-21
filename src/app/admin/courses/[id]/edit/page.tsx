@@ -277,20 +277,20 @@ if ((block.type === "document" || block.type === "video") && block.file) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-lg text-slate-600">Loading course...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Loading course...</p>
       </div>
     );
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-24">
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+        <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10 shadow-sm">
            <BackToAdminButton />
-           <h1 className="text-3xl font-bold text-slate-900 mb-2">Edit Course</h1>
-           <p className="text-slate-600 mb-8">Update course information and content sections.</p>
+           <h1 className="text-3xl font-bold text-slate-900 dark:text-zinc-100 mb-2">Edit Course</h1>
+           <p className="text-slate-600 dark:text-zinc-400 mb-8">Update course information and content sections.</p>
 
           {error && <div className="mb-6 rounded-2xl bg-red-100 border border-red-200 px-4 py-3 text-red-700">{error}</div>}
           {message && <div className="mb-6 rounded-2xl bg-emerald-100 border border-emerald-200 px-4 py-3 text-emerald-700">{message}</div>}
@@ -359,9 +359,9 @@ if ((block.type === "document" || block.type === "video") && block.file) {
               </div>
 
               {contentBlocks.map((block) => (
-                <div key={block.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                <div key={block.id} className="rounded-3xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-6">
                   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <h3 className="font-semibold text-slate-900">Section {block.order}</h3>
+                    <h3 className="font-semibold text-slate-900 dark:text-zinc-100">Section {block.order}</h3>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -377,7 +377,7 @@ if ((block.type === "document" || block.type === "video") && block.file) {
                           }
                         }}
                         disabled={contentBlocks.findIndex((b) => b.id === block.id) === 0}
-                        className="text-slate-500 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+                        className="text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed text-sm"
                         title="Move up"
                       >
                         ↑
@@ -396,12 +396,12 @@ if ((block.type === "document" || block.type === "video") && block.file) {
                           }
                         }}
                         disabled={contentBlocks.findIndex((b) => b.id === block.id) === contentBlocks.length - 1}
-                        className="text-slate-500 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+                        className="text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed text-sm"
                         title="Move down"
                       >
                         ↓
                       </button>
-                      <Button variant="ghost" className="text-sm text-slate-600" type="button" onClick={() => removeBlock(block.id)}>
+                      <Button variant="ghost" className="text-sm text-slate-600 dark:text-zinc-400" type="button" onClick={() => removeBlock(block.id)}>
                         Remove
                       </Button>
                     </div>
@@ -449,16 +449,16 @@ if ((block.type === "document" || block.type === "video") && block.file) {
                             type="file"
                             accept="video/mp4,video/webm,video/ogg,video/quicktime"
                             onChange={(event) => updateBlock(block.id, { file: event.target.files?.[0] ?? null })}
-                            className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-slate-900"
+                            className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-slate-900 dark:text-zinc-100"
                           />
-                          <p className="text-xs text-slate-500">Supported formats: MP4, WebM, OGG, MOV. Max file size depends on your Firebase plan.</p>
+                          <p className="text-xs text-slate-500 dark:text-zinc-400">Supported formats: MP4, WebM, OGG, MOV. Max file size depends on your Firebase plan.</p>
                         </div>
                         <div className="relative">
                           <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-slate-200" />
+                            <span className="w-full border-t border-slate-200 dark:border-white/10" />
                           </div>
                           <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-white px-2 text-slate-500">Or use an external URL</span>
+                            <span className="bg-white dark:bg-zinc-900 px-2 text-slate-500 dark:text-zinc-400">Or use an external URL</span>
                           </div>
                         </div>
                         <div className="space-y-2">
@@ -468,7 +468,7 @@ if ((block.type === "document" || block.type === "video") && block.file) {
                             onChange={(event) => updateBlock(block.id, { url: event.target.value })}
                             placeholder="https://www.youtube.com/watch?v=..."
                           />
-                          {block.url && <p className="text-sm text-slate-500">Current: {block.url}</p>}
+                          {block.url && <p className="text-sm text-slate-500 dark:text-zinc-400">Current: {block.url}</p>}
                         </div>
                       </div>
                     )}
@@ -480,9 +480,9 @@ if ((block.type === "document" || block.type === "video") && block.file) {
                           type="file"
                           accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                           onChange={(event) => updateBlock(block.id, { file: event.target.files?.[0] ?? null })}
-                          className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-slate-900"
+                          className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-slate-900 dark:text-zinc-100"
                         />
-                        {block.url && <p className="text-sm text-slate-500">Current file: {block.url}</p>}
+                        {block.url && <p className="text-sm text-slate-500 dark:text-zinc-400">Current file: {block.url}</p>}
                       </div>
                     )}
                   </div>
@@ -503,8 +503,8 @@ if ((block.type === "document" || block.type === "video") && block.file) {
                </div>
 
                {quizzes.length === 0 ? (
-                 <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 text-center">
-                   <p className="text-slate-500">No quizzes found for this course.</p>
+                 <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-6 text-center">
+                   <p className="text-slate-500 dark:text-zinc-400">No quizzes found for this course.</p>
                    <Button 
                      className="mt-4" 
                      onClick={() => setShowQuizForm(true)}
@@ -515,11 +515,11 @@ if ((block.type === "document" || block.type === "video") && block.file) {
                ) : (
                  <div className="grid gap-4">
                    {quizzes.map((quiz) => (
-                     <div key={quiz.id} className="rounded-3xl border border-slate-200 bg-white p-6">
+                     <div key={quiz.id} className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-6">
                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                          <div>
-                           <h3 className="text-lg font-semibold text-slate-900">{quiz.title}</h3>
-                           <p className="text-slate-500">{quiz.description}</p>
+                           <h3 className="text-lg font-semibold text-slate-900 dark:text-zinc-100">{quiz.title}</h3>
+                           <p className="text-slate-500 dark:text-zinc-400">{quiz.description}</p>
                            <div className="mt-2 flex flex-wrap gap-2">
                              <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700 text-sm">
                                {quiz.questions.length} questions
@@ -552,9 +552,9 @@ if ((block.type === "document" || block.type === "video") && block.file) {
              {/* Quiz Creation Modal */}
              {showQuizForm && (
                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-                 <div className="bg-white rounded-3xl border border-slate-200 shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+                 <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
                    <div className="flex items-center justify-between mb-4">
-                     <h2 className="text-2xl font-bold text-slate-900">Add Quiz</h2>
+                     <h2 className="text-2xl font-bold text-slate-900 dark:text-zinc-100">Add Quiz</h2>
                       <Button 
                         type="button"
                         variant="outline" 
@@ -563,7 +563,7 @@ if ((block.type === "document" || block.type === "video") && block.file) {
                         ×
                       </Button>
                    </div>
-                   <p className="text-slate-600 mb-4">Create a new quiz for {course?.title}</p>
+                   <p className="text-slate-600 dark:text-zinc-400 mb-4">Create a new quiz for {course?.title}</p>
                    <QuizForm
                      mode="create"
                      courseId={courseId as string}

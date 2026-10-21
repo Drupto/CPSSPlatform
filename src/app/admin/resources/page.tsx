@@ -325,20 +325,20 @@ export default function AdminResourcesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-lg text-slate-600">Loading admin resources...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Loading admin resources...</p>
       </div>
     );
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-24">
-        <div className="bg-white rounded-3xl shadow-lg p-10">
+        <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-lg p-10">
           <BackToAdminButton />
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">Resource Management</h1>
-          <p className="text-slate-600 mb-8">
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-zinc-100 mb-4">Resource Management</h1>
+          <p className="text-slate-600 dark:text-zinc-400 mb-8">
             Manage study materials and additional resources for your courses.
           </p>
 
@@ -364,10 +364,10 @@ export default function AdminResourcesPage() {
                   </Select>
                   
                   {selectedCourse && (
-                    <div className="mt-4 p-4 border border-slate-200 rounded-lg">
-                      <h3 className="font-medium text-slate-900">{selectedCourse.title}</h3>
-                      <p className="text-sm text-slate-500 mt-1">{selectedCourse.description}</p>
-                      <p className="text-xs text-slate-400 mt-2">ID: {selectedCourse.id}</p>
+                    <div className="mt-4 p-4 border border-slate-200 dark:border-white/10 rounded-lg">
+                      <h3 className="font-medium text-slate-900 dark:text-zinc-100">{selectedCourse.title}</h3>
+                      <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1">{selectedCourse.description}</p>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400 mt-2">ID: {selectedCourse.id}</p>
                     </div>
                   )}
                 </CardContent>
@@ -409,7 +409,7 @@ export default function AdminResourcesPage() {
                       
                       <div className="space-y-4 mt-4">
                         <div>
-                          <label className="text-sm font-medium text-slate-700">Title</label>
+                          <label className="text-sm font-medium text-slate-700 dark:text-zinc-300">Title</label>
                           <Input
                             name="title"
                             value={formData.title}
@@ -422,7 +422,7 @@ export default function AdminResourcesPage() {
                         </div>
                         
                         <div>
-                          <label className="text-sm font-medium text-slate-700">Type</label>
+                          <label className="text-sm font-medium text-slate-700 dark:text-zinc-300">Type</label>
                           <Select name="type" value={formData.type} onValueChange={(value) => { setFormData({ ...formData, type: value }); setFormErrors({}); }}>
                             <SelectTrigger>
                               <SelectValue />
@@ -439,7 +439,7 @@ export default function AdminResourcesPage() {
                         {formData.type === 'flashcard' && (
                           <>
                             <div>
-                              <label className="text-sm font-medium text-slate-700">Front</label>
+                              <label className="text-sm font-medium text-slate-700 dark:text-zinc-300">Front</label>
                               <Input
                                 name="front"
                                 value={formData.front}
@@ -451,7 +451,7 @@ export default function AdminResourcesPage() {
                               )}
                             </div>
                             <div>
-                              <label className="text-sm font-medium text-slate-700">Back</label>
+                              <label className="text-sm font-medium text-slate-700 dark:text-zinc-300">Back</label>
                               <Textarea
                                 name="back"
                                 value={formData.back}
@@ -469,7 +469,7 @@ export default function AdminResourcesPage() {
                         {formData.type !== 'flashcard' && (
                           <>
                         <div>
-                          <label className="text-sm font-medium text-slate-700">Description</label>
+                          <label className="text-sm font-medium text-slate-700 dark:text-zinc-300">Description</label>
                           <Textarea
                             name="body"
                             value={formData.body}
@@ -480,7 +480,7 @@ export default function AdminResourcesPage() {
                         </div>
                         
                         <div>
-                          <label className="text-sm font-medium text-slate-700">URL (for documents/videos/links)</label>
+                          <label className="text-sm font-medium text-slate-700 dark:text-zinc-300">URL (for documents/videos/links)</label>
                           <Input
                             name="url"
                             value={formData.url}
@@ -495,7 +495,7 @@ export default function AdminResourcesPage() {
                         )}
                         
                         <div>
-                          <label className="text-sm font-medium text-slate-700">Order</label>
+                          <label className="text-sm font-medium text-slate-700 dark:text-zinc-300">Order</label>
                           <Input
                             name="order"
                             type="number"
@@ -547,7 +547,7 @@ export default function AdminResourcesPage() {
                       </Button>
                     </div>
                   ) : resources.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500">
+                    <div className="text-center py-8 text-slate-500 dark:text-zinc-400">
                       No resources found for this course. Add a new resource to get started.
                     </div>
                   ) : (
@@ -568,7 +568,7 @@ export default function AdminResourcesPage() {
                                 {getResourceIcon(resource.type)}
                                 <div>
                                   <div className="font-medium">{resource.title}</div>
-                                  <div className="text-sm text-slate-500 mt-1 line-clamp-2">
+                                  <div className="text-sm text-slate-500 dark:text-zinc-400 mt-1 line-clamp-2">
                                     {isFlashcard(resource) ? resource.front : resource.body}
                                   </div>
                                 </div>
@@ -641,14 +641,14 @@ export default function AdminResourcesPage() {
                       </DialogHeader>
 
                       <div className="mt-2 space-y-3">
-                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                          <p className="font-medium text-slate-900">{copyResource?.title}</p>
-                          <p className="text-xs text-slate-500 mt-1">Copying from: {selectedCourse?.title}</p>
+                        <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-3">
+                          <p className="font-medium text-slate-900 dark:text-zinc-100">{copyResource?.title}</p>
+                          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">Copying from: {selectedCourse?.title}</p>
                         </div>
 
                         <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                           {otherCourses.length === 0 ? (
-                            <p className="text-sm text-slate-500 py-4 text-center">
+                            <p className="text-sm text-slate-500 dark:text-zinc-400 py-4 text-center">
                               There are no other courses yet. Create another course first.
                             </p>
                           ) : (
@@ -656,20 +656,20 @@ export default function AdminResourcesPage() {
                               <label
                                 key={course.id}
                                 htmlFor={`copy-target-${course.id}`}
-                                className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 cursor-pointer hover:border-primary transition"
+                                className="flex items-center gap-3 rounded-lg border border-slate-200 dark:border-white/10 p-3 cursor-pointer hover:border-primary transition"
                               >
                                 <Checkbox
                                   id={`copy-target-${course.id}`}
                                   checked={copyTargetIds.includes(course.id)}
                                   onCheckedChange={() => toggleCopyTarget(course.id)}
                                 />
-                                <span className="text-sm font-medium text-slate-700">{course.title}</span>
+                                <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">{course.title}</span>
                               </label>
                             ))
                           )}
                         </div>
 
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-slate-500 dark:text-zinc-400">
                           The copy is appended at the end of the target course&apos;s resources.
                         </p>
                       </div>

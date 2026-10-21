@@ -186,7 +186,7 @@ export default function QuizDetailedResultsPage() {
                   const isCorrect = oIndex === correctAnswer;
                   const isSelected = userAnswer === oIndex;
                   
-                  let bgColor = "bg-white";
+                  let bgColor = "bg-white dark:bg-zinc-900";
                   if (isSelected && isCorrect) {
                     bgColor = "bg-green-100 border-green-500";
                   } else if (isSelected && !isCorrect) {
@@ -230,15 +230,15 @@ export default function QuizDetailedResultsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-lg text-slate-600">Loading quiz results...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Loading quiz results...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
         <div className="bg-red-100 border border-red-200 rounded-2xl p-6 max-w-md text-center">
           <p className="text-red-700">{error}</p>
           <Button className="mt-4" onClick={() => router.push(`/admin/courses/${courseId}/quizzes`)}>
@@ -250,7 +250,7 @@ export default function QuizDetailedResultsPage() {
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-6">
@@ -263,8 +263,8 @@ export default function QuizDetailedResultsPage() {
             <ChevronLeft className="h-4 w-4 mr-2" />
             Back to Analytics
           </Button>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Quiz Results: {quiz?.title}</h1>
-          <p className="text-slate-600">Detailed results for {course?.title}</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-zinc-100 mb-2">Quiz Results: {quiz?.title}</h1>
+          <p className="text-slate-600 dark:text-zinc-400">Detailed results for {course?.title}</p>
         </div>
 
         <div className="grid gap-6 mb-8">
@@ -273,7 +273,7 @@ export default function QuizDetailedResultsPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Attempts</CardTitle>
-                <Users className="h-4 w-4 text-slate-500" />
+                <Users className="h-4 w-4 text-slate-500 dark:text-zinc-400" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{attempts.length}</div>
@@ -282,7 +282,7 @@ export default function QuizDetailedResultsPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Average Score</CardTitle>
-                <BarChart3 className="h-4 w-4 text-slate-500" />
+                <BarChart3 className="h-4 w-4 text-slate-500 dark:text-zinc-400" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
@@ -295,7 +295,7 @@ export default function QuizDetailedResultsPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Pass Rate</CardTitle>
-                <Trophy className="h-4 w-4 text-slate-500" />
+                <Trophy className="h-4 w-4 text-slate-500 dark:text-zinc-400" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
@@ -308,7 +308,7 @@ export default function QuizDetailedResultsPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Avg. Time</CardTitle>
-                <Clock className="h-4 w-4 text-slate-500" />
+                <Clock className="h-4 w-4 text-slate-500 dark:text-zinc-400" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">N/A</div>
@@ -327,7 +327,7 @@ export default function QuizDetailedResultsPage() {
             <CardContent>
               <div className="flex flex-wrap gap-4 items-center">
                 <div className="flex-1 min-w-[200px]">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Filter by User</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1">Filter by User</label>
                   <Select value={selectedUser} onValueChange={setSelectedUser}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a user" />
@@ -375,7 +375,7 @@ export default function QuizDetailedResultsPage() {
               <TableBody>
                 {attempts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={5} className="text-center py-8 text-slate-500 dark:text-zinc-400">
                       No quiz attempts found.
                     </TableCell>
                   </TableRow>
@@ -384,7 +384,7 @@ export default function QuizDetailedResultsPage() {
                     <TableRow key={attempt.id}>
                       <TableCell>
                         <div className="font-medium">{attempt.userName}</div>
-                        <div className="text-sm text-slate-500">{attempt.userEmail}</div>
+                        <div className="text-sm text-slate-500 dark:text-zinc-400">{attempt.userEmail}</div>
                       </TableCell>
                       <TableCell>
                         <Badge className={getScoreColor(attempt.score)}>
@@ -425,7 +425,7 @@ export default function QuizDetailedResultsPage() {
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="text-xl font-semibold">{attempt.userName}</h3>
-                        <p className="text-slate-600">{attempt.userEmail}</p>
+                        <p className="text-slate-600 dark:text-zinc-400">{attempt.userEmail}</p>
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold">

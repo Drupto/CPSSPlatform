@@ -85,20 +85,20 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-lg text-slate-600">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Loading...</p>
       </div>
     );
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-4xl mx-auto px-6 py-28">
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
-           <h1 className="text-3xl font-bold text-slate-900 mb-2">Profile Settings</h1>
-           <p className="text-slate-600 mb-8">Update your profile information.</p>
-           <p className="text-sm text-slate-500 mb-6">Track your learning progress in <Link href="/dashboard/progress" className="text-primary hover:underline">My Progress</Link></p>
+        <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10 shadow-sm">
+           <h1 className="text-3xl font-bold text-slate-900 dark:text-zinc-100 mb-2">Profile Settings</h1>
+           <p className="text-slate-600 dark:text-zinc-400 mb-8">Update your profile information.</p>
+           <p className="text-sm text-slate-500 dark:text-zinc-400 mb-6">Track your learning progress in <Link href="/dashboard/progress" className="text-primary hover:underline">My Progress</Link></p>
 
           {error && <div className="mb-6 rounded-2xl bg-red-100 border border-red-200 px-4 py-3 text-red-700">{error}</div>}
           {message && <div className="mb-6 rounded-2xl bg-emerald-100 border border-emerald-200 px-4 py-3 text-emerald-700">{message}</div>}
@@ -106,8 +106,8 @@ export default function ProfilePage() {
           <form onSubmit={handleSave} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" value={user?.email || ""} disabled className="bg-slate-50" />
-              <p className="text-xs text-slate-500">Email cannot be changed.</p>
+              <Input id="email" value={user?.email || ""} disabled className="bg-slate-50 dark:bg-zinc-800" />
+              <p className="text-xs text-slate-500 dark:text-zinc-400">Email cannot be changed.</p>
             </div>
 
             <div className="space-y-2">
@@ -122,7 +122,7 @@ export default function ProfilePage() {
 
             <div className="space-y-2">
               <Label>Role</Label>
-              <Input value={profile?.role || "student"} disabled className="bg-slate-50 capitalize" />
+              <Input value={profile?.role || "student"} disabled className="bg-slate-50 dark:bg-zinc-800 capitalize" />
             </div>
 
             <div className="flex gap-3 pt-4">

@@ -21,7 +21,7 @@ export const metadata: Metadata = buildMetadata({
 
 export default function ChecklistPage() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <main>
         <section className="py-24">
@@ -33,7 +33,7 @@ export default function ChecklistPage() {
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
                 CSCS Exam Prep Checklist
               </h1>
-              <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-lg text-slate-600 dark:text-zinc-400 max-w-2xl mx-auto leading-relaxed">
                 Tell us where to send your study motivation, and download the checklist
                 instantly. Five print-ready pages that take you from first study session
                 to exam day.

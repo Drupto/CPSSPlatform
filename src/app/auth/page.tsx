@@ -103,12 +103,12 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
+      <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-lg shadow-lg p-8">
         <div className="text-center mb-8">
           <Link href="/" className="text-3xl font-bold tracking-tight inline-block">
             KINÉTIKA
           </Link>
-          <p className="text-slate-600 mt-2">Join thousands of certified professionals</p>
+          <p className="text-slate-600 dark:text-zinc-400 mt-2">Join thousands of certified professionals</p>
         </div>
 
         <Tabs 
@@ -160,14 +160,14 @@ export default function AuthPage() {
                   required
                   minLength={8}
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-zinc-400">
                   At least 8 characters, with an uppercase letter, a lowercase letter, and a number.
                 </p>
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
-              <p className="text-sm text-slate-600 text-center">
+              <p className="text-sm text-slate-600 dark:text-zinc-400 text-center">
                 By signing up, you agree to our{" "}
                 <Link href="/terms-of-service" className="text-primary hover:underline">
                   Terms of Service

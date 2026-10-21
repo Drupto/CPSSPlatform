@@ -109,19 +109,19 @@ export function CourseDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-lg text-slate-600">Loading course...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
+        <p className="text-lg text-slate-600 dark:text-zinc-400">Loading course...</p>
       </div>
     );
   }
 
   if (!course) {
     return (
-      <main className="relative min-h-screen bg-slate-50">
+      <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
         <Navbar />
         <div className="max-w-4xl mx-auto px-6 py-28 text-center">
-          <h1 className="text-3xl font-bold text-slate-900">Course not found</h1>
-          <p className="mt-4 text-slate-600">This course may have been removed or the link is invalid.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-zinc-100">Course not found</h1>
+          <p className="mt-4 text-slate-600 dark:text-zinc-400">This course may have been removed or the link is invalid.</p>
           <Link href="/courses" className="mt-8 inline-flex rounded-full bg-primary px-6 py-3 text-white">
             Back to Catalog
           </Link>
@@ -131,29 +131,29 @@ export function CourseDetail() {
   }
 
   return (
-    <main className="relative min-h-screen bg-slate-50">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-800 dark:bg-zinc-950">
       <Navbar />
       <div className="max-w-6xl mx-auto px-6 py-28">
         <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
-             <div className="space-y-6 rounded-3xl border border-slate-200 bg-white p-10 shadow-sm">
+             <div className="space-y-6 rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-10 shadow-sm">
               <div className="space-y-3">
                 <p className="text-sm uppercase tracking-[0.3em] text-secondary">Course</p>
-                <h1 className="text-4xl font-bold text-slate-900">{course.title}</h1>
-                <p className="text-slate-600">{course.description}</p>
+                <h1 className="text-4xl font-bold text-slate-900 dark:text-zinc-100">{course.title}</h1>
+                <p className="text-slate-600 dark:text-zinc-400">{course.description}</p>
               </div>
              <div className="space-y-4">
-               <div className="rounded-3xl bg-slate-50 p-6">
-                 <p className="text-sm text-slate-500">Price (INR — paid via UPI / KOTAK)</p>
-                 <p className="mt-2 text-3xl font-semibold text-slate-900">{formatInr(course.price)}</p>
+               <div className="rounded-3xl bg-slate-50 dark:bg-zinc-800 p-6">
+                 <p className="text-sm text-slate-500 dark:text-zinc-400">Price (INR — paid via UPI / KOTAK)</p>
+                 <p className="mt-2 text-3xl font-semibold text-slate-900 dark:text-zinc-100">{formatInr(course.price)}</p>
                </div>
-               <div className="rounded-3xl bg-slate-50 p-6">
-                 <p className="text-sm text-slate-500">Status</p>
-                 <p className="mt-2 text-slate-900">{course.published ? "Published" : "Draft"}</p>
+               <div className="rounded-3xl bg-slate-50 dark:bg-zinc-800 p-6">
+                 <p className="text-sm text-slate-500 dark:text-zinc-400">Status</p>
+                 <p className="mt-2 text-slate-900 dark:text-zinc-100">{course.published ? "Published" : "Draft"}</p>
                </div>
              </div>
            </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 p-8 shadow-sm">
               {enrollmentStatus === "approved" ? (
                 <Button className="w-full" onClick={() => router.push(`/courses/${course.slug}/learn`)}>
                   Go to Course
@@ -172,7 +172,7 @@ export function CourseDetail() {
                 </Button>
               )}
 
-            <div className="mt-6 text-sm text-slate-600">
+            <div className="mt-6 text-sm text-slate-600 dark:text-zinc-400">
               {currentUser
                 ? (enrollmentStatus === "approved"
                   ? "You have access to this course."
