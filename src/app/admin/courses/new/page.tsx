@@ -5,22 +5,31 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { addCourseContentItem, createCourse, getUserProfile, uploadCourseAsset, isAdminProfile } from "@/lib/course";
+import { addCourseContentItem, createCourse, createQuiz, getUserProfile, uploadCourseAsset, isAdminProfile } from "@/lib/course";
+import type { Quiz } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Navbar } from "@/components/navbar";
 import { BackToAdminButton } from "@/components/admin/BackToAdminButton";
+import { QuizForm } from "@/components/admin/quizzes/QuizForm";
 
 interface ContentBlock {
   id: number;
-  type: "text" | "video" | "document";
+  type: "text" | "video" | "document" | "quiz";
   title: string;
   body: string;
   url: string;
   file: File | null;
   order: number;
+  /**
+   * Only used while `type === "quiz"`: the quiz authored inline via the
+   * QuizForm modal. It lives in client state until submit time because quiz
+   * documents belong to `courses/{courseId}/quizzes` and the course (hence
+   * the courseId) only exists once the form is submitted.
+   */
+  quizData?: Partial<Quiz>;
 }
 
 export default function NewCoursePage() {
@@ -42,6 +51,9 @@ export default function NewCoursePage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [uploadProgress, setUploadProgress] = useState("");
+  // Block id whose quiz authoring modal is open (quiz-type blocks only).
+  const [quizModalBlockId, setQuizModalBlockId] = useState<number | null>(null);
+  const [isSavingQuizBlock, setIsSavingQuizBlock] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser: User | null) => {
@@ -77,6 +89,29 @@ export default function NewCoursePage() {
     ]);
   };
 
+  // Adds a quiz block at the end of the stream — the admin then reorders it
+  // with the ↑/↓ controls so it lands right after the content it should test.
+  const addQuizBlock = () => {
+    setContentBlocks((current) => [
+      ...current,
+      {
+        id: Date.now(),
+        type: "quiz",
+        title: "Quiz",
+        body: "",
+        url: "",
+        file: null,
+        order: current.length + 1,
+      },
+    ]);
+  };
+
+  const handleQuizBlockSave = async (blockId: number, quiz: Partial<Quiz>) => {
+    updateBlock(blockId, { quizData: quiz, title: quiz.title?.trim() || "Quiz" });
+    setQuizModalBlockId(null);
+    setIsSavingQuizBlock(false);
+  };
+
   const updateBlock = (id: number, updates: Partial<ContentBlock>) => {
     setContentBlocks((current) =>
       current.map((block) => (block.id === id ? { ...block, ...updates } : block))
@@ -101,7 +136,9 @@ export default function NewCoursePage() {
         return;
       }
 
-      // Validate all video/document blocks have either a file or URL
+      // Validate all video/document blocks have either a file or URL, and quiz
+      // blocks have been fully authored (Firestore rules require >= 1 question
+      // on every quiz document, so an empty quiz shell cannot be persisted).
       for (let i = 0; i < contentBlocks.length; i++) {
         const block = contentBlocks[i];
         if (block.type === "video" && !block.file && !block.url.trim()) {
@@ -111,6 +148,11 @@ export default function NewCoursePage() {
         }
         if (block.type === "document" && !block.file) {
           setError(`Section ${i + 1}: Document blocks require a file upload.`);
+          setIsSaving(false);
+          return;
+        }
+        if (block.type === "quiz" && (!block.quizData || !block.quizData.title?.trim() || !block.quizData.questions || block.quizData.questions.length === 0)) {
+          setError(`Section ${i + 1}: Open the quiz editor and add at least one question before saving the course.`);
           setIsSaving(false);
           return;
         }
@@ -129,6 +171,23 @@ export default function NewCoursePage() {
         published,
         coverImageUrl: coverImageUrl.trim(),
       });
+
+      // STEP 1.5: Create quiz documents for every quiz block. This must happen
+      // after the course exists (quizzes live in courses/{courseId}/quizzes)
+      // and before content items are written, because each quiz-type content
+      // item stores the quizId it launches.
+      const quizIdsByBlockId = new Map<number, string>();
+      const quizBlockCount = contentBlocks.filter((block) => block.type === "quiz").length;
+      if (quizBlockCount > 0) {
+        let quizIndex = 0;
+        for (const block of contentBlocks) {
+          if (block.type !== "quiz" || !block.quizData) continue;
+          quizIndex += 1;
+          setUploadProgress(`Creating quiz ${quizIndex}/${quizBlockCount}...`);
+          const quizId = await createQuiz(courseId, block.quizData);
+          quizIdsByBlockId.set(block.id, quizId);
+        }
+      }
 
       // STEP 2: Upload all files and prepare content data
       setUploadProgress("Uploading media files...");
@@ -161,6 +220,10 @@ export default function NewCoursePage() {
           // time via getYouTubeEmbedUrl, so nothing unsafe is ever embedded.
           url: contentUrl.trim(),
           order: block.order,
+          // Quiz blocks point at the quiz document created in STEP 1.5.
+          ...(block.type === "quiz" && quizIdsByBlockId.has(block.id)
+            ? { quizId: quizIdsByBlockId.get(block.id) }
+            : {}),
         });
       }
 
@@ -262,9 +325,14 @@ export default function NewCoursePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Course Content Sections</h2>
-                <Button type="button" variant="outline" onClick={addContentBlock}>
-                  Add Section
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button type="button" variant="outline" onClick={addContentBlock}>
+                    Add Section
+                  </Button>
+                  <Button type="button" variant="outline" onClick={addQuizBlock}>
+                    Add Quiz
+                  </Button>
+                </div>
               </div>
 
               {contentBlocks.map((block) => (
@@ -334,11 +402,33 @@ export default function NewCoursePage() {
                         <option value="text">Text</option>
                         <option value="video">Video URL</option>
                         <option value="document">Document Upload</option>
+                        <option value="quiz">Quiz</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="mt-4 space-y-4">
+                    {block.type === "quiz" && (
+                      <div className="space-y-3">
+                        {block.quizData && block.quizData.questions && block.quizData.questions.length > 0 ? (
+                          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
+                            Quiz ready — {block.quizData.questions.length} question{block.quizData.questions.length === 1 ? "" : "s"}, pass mark {block.quizData.passPercentage ?? 70}%.
+                          </div>
+                        ) : (
+                          <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+                            No questions yet — add the quiz details before saving the course.
+                          </div>
+                        )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setQuizModalBlockId(block.id)}
+                        >
+                          {block.quizData && block.quizData.questions && block.quizData.questions.length > 0 ? "Edit Quiz Details" : "Add Quiz Details"}
+                        </Button>
+                      </div>
+                    )}
+
                     {block.type === "text" && (
                       <div className="space-y-2">
                         <Label>Text Content</Label>
@@ -396,6 +486,41 @@ export default function NewCoursePage() {
                 </div>
               ))}
             </div>
+
+            {/* Quiz authoring modal — edits the quiz block held in local state;
+                the quiz document itself is created after the course is saved. */}
+            {quizModalBlockId !== null && (() => {
+              const quizBlock = contentBlocks.find((b) => b.id === quizModalBlockId);
+              if (!quizBlock) return null;
+              return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                  <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-white/10 shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-bold text-slate-900 dark:text-zinc-100">
+                        {quizBlock.quizData && quizBlock.quizData.questions && quizBlock.quizData.questions.length > 0 ? "Edit Quiz Details" : "Add Quiz Details"}
+                      </h2>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setQuizModalBlockId(null)}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                    <p className="text-slate-600 dark:text-zinc-400 mb-4">
+                      This quiz will be placed at position {quizBlock.order} in the course stream.
+                    </p>
+                    <QuizForm
+                      mode="create"
+                      courseId="new-course"
+                      initialQuiz={quizBlock.quizData}
+                      onSave={(quiz) => handleQuizBlockSave(quizBlock.id, quiz)}
+                      isSaving={isSavingQuizBlock}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-slate-600 dark:text-zinc-400">Publish now to make the course available to students.</div>

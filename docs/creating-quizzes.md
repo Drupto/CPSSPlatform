@@ -20,9 +20,17 @@ Each quiz consists of:
 
 ## Admin Side: Creating Quizzes
 
+### Creating Quizzes During Course Creation (Inline Quiz Blocks)
+
+Quizzes CAN now be added during the initial course creation form. In the course builder, use the **Add Quiz** button to insert a quiz block into the course stream, then click **Add Quiz Details** to author the quiz (title, pass mark, questions) via the quiz form modal. Quiz blocks support the same ↑/↓ reordering as content sections, so a quiz can be placed directly after the content it tests.
+
+Because quiz documents live in the `courses/{courseId}/quizzes` subcollection, the quiz documents are created when the course is saved (after the course document exists). Each quiz block is stored as an ordered content item with `type: "quiz"` and a `quizId` pointing at the quiz document. Firestore rules require quiz-type content items to carry a non-empty `quizId`, and every quiz document must contain at least one question — the form blocks saving until that is satisfied.
+
+On the student side, quiz content items render inline in the learn page stream (Start Quiz / Retake Quiz via the existing quiz modal), and are hidden from the legacy bottom-of-outline quiz list to avoid duplication.
+
 ### Creating Quizzes After Course Creation
 
-Quizzes cannot be added during the initial course creation form. The course must exist first because quiz data is stored in a Firestore subcollection under the course document: `courses/{courseId}/quizzes`.
+Standalone quizzes (not tied to a position in the course stream) can still be added after the course exists.
 
 ### Step-by-Step Process
 

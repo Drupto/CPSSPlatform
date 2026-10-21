@@ -29,13 +29,15 @@ import { QuizForm } from "@/components/admin/quizzes/QuizForm";
 
 interface ContentBlockForm {
   id: string;
-  type: "text" | "video" | "document" | "link";
+  type: "text" | "video" | "document" | "link" | "quiz";
   title: string;
   body: string;
   url: string;
   order: number;
   isNew?: boolean;
   file: File | null;
+  /** Set when type === "quiz": id of the quiz doc this content item launches. */
+  quizId?: string;
 }
 
 export default function EditCoursePage() {
@@ -100,12 +102,13 @@ export default function EditCoursePage() {
         .filter((item) => item.type !== "flashcard")
         .map((item) => ({
           id: item.id,
-          type: item.type as "text" | "video" | "document" | "link",
+          type: item.type as "text" | "video" | "document" | "link" | "quiz",
           title: item.title,
           body: item.body || "",
           url: item.url || "",
           order: item.order,
           file: null,
+          quizId: item.quizId,
         }));
       setContentBlocks(blocks);
       
@@ -231,6 +234,8 @@ if ((block.type === "document" || block.type === "video") && block.file) {
             // time via getYouTubeEmbedUrl, so nothing unsafe is ever embedded.
             url: contentUrl.trim(),
             order: block.order,
+            // Preserve the quiz reference on quiz-type content items.
+            ...(block.type === "quiz" && block.quizId ? { quizId: block.quizId } : {}),
           });
         } else {
           await updateCourseContentItem(courseId as string, block.id, {
@@ -241,6 +246,9 @@ if ((block.type === "document" || block.type === "video") && block.file) {
             // time via getYouTubeEmbedUrl, so nothing unsafe is ever embedded.
             url: contentUrl.trim(),
             order: block.order,
+            // Preserve the quiz reference on quiz-type content items (the
+            // merge-write keeps it in the doc; rules require it for quiz type).
+            ...(block.type === "quiz" && block.quizId ? { quizId: block.quizId } : {}),
           });
         }
       }
@@ -425,11 +433,24 @@ if ((block.type === "document" || block.type === "video") && block.file) {
                         <option value="text">Text</option>
                         <option value="video">Video URL</option>
                         <option value="document">Document Upload</option>
+                        {/* Display-only: quiz blocks are created from the course
+                            builder/quiz editor (they need a quizId reference).
+                            Disabled so admins can't switch a block TO quiz here
+                            and save an item the rules would reject. */}
+                        <option value="quiz" disabled>Quiz</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="mt-4 space-y-4">
+                    {block.type === "quiz" && (
+                      <div className="rounded-2xl border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-4 py-3 text-sm text-blue-800 dark:text-blue-200">
+                        Quiz content item{block.quizId ? ` (quiz id: ${block.quizId})` : ""} — the questions are managed via the
+                        quiz editor below; this block only controls where the quiz appears in the course stream.
+                        Switching this section to another type removes it from the stream.
+                      </div>
+                    )}
+
                     {block.type === "text" && (
                       <div className="space-y-2">
                         <Label>Text Content</Label>

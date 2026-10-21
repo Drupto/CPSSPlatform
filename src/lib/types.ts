@@ -1,6 +1,6 @@
 import type { Timestamp } from "firebase/firestore";
 
-export type CourseContentType = "text" | "video" | "document" | "link" | "flashcard";
+export type CourseContentType = "text" | "video" | "document" | "link" | "flashcard" | "quiz";
 
 export interface UserProfile {
   uid: string;
@@ -75,6 +75,14 @@ export interface CourseContentItem {
   body?: string;
   url?: string;
   order: number;
+  /**
+   * Only set when `type === "quiz"`: the id of the quiz document in the
+   * `courses/{courseId}/quizzes` subcollection this content item launches.
+   * Quizzes live in their own subcollection (they carry the answer key and
+   * attempts machinery), so quiz "content" is just an ordered pointer into
+   * the course stream that the learn page renders inline.
+   */
+  quizId?: string;
 }
 
 export interface Flashcard extends Omit<CourseContentItem, "body"> {

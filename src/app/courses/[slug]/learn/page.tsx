@@ -477,6 +477,13 @@ export default function CourseLearnPage() {
   }, [course, user]);
 
   const currentItem = content[currentIndex];
+  // Quiz content items resolve to their quiz doc (loaded via the sanitized
+  // getQuizForStudent callable) so the quiz renders inline at its ordered
+  // position in the stream instead of only in the outline's legacy quiz list.
+  const inlineQuiz =
+    currentItem?.type === "quiz" && currentItem.quizId
+      ? quizzes.find((quiz) => quiz.id === currentItem.quizId) ?? null
+      : null;
   const progressPercent = content.length > 0 ? Math.round((completedIds.length / content.length) * 100) : 0;
 
   const toggleComplete = async (contentId: string) => {
@@ -893,6 +900,51 @@ export default function CourseLearnPage() {
                   )}
                 </div>
               )}
+
+              {/* Quiz content item — the quiz renders inline at its ordered
+                  position in the course stream (not just the outline list). */}
+              {currentItem.type === "quiz" && (
+                <div className="mt-4 rounded-3xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-zinc-800 p-6">
+                  {inlineQuiz ? (
+                    (() => {
+                      const inlineAttempts = quizAttempts.filter((attempt) => attempt.quizId === inlineQuiz.id);
+                      const inlineAttempt = inlineAttempts[0];
+                      const inlinePassed = inlineAttempt ? inlineAttempt.passed : null;
+                      const inlineMaxAttempts = inlineQuiz.maxAttempts ?? 1;
+                      const inlineCanStart = inlineAttempts.length < inlineMaxAttempts;
+                      return (
+                        <div>
+                          <p className="text-slate-600 dark:text-zinc-400 mb-4">
+                            {inlineQuiz.description || "Test your knowledge of this section before moving on."}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <Button
+                              onClick={() => startQuiz(inlineQuiz)}
+                              disabled={!inlineCanStart || isStartingQuiz}
+                            >
+                              {!inlineCanStart
+                                ? "Attempts used"
+                                : inlinePassed
+                                  ? "Retake Quiz"
+                                  : "Start Quiz"}
+                            </Button>
+                            {inlinePassed && (
+                              <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                                {inlineAttempt?.score}% passed
+                              </span>
+                            )}
+                            <span className="text-xs text-slate-500 dark:text-zinc-400">
+                              {inlineAttempts.length}/{inlineMaxAttempts} attempts used
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <p className="text-slate-600 dark:text-zinc-400">Quiz details are being prepared. Please check back shortly.</p>
+                  )}
+                </div>
+              )}
             </section>
 
             {quizError && (
@@ -951,8 +1003,10 @@ export default function CourseLearnPage() {
                   </li>
                 ))}
                 
-                {/* Quiz buttons */}
-                {quizzes.map((quiz, quizIdx) => {
+                {/* Quiz buttons — legacy list for quizzes not placed in the
+                    stream; quizzes referenced by quiz-type content items are
+                    rendered inline at their ordered position instead. */}
+                {quizzes.filter((quiz) => !content.some((item) => item.type === "quiz" && item.quizId === quiz.id)).map((quiz, quizIdx) => {
                   const quizAttemptsForQuiz = quizAttempts.filter(attempt => attempt.quizId === quiz.id);
                   const quizAttempt = quizAttemptsForQuiz[0];
                   const passed = quizAttempt ? quizAttempt.passed : null;

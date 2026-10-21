@@ -159,6 +159,10 @@ export async function addCourseContentItem(courseId: string, content: CourseCont
     body: content.body ?? "",
     url: content.url ?? "",
     order: content.order,
+    // Quiz-type content items carry the id of the quiz doc they launch; the
+    // key is omitted for every other type so existing documents keep their
+    // exact shape (Firestore rejects explicit `undefined` values).
+    ...(content.quizId ? { quizId: content.quizId } : {}),
     createdAt: serverTimestamp(),
   });
   return contentRef.id;

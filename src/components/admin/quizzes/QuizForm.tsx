@@ -12,7 +12,10 @@ interface QuizFormProps {
   mode: "create" | "edit";
   courseId: string;
   quizId?: string;
-  initialQuiz?: Quiz;
+  /** Existing quiz values to prefill — full Quiz objects and partial drafts
+   * (e.g. quizzes authored in the course builder before the course exists)
+   * are both accepted; the form only spreads these into its local state. */
+  initialQuiz?: Partial<Quiz>;
   onSave: (quiz: Partial<Quiz>) => Promise<void>;
   isSaving: boolean;
 }

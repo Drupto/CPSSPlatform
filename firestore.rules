@@ -60,10 +60,17 @@ service cloud.firestore {
     function isValidContentData(data) {
       return data is map
         && data.type is string
-        && data.type in ['text', 'video', 'document', 'link', 'flashcard']
+        && data.type in ['text', 'video', 'document', 'link', 'flashcard', 'quiz']
         && data.title is string
         && data.title.size() > 0
         && data.title.size() <= 200
+        // Quiz content items are ordered pointers into the course stream that
+        // reference a quiz document (courses/{courseId}/quizzes/{quizId}) the
+        // learn page launches inline. A quiz item MUST carry a non-empty
+        // quizId; other types may not gain one accidentally (stale ids are
+        // tolerated on legacy docs via the only-checked-when-present pattern).
+        && (data.type != 'quiz' || (data.quizId is string && data.quizId.size() > 0 && data.quizId.size() <= 150))
+        && (!('quizId' in data) || (data.quizId is string && data.quizId.size() <= 150))
         && (!('body' in data) || (data.body is string && data.body.size() <= 50000))
         && (!('url' in data) || (data.url is string
             && data.url.size() <= 2048
