@@ -49,12 +49,6 @@ const galleryImages: GalleryImage[] = [
     height: 1600,
   },
   {
-    src: "https://res.cloudinary.com/dziccfxut/image/upload/v1778860869/3_jz5oft.jpg",
-    alt: "Athlete performing a barbell lift",
-    width: 1280,
-    height: 960,
-  },
-  {
     src: "https://res.cloudinary.com/dziccfxut/image/upload/v1778860869/5_qiqnvh.jpg",
     alt: "KINÉTIKA coaching in action",
     width: 1280,
@@ -77,12 +71,6 @@ const galleryImages: GalleryImage[] = [
     alt: "Functional fitness session",
     width: 960,
     height: 1280,
-  },
-  {
-    src: "https://res.cloudinary.com/dziccfxut/image/upload/v1778860868/9_zxvspj.jpg",
-    alt: "Endurance and conditioning work",
-    width: 1280,
-    height: 720,
   },
   {
     src: "https://res.cloudinary.com/dziccfxut/image/upload/v1778860868/6_rt9dtw.jpg",
