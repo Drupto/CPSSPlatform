@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,7 @@ type GalleryImage = {
   alt: string;
   width: number;
   height: number;
+  type?: "image" | "video";
 };
 
 const thumbnailSizes =
@@ -40,12 +41,6 @@ const galleryImages: GalleryImage[] = [
     src: "https://res.cloudinary.com/dziccfxut/image/upload/v1792576632/hybrid2_sy94ow.jpg",
     alt: "Hybrid athlete conditioning workout",
     width: 900,
-    height: 1600,
-  },
-  {
-    src: "https://res.cloudinary.com/dziccfxut/image/upload/v1778860869/1_m5r5qi.jpg",
-    alt: "Strength and conditioning training",
-    width: 1200,
     height: 1600,
   },
   {
@@ -78,6 +73,76 @@ const galleryImages: GalleryImage[] = [
     width: 591,
     height: 1280,
   },
+  {
+    src: "https://res.cloudinary.com/dziccfxut/image/upload/v1793272526/7_iwmsdw.jpg",
+    alt: "Gallery image",
+    width: 1200,
+    height: 1600,
+    type: "image",
+  },
+  {
+    src: "https://res.cloudinary.com/dziccfxut/image/upload/v1793272526/4_hdv5xo.jpg",
+    alt: "Gallery image",
+    width: 1200,
+    height: 1600,
+    type: "image",
+  },
+  {
+    src: "https://res.cloudinary.com/dziccfxut/image/upload/v1793272527/hybrid4_kormkt.jpg",
+    alt: "Gallery image",
+    width: 1200,
+    height: 1600,
+    type: "image",
+  },
+  {
+    src: "https://res.cloudinary.com/dziccfxut/image/upload/v1793272527/5_iaub3w.jpg",
+    alt: "Gallery image",
+    width: 1200,
+    height: 1600,
+    type: "image",
+  },
+  {
+    src: "https://res.cloudinary.com/dziccfxut/video/upload/v1793272527/8_sb3yyy.mp4",
+    alt: "Gallery video",
+    width: 1200,
+    height: 1600,
+    type: "video",
+  },
+  {
+    src: "https://res.cloudinary.com/dziccfxut/video/upload/v1793272529/2_hlux6z.mp4",
+    alt: "Gallery video",
+    width: 1200,
+    height: 1600,
+    type: "video",
+  },
+  {
+    src: "https://res.cloudinary.com/dziccfxut/video/upload/v1793272529/1_x6fbdg.mp4",
+    alt: "Gallery video",
+    width: 1200,
+    height: 1600,
+    type: "video",
+  },
+  {
+    src: "https://res.cloudinary.com/dziccfxut/video/upload/v1793272530/3_qkbxgq.mp4",
+    alt: "Gallery video",
+    width: 1200,
+    height: 1600,
+    type: "video",
+  },
+  {
+    src: "https://res.cloudinary.com/dziccfxut/video/upload/v1793272544/9_qcxxtb.mp4",
+    alt: "Gallery video",
+    width: 1200,
+    height: 1600,
+    type: "video",
+  },
+  {
+    src: "https://res.cloudinary.com/dziccfxut/image/upload/v1793272718/10_b9bbpl.jpg",
+    alt: "Gallery image",
+    width: 1200,
+    height: 1600,
+    type: "image",
+  },
 ];
 
 const navButtonClasses =
@@ -86,6 +151,7 @@ const navButtonClasses =
 export function Gallery() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const isOpen = activeIndex !== null;
   const activeImage = activeIndex !== null ? galleryImages[activeIndex] : null;
@@ -131,6 +197,32 @@ export function Gallery() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, showPrevious, showNext]);
+
+  // Auto-play videos when they become active. React drops the `muted` attribute
+  // from the DOM so the `autoPlay` prop alone is blocked by browsers; use
+  // imperative play instead so muted autoplay actually starts.
+  useEffect(() => {
+    if (!isOpen || activeImage?.type !== "video") {
+      videoRef.current?.pause();
+      return;
+    }
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = true;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Autoplay may still be blocked by the browser; keep controls visible so the
+        // user can tap play manually.
+      });
+    }
+
+    return () => {
+      video.pause();
+    };
+  }, [isOpen, activeImage]);
 
   return (
     <section className="py-24 bg-white dark:bg-zinc-950" id="gallery">
@@ -183,24 +275,53 @@ export function Gallery() {
                   className="group relative block w-full cursor-zoom-in overflow-hidden rounded-2xl border border-slate-200 bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:border-white/10"
                 >
                   <div className="relative aspect-[4/5] w-full">
-                    {/* Blurred copy of the photo fills the letterbox area so
-                        portrait and landscape shots share the same frame size. */}
-                    <Image
-                      src={image.src}
-                      alt=""
-                      aria-hidden="true"
-                      fill
-                      sizes={thumbnailSizes}
-                      className="scale-110 object-cover opacity-30 blur-2xl"
-                    />
-                    <div className="absolute inset-0 bg-black/40" />
-                    <Image
-                      src={image.src}
-                      alt={image.alt}
-                      fill
-                      sizes={thumbnailSizes}
-                      className="object-contain"
-                    />
+                    {image.type === "video" ? (
+                      <>
+                        {/* First-frame preview of the video (no autoplay in the
+                            grid to keep the page light), with a play overlay. */}
+                        <video
+                          src={image.src}
+                          muted
+                          playsInline
+                          preload="metadata"
+                          aria-hidden="true"
+                          className="absolute inset-0 h-full w-full object-contain"
+                          onLoadedMetadata={(event) => {
+                            // Seek to ~0.1s so browsers render a real frame
+                            // instead of a black poster.
+                            const el = event.currentTarget;
+                            if (el.currentTime < 0.05) {
+                              el.currentTime = 0.1;
+                            }
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/20" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Play className="w-10 h-10 text-white drop-shadow" />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Blurred copy of the photo fills the letterbox area so
+                            portrait and landscape shots share the same frame size. */}
+                        <Image
+                          src={image.src}
+                          alt=""
+                          aria-hidden="true"
+                          fill
+                          sizes={thumbnailSizes}
+                          className="scale-110 object-cover opacity-30 blur-2xl"
+                        />
+                        <div className="absolute inset-0 bg-black/40" />
+                        <Image
+                          src={image.src}
+                          alt={image.alt}
+                          fill
+                          sizes={thumbnailSizes}
+                          className="object-contain"
+                        />
+                      </>
+                    )}
                   </div>
 
                   <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-end bg-gradient-to-t from-black/70 via-black/20 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
@@ -238,14 +359,44 @@ export function Gallery() {
 
           <div className="relative h-[68vh] w-full sm:h-[72vh]">
             {activeImage ? (
-              <Image
-                src={activeImage.src}
-                alt={activeImage.alt}
-                fill
-                sizes="95vw"
-                priority
-                className="object-contain p-3 sm:p-10"
-              />
+              activeImage.type === "video" ? (
+                <video
+                  ref={(el) => {
+                    videoRef.current = el;
+                    // Play as soon as the element mounts — useEffect can run
+                    // before the Radix dialog portal mounts the element.
+                    if (el) {
+                      el.muted = true;
+                      el.play().catch(() => {});
+                    }
+                  }}
+                  onCanPlay={() => {
+                    // Retry once enough data has loaded (covers races where
+                    // the initial play() fired before the src was ready).
+                    const el = videoRef.current;
+                    if (el && el.paused) {
+                      el.play().catch(() => {});
+                    }
+                  }}
+                  src={activeImage.src}
+                  aria-label={activeImage.alt}
+                  controls
+                  muted
+                  playsInline
+                  loop
+                  preload="auto"
+                  className="w-full h-full object-contain p-3 sm:p-10 bg-black"
+                />
+              ) : (
+                <Image
+                  src={activeImage.src}
+                  alt={activeImage.alt}
+                  fill
+                  sizes="95vw"
+                  priority
+                  className="object-contain p-3 sm:p-10"
+                />
+              )
             ) : null}
 
             <Button

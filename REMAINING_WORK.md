@@ -2,7 +2,7 @@
 
 > **Purpose:** one page that points at every outstanding task across the repo, so nothing lives only in a stale report.
 > **This file is an index, not a plan.** The detailed plans stay where they are (§1). Update the status column here when something closes.
-> **Created:** 2026-10-23 · **HEAD:** `3e342d7` (branch `FirebaseIntegration`) · **Status legend:** ✅ done · ◐ partial · ⬜ open · ⚠️ accepted risk
+> **Created:** 2026-10-23 · **Last updated:** 2026-10-29 · **HEAD:** `6c2a4b0` (branch `FirebaseIntegration`) · **Status legend:** ✅ done · ◐ partial · ⬜ open · ⚠️ accepted risk
 
 ---
 
@@ -12,7 +12,8 @@
 |---|---|---|---|
 | `PHASE2_IMPLEMENTATION_PLAN.md` (root) | **Product Phase 2** — Brevo email, referrals, CRM, certificates, invoices/refunds, notifications | ⬜ Not started, blocked on client decisions (§3 D1–D9) | Freshest doc (2026-10-23), verified against current code |
 | `docs/DPDP_COMPLIANCE_PLAN.md` | **India DPDP Act compliance** — 16 gaps, 7 phases, retention schedule, breach runbook, copy templates | ⬜ 0 of 7 phases implemented | Verified: no `consents`/`grievances`/`erasureRequests` in `firestore.rules`, no `src/app/grievance` page. Statutory deadline **13 May 2027**; Consent Managers **13 Nov 2026** |
-| `SECURITY_AUDIT.md` (root) | Security findings C1–C3, H1–H7, M1–M6, L1–L5 | ◐ 16 of 21 resolved; 2 open, 1 partial, 1 action | Written 2026-08-01, re-verified 2026-08-31 @ `c4a3265` → **stale vs HEAD `3e342d7`** |
+| `SECURITY_AUDIT.md` (root) | Security findings C1–C3, H1–H7, M1–M6, L1–L5 | ◐ 17 of 22 resolved; 1 open, 1 deferred-CRITICAL | Written 2026-08-01, re-verified 2026-08-31 @ `c4a3265` → **stale vs HEAD `6c2a4b0`**; see `docs/SECURITY_REMEDIATION_PLAN.md` for the step-by-step remediation plan |
+| `docs/SECURITY_REMEDIATION_PLAN.md` (root) | **Security remediation plan** — R0–R8 step-by-step implementation (key rotation, password policy, admin 2FA, deps, App Check, API key restriction, PITR, hygiene, deploy sequence) | ⬜ Not started | Created 2026-10-29 @ HEAD `6c2a4b0`; supersedes open findings in `SECURITY_AUDIT.md` |
 | `docs/PRODUCTION_READINESS.md` | Build, deploy config, security summary, deps, code gates, SEO | ◐ Build/TS/SEO green; deploy + CI gaps | Same 2026-08-31 date — re-verify before quoting |
 | `docs/SEO.md` | What SEO infrastructure exists + post-deploy checklist | ✅ Code complete, ⬜ 4 manual steps | Manual steps listed in §4 below |
 | `docs/task-progress.md` | Historical feature checklist (all Phase 1 items ✅) | ✅ Complete | Points at the two reports above for the open items |
@@ -32,6 +33,7 @@ Read-only / historical (safe to ignore when resuming): `docs/blueprint.md` (orig
 | B5 | Firebase console → restrict the web API key by HTTP referrer to the production domains (audit **L1**). | `SECURITY_AUDIT.md` L1 | S |
 | B6 | Confirm `GOOGLE_APPLICATION_CREDENTIALS_JSON` / discrete `FIREBASE_ADMIN_*` vars exist in the hosting runtime, or that App Hosting/Cloud Run ADC covers it. Sitemap + course metadata depend on it. | `.env.example` documents 3 resolution paths | S |
 | B7 | Verify the email-verification link domain in Firebase Auth settings points at the production domain; test signup → verify → login on prod. | Go-live checklist item | S |
+| B8 | **Rotate & relocate service-account private key** — live `FIREBASE_ADMIN_PRIVATE_KEY` in `.env` (new CRITICAL finding, 2026-10-29). Deferred by owner; must complete before go-live. | `.env` line 19; `.gitignore` covers but key is on disk | S |
 
 ---
 
@@ -40,12 +42,13 @@ Read-only / historical (safe to ignore when resuming): `docs/blueprint.md` (orig
 | # | Task | Severity | State |
 |---|---|---|---|
 | H3 | Scope Storage reads to enrolled users, **or** keep the accepted-risk note. Covers must stay publicly readable and `getDownloadURL` tokens bypass rules; real fix = signed URLs or a Function proxy | 🟠 High | ⚠️ Accepted & documented — revisit only if content leaks matter |
-| H7 | AI demo flow: input caps + injection delimiters done; **auth/rate-limit gate deferred** → mitigated by App Check + quotas | 🟠 High | ◐ Partial |
+| H7 | AI demo flow — **closed**: `src/ai/` removed entirely; no public AI attack surface remains | 🟠 High | ✅ Closed (2026-10-29 — AI flow removed from codebase) |
 | L5 | Enable **App Check** (reCAPTCHA v3 web + enforce on Functions/Firestore/Storage). Also closes H7's residual abuse exposure | 🔵 Low | ⬜ Open (console work) |
 | — | `npm audit` — root prod advisories 62 (0 critical, 10 high, mostly `sharp`/`libvips` via Genkit + `teeny-request`); `functions/` 9 moderate. Re-run `npm audit --omit=dev --audit-level=high`; upgrades need breaking changes | 🟡 | ⬜ Recurring |
 | — | Add **Dependabot/Renovate** + a CI job running `tsc --noEmit`, `next build`, `npm audit --audit-level=high`. There is **no `.github/`** and no test framework at all | 🟡 | ⬜ Open |
 | — | First automated tests: Firestore rules tests (emulator) + callable-function tests. Phase 2 §15 assumes an emulator harness that does not exist yet — **build it during F0** | 🟡 | ⬜ Open |
 | — | Remove `localhost` origins from `cors.json` at go-live (audit L3) once dev URLs are settled | 🔵 Low | ⬜ After B2 |
+| — | Repo hygiene: `git rm -r --cached functions/lib` + gitignore entry; remove tracked junk `y`, `.modified`, `src/app/favicon.ico:Zone.Identifier`; rebrand `functions/.env.example` (DruptoLMS/Razorpay remnants) | 🟡 Medium | ⬜ Open (R7 in remediation plan) |
 
 ---
 
@@ -129,7 +132,8 @@ Not bugs; just things no existing doc owns. Listed so they don't get discovered 
 
 ## 9. Suggested execution order
 
-1. **Now (½ day):** B1–B7 launch blockers → then S1–S4 SEO steps (they're all console/CLI, no code).
+1. **Now (½ day):** B1–B7 launch blockers + B8 key rotation (owner action) → then S1–S4 SEO steps (they're all console/CLI, no code).
+2. **Security remediation plan:** work through `docs/SECURITY_REMEDIATION_PLAN.md` R1–R8 in order (R0 key rotation deferred by owner but remains a go-live blocker).
 2. **Before Phase 2 code:** repo hygiene §7 (`git rm y .modified`) + Firebase emulator test harness + CI job (needed by Phase 2 §15 anyway).
 3. **Client answers D1–D9** → Phase 2 Phase 0 → F0 (Brevo) → F1 → F5 → F2 → F4 → F3.
 4. **Interleave:** DPDP Phases 1–3 right after F0 (they reuse the same email provider), Phase 4–7 before 13 May 2027.
@@ -148,6 +152,7 @@ Checked directly in the working tree, not copied from reports:
 - `src/app/layout.tsx:76-77` — verification token still a placeholder; `src/lib/seo.ts:176-179` — placeholder socials.
 - `public/` — `icon.svg`, `logo.png`, `QR_Local_Payment.jpeg` only.
 - `.env.example` — clean, documents all three Admin-SDK credential paths.
+- `.env` — **contains live `FIREBASE_ADMIN_PRIVATE_KEY` (new CRITICAL finding, 2026-10-29)**; gitignored & never committed, but must be rotated/relocated before go-live (R0 in remediation plan).
 - `git ls-files y .modified` — both tracked (junk). `tsconfig.tsbuildinfo` tracked? **No** — gitignored.
-- HEAD `3e342d7` vs audit baseline `c4a3265` → both reports predate current code.
+- HEAD `6c2a4b0` vs audit baseline `c4a3265` → both reports predate current code; new findings documented in `docs/SECURITY_REMEDIATION_PLAN.md`.
 

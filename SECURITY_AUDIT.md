@@ -21,6 +21,43 @@ The application has a **reasonable security foundation** — Firestore rules enf
 
 **Top risks (remaining):** enrollment-scoped Storage reads consciously deferred (H3 — documented below), residual dependency advisories (62 in root production deps, **0 critical** — was 3), and App Check not yet enabled (L5 — also closes H7's remaining cost-abuse exposure). No critical findings remain.
 
+---
+
+## 2026-10-29 re-verification addendum (vs HEAD `6c2a4b0`)
+
+Re-verified against current HEAD `6c2a4b0` (~10 feature commits ahead of the `c4a3265` baseline this report was last checked against). The codebase itself is in **better shape than the report implies** — several feared attack surfaces no longer exist — but one new CRITICAL finding was introduced since the last audit date.
+
+### New finding (CRITICAL) — live service-account private key in `.env`
+**`FIREBASE_ADMIN_PRIVATE_KEY` is present in plaintext at `.env:19`** for service account `netlify-runtime@cscs-prep-2c063.iam.gserviceaccount.com`.
+
+- ✅ Verified: `.env` is gitignored (`\.env*`) and has **never been committed** — `git log --all -S 'BEGIN PRIVATE KEY' -- .env` returns nothing.
+- ⚠️ The key is a full Firebase Admin credential sitting in plaintext on disk. The prior audit line *"`.env` verified untracked and free of server secrets"* (H6) is **no longer accurate**.
+- **Fix:** rotate the key in GCP IAM, move the new key outside the repo, remove the key from `.env`, and point the runtime via `GOOGLE_APPLICATION_CREDENTIALS`/`GOOGLE_APPLICATION_CREDENTIALS_JSON`. Step-by-step: see `docs/SECURITY_REMEDIATION_PLAN.md` R0 (deferred by owner, go-live blocker).
+
+### Finding status changes since 2026-08-31
+
+| Finding | 2026-08-31 status | 2026-10-29 status | Basis |
+|---------|-------------------|-------------------|-------|
+| H6 `.env` free of server secrets | ✅ Resolved | ❌ **Regressed — new CRITICAL key in `.env`** | Live `FIREBASE_ADMIN_PRIVATE_KEY` confirmed at `.env:19` |
+| H7 AI flow cost/abuse exposure | ◐ Partial | ✅ Closed | `src/ai/` removed entirely — no public AI flow remains |
+| H3 Storage reads open to signed-in users | ⚠️ Accepted risk | ⚠️ Accepted risk (unchanged) | Cover images need public readability; signed-URL fix deferred |
+| L5 App Check | ⬜ Pending | ⬜ Pending | Still not enabled; see remediation plan R4 |
+| New dependency advisories | — | 🟠 High | `@fastify/busboy` (3 highs, fixable via `npm audit fix`); `@grpc/grpc-js` (2 highs, breaking-change upgrade tracked) |
+
+### Confirmed still-resolved (re-verified in code)
+- C1/H4 path-traversal ID validation in Cloud Functions (`ID_RE` regex in `quiz-attempts.ts`, `quizzes.ts`).
+- C2 `progress` `hasOnly`/type/size caps (`firestore.rules:290-304`).
+- C3 Edge middleware fail-closed admin gate (`src/middleware.ts` JWKS verification + `admin: true` claim).
+- M2 role hardcoded to `"student"` in `createUserProfile` (no client-chosen role).
+- M3 enrollment `id` field validation (`firestore.rules:219`/`258` whitelist).
+- M5 storage delete path prefix `courses/` validation (`src/lib/course.ts`).
+- Quiz answer-key protection: server-side callables strip `correctAnswerIndex`/`explanation`; attempts/sessions `create: if false`.
+
+### Where the detailed fix steps live
+`docs/SECURITY_REMEDIATION_PLAN.md` — step-by-step implementation plan R0–R8 (key rotation, server password policy, admin 2FA, dependency fixes, App Check, API key referrer restriction, Firestore PITR/backups, repo hygiene, deploy sequence). Update status in that file and `REMAINING_WORK.md` as steps close.
+
+---
+
 **Resolved in the 2026-08-01 remediation pass:**
 - ✅ C1 + H4: Firestore path traversal in Cloud Functions — IDs now validated with strict regex
 - ✅ C2: `progress` collection now enforces `hasOnly`, type, and size limits

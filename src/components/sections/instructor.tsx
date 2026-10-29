@@ -10,10 +10,12 @@ export function Instructor() {
   const credentials = [
     "NSCA CSCS (Certified Strength and Conditioning Specialist)",
     "ACE CPT (Certified Personal Trainer)",
-    "NSDC Master Trainer",
     "B.P.Ed",
     "B.Sc",
     "MBA",
+    "Diabetes educator",
+    "Pre&post natal training specialist",
+    "Speed development coach",
     "Certified Yoga Instructor",
     "Pre & Post Natal Exercise Specialist",
     "FTS"
