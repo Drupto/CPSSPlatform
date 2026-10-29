@@ -13,7 +13,7 @@ export const metadata: Metadata = buildMetadata({
 
 export default function PrivacyPolicy() {
   return (
-    <main className="relative min-h-screen bg-slate-50 overflow-x-hidden">
+    <main className="relative min-h-screen bg-slate-50 dark:bg-zinc-950 overflow-x-hidden">
       <Navbar />
 
       <section className="py-24 bg-white">

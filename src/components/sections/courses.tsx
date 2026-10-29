@@ -152,7 +152,7 @@ export function Courses() {
           <div className="flex flex-wrap justify-center items-center gap-x-2 gap-y-3 mb-8">
             {frameworkSteps.map((step, i) => (
               <span key={step} className="flex items-center">
-                <span className="px-4 py-2 rounded-full bg-slate-100 text-slate-800 text-sm font-bold">
+                <span className="px-4 py-2 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-100 text-sm font-bold">
                   {step}
                 </span>
                 {i < frameworkSteps.length - 1 && (

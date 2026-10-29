@@ -194,9 +194,9 @@ export function PdfViewerDialog({ pdf, onClose }: PdfViewerDialogProps) {
           </div>
 
           {/* Viewer body */}
-          <div className="relative flex-1 bg-slate-100">
+          <div className="relative flex-1 bg-slate-100 dark:bg-zinc-900">
             {isLoading && !inlineUnsupported && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-slate-100">
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-slate-100 dark:bg-zinc-900">
                 <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
                 <p className="text-sm text-slate-500">Loading document…</p>
               </div>

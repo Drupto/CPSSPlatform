@@ -53,12 +53,15 @@ Fresh `npm audit --omit=dev --audit-level=high` (2026-10-29) found:
 
 | # | Step | Detail | Effort |
 |---|------|--------|--------|
-| R3-1 | `npm audit fix` (root + functions) | `cd functions && npm audit fix` and root `npm audit fix`. Resolves all three `@fastify/busboy` highs. | S |
-| R3-2 | Build + smoke test | `npm run build` (root) + `cd functions && npm run build` + deploy to emulator; verify `startQuizAttempt`/`submitQuizAttempt`/`getQuizForStudent` still work. | S |
-| R3-3 | Track `@grpc/grpc-js` | Logged as tracked-breaking-change; upgrade Firebase SDK when a non-breaking patch lands. Re-run audit before each deploy. | S |
-| R3-4 | Recurring cadence | Add `npm audit --omit=dev --audit-level=high` to pre-deploy checklist (no CI exists yet — see hygiene item). | S |
+| R3-1 | `npm audit fix` (root + functions) | ✅ Done 2026-10-29. `@fastify/busboy` → 3.2.4 (all 3 highs resolved). | S |
+| R3-2 | **`next` 15.5.25 → 15.5.28 (CRITICAL fix)** | ✅ Done 2026-10-29. `next` was exact-pinned at 15.5.25 so `npm audit fix` could not touch it; manually bumped the patch version. Fixes GHSA-4jqv-mc3x-m676, GHSA-mcj8-r9mp-w47p, GHSA-2464-fhr4-w9xw (RCE in image optimization), GHSA-p3m5-59mp-jv5r + the postcss highs under the old next. Production build verified green. | S |
+| R3-3 | Zod advisory | ✅ Resolved — GHSA-mrhx-c7xc-m3w5 no longer reported (patched within ^3 range); zod@4 migration **not** needed. | S |
+| R3-4 | Track remaining advisories (accepted) | ⬜ Tracked: `@grpc/grpc-js` 2 highs (fix = firebase@9 *downgrade* — rejected; wait for a patched firebase@11.x/12 and upgrade forward), `postcss` 8.4.31 nested under next (build-time only, not runtime-exposed; fix = next@16 major — schedule deliberately), `uuid`/`teeny-request`/`gaxios` chain (moderate; fix = firebase-admin@14 major). Re-run `npm audit --omit=dev --audit-level=high` before each deploy. | S |
+| R3-5 | Recurring cadence | Add `npm audit --omit=dev --audit-level=high` to pre-deploy checklist (no CI exists yet — see hygiene item). | S |
 
-**Acceptance:** zero critical/high advisories fixable by `npm audit fix`; `@grpc` tracked with a revisit date.
+**Acceptance:** ✅ 0 critical, 0 fixable-by-non-breaking highs. Remaining 6 high are all inside major-version-upgrade chains (firebase@11, next@15→16, firebase-admin@13→14) — tracked deliberately, never use `npm audit fix --force` here (it would *downgrade* firebase to v9).
+
+**⚠️ Windows note:** `npm run build` fails on Windows with `'NODE_ENV' is not recognized` (the build script uses Unix env syntax). Build with `$env:NODE_ENV='production'; npx next build` locally, or add `cross-env` to normalize.
 
 
 ---
@@ -124,7 +127,7 @@ Run in order; each gate must pass before the next.
 | R0 key rotation | ⚠️ Deferred by owner | **Yes** — must complete before go-live |
 | R1 server password policy | ⬜ | Yes |
 | R2 admin 2FA | ⬜ | Yes |
-| R3 dependency fixes | ⬜ | Partial (busboy fixable now; grpc tracked) |
+| R3 dependency fixes | ⬜ Partial (✅ busboy + next 15.5.28 CRITICAL fixed 2026-10-29; grpc/postcss/uuid tracked as major-upgrade chains) | Partial (remaining need major upgrades — tracked) |
 | R4 App Check | ⬜ | Yes (cost/abuse protection) |
 | R5 API key restriction | ⬜ | Yes |
 | R6 backups/PITR | ⬜ | Yes (irreversible delete risk) |
