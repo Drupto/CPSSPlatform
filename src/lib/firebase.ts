@@ -5,6 +5,7 @@ import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, initializeFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -58,6 +59,35 @@ if (typeof window !== "undefined") {
   dbInstance = initializeFirestore(app, {});
   storageInstance = getStorage(app);
   functionsInstance = getFunctions(app, "us-central1");
+
+  // --- Firebase App Check (reCAPTCHA Enterprise) ---
+  // Activates only when NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY is set, so local
+  // dev / CI keep working before App Check enforcement is turned on in the console.
+  // Rollout (see docs/SECURITY_REMEDIATION_PLAN.md R4): register the app in
+  // Firebase Console → App Check, add the site key to .env.local, then enable
+  // enforcement on Functions / Firestore / Storage in MONITOR mode first.
+  try {
+    const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY;
+    if (recaptchaSiteKey) {
+      // Local debug token support: while backend enforcement is on, set
+      // NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN in .env.local (token from App Check
+      // console → Apps → Manage debug tokens) to allow local testing. Never
+      // set this variable in production hosting.
+      const debugToken = process.env.NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN;
+      if (debugToken) {
+        (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: string }).FIREBASE_APPCHECK_DEBUG_TOKEN =
+          debugToken;
+      }
+      initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
+        isTokenAutoRefreshEnabled: true,
+      });
+    }
+  } catch (error) {
+    // App Check failure must never break app initialization. In monitor mode the
+    // backend ignores tokens anyway; in enforce mode requests fail loudly there.
+    console.warn("[firebase] App Check initialization failed:", error);
+  }
 
   if (useEmulators && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
     try {

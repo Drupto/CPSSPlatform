@@ -41,7 +41,7 @@ Re-verified against current HEAD `6c2a4b0` (~10 feature commits ahead of the `c4
 | H6 `.env` free of server secrets | ✅ Resolved | ❌ **Regressed — new CRITICAL key in `.env`** | Live `FIREBASE_ADMIN_PRIVATE_KEY` confirmed at `.env:19` |
 | H7 AI flow cost/abuse exposure | ◐ Partial | ✅ Closed | `src/ai/` removed entirely — no public AI flow remains |
 | H3 Storage reads open to signed-in users | ⚠️ Accepted risk | ⚠️ Accepted risk (unchanged) | Cover images need public readability; signed-URL fix deferred |
-| L5 App Check | ⬜ Pending | ⬜ Pending | Still not enabled; see remediation plan R4 |
+| L5 App Check | ⬜ Pending | ◐ Client wiring done (2026-10-31) | Console registration + enforcement remain; see remediation plan R4 |
 | New dependency advisories | — | 🟠 High | `@fastify/busboy` (3 highs, fixable via `npm audit fix`); `@grpc/grpc-js` (2 highs, breaking-change upgrade tracked) |
 
 ### Confirmed still-resolved (re-verified in code)

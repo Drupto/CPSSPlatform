@@ -128,7 +128,7 @@ Run in order; each gate must pass before the next.
 | R1 server password policy | ⬜ | Yes |
 | R2 admin 2FA | ⬜ | Yes |
 | R3 dependency fixes | ⬜ Partial (✅ busboy + next 15.5.28 CRITICAL fixed 2026-10-29; grpc/postcss/uuid tracked as major-upgrade chains) | Partial (remaining need major upgrades — tracked) |
-| R4 App Check | ⬜ | Yes (cost/abuse protection) |
+| R4 App Check | ◐ Client wiring ✅ (2026-10-31); console setup + enforcement pending | Yes (cost/abuse protection) |
 | R5 API key restriction | ⬜ | Yes |
 | R6 backups/PITR | ⬜ | Yes (irreversible delete risk) |
 | R7 hygiene | ⬜ | No |
@@ -147,7 +147,7 @@ Protects callable Functions (`startQuizAttempt`, `submitQuizAttempt`, `getQuizFo
 | # | Step | Detail | Effort |
 |---|------|--------|--------|
 | R4-1 | Console setup | Firebase Console → Build → App Check → register app with reCAPTCHA Enterprise; note site key + secret. | S |
-| R4-2 | Client wiring | Add `initializeAppCheck` in `src/lib/firebase.ts` (or `src/app/layout.tsx` client boundary) with the reCAPTCHA Enterprise site key; activate on page load. | S |
+| R4-2 | Client wiring | ✅ Done (2026-10-31) — `initializeAppCheck` with reCAPTCHA Enterprise provider added in `src/lib/firebase.ts`; activates when `NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY` is set (optional `NEXT_PUBLIC_APPCHECK_DEBUG_TOKEN` for local testing during enforcement). | S |
 | R4-3 | Function enforcement | Firebase Console → App Check → enforce on Cloud Functions (the three quiz callables). Start in **monitor** mode, review logs, then switch to **enforce**. | S |
 | R4-4 | Firestore + Storage enforcement | Enforce App Check on Firestore and Storage in console after Functions enforcement is stable. | S |
 | R4-5 | Verify | A scripted call to a callable without an App Check token must be rejected; a normal browser flow must succeed. | S |
